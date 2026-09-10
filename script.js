@@ -76,8 +76,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('password') ? document.getElementById('password').value.trim() : '';
             const initialData = document.getElementById('initialData') ? document.getElementById('initialData').value.trim() : '';
 
-            if (!username) {
-                showAlert('Please enter your username.');
+            if (!username || !password) {
+                showAlert('Username and password are required.');
                 return;
             }
 
