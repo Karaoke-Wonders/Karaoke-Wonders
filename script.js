@@ -1,5 +1,5 @@
 // Using main domain path route for Worker API
-const WORKER_BASE_URL = 'https://karaokewonders.com'; 
+const WORKER_BASE_URL = 'https://karaokewonders.fetched.workers.dev/'; 
 
 let isRegisterMode = false;
 
