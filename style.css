@@ -10,12 +10,17 @@ body {
     background-color: var(--bg-black);
     color: #f8fafc;
     min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     overflow-x: hidden;
 }
 
+/* Auth Page Layout Helper (Applied to body only on index.html via Tailwind or wrapper) */
+.auth-page-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Glassmorphism Containers */
 .glass {
     background: var(--glass-white);
     backdrop-filter: blur(16px);
@@ -23,12 +28,14 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Gradient Text Effect */
 .gradient-text {
     background: linear-gradient(90deg, var(--accent-green), var(--accent-blue));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
+/* Primary Action Buttons */
 .btn-primary {
     background: linear-gradient(90deg, #22c55e, #0ea5e9);
     transition: all 0.3s ease;
@@ -47,9 +54,11 @@ body {
     box-shadow: none;
 }
 
+/* Form Inputs */
 .input-field {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #f8fafc;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -57,4 +66,20 @@ body {
     outline: none;
     border-color: var(--accent-green);
     box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.15);
+}
+
+/* Dashboard Sidebar Styling */
+.sidebar-link {
+    transition: all 0.2s ease;
+}
+
+.sidebar-link.active {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border-left: 3px solid var(--accent-green);
+    border-radius: 0 0.75rem 0.75rem 0;
+}
+
+.sidebar-link:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.03);
 }

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Karaoke Wonders</title>
+    <title>Auth - Karaoke Wonders</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts -->
@@ -13,69 +13,63 @@
     <!-- Custom Stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="p-6 relative">
-    <!-- Glowing background accent orbs -->
+<body class="p-6 relative flex items-center justify-center min-h-screen">
+    <!-- Background Glow Orbs -->
     <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
     <div class="absolute bottom-1/4 left-1/2 -translate-x-1/2 translate-y-1/2 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-    <!-- Login Card -->
+    <!-- Auth Card -->
     <div class="glass max-w-md w-full p-8 sm:p-10 rounded-3xl relative z-10 shadow-2xl">
-        <div class="text-center mb-8">
+        <div class="text-center mb-6">
             <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-green-400/20 to-blue-500/20 mb-4 border border-white/10">
                 <i data-lucide="mic" class="w-6 h-6 text-green-400"></i>
             </div>
             <h1 class="text-3xl font-extrabold gradient-text mb-2">KaraokeWonders</h1>
-            <p class="text-slate-400 text-sm">Sign in to start your performance</p>
+            <p id="auth-subtitle" class="text-slate-400 text-sm">Sign in to access your stage profile</p>
         </div>
 
-        <!-- Alert Message Box -->
+        <!-- Alert Notification Box -->
         <div id="alert-box" class="hidden mb-6 p-4 rounded-xl text-xs font-medium border flex items-center gap-3">
             <i id="alert-icon" class="w-4 h-4 shrink-0"></i>
             <span id="alert-text"></span>
         </div>
 
-        <form id="login-form" class="space-y-5">
+        <!-- Auth Form -->
+        <form id="auth-form" class="space-y-5">
             <div>
-                <label for="username" class="block text-sm font-medium mb-2 text-slate-300">Username or Email</label>
+                <label for="username" class="block text-sm font-medium mb-2 text-slate-300">Username</label>
                 <div class="relative">
                     <i data-lucide="user" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
-                    <input type="text" id="username" required autocomplete="username" class="input-field w-full rounded-xl pl-11 pr-4 py-3 text-sm" placeholder="Enter your username">
+                    <input type="text" id="username" required autocomplete="username" class="input-field w-full rounded-xl pl-11 pr-4 py-3 text-sm" placeholder="e.g. stage_star">
                 </div>
             </div>
 
-            <div>
-                <div class="flex items-center justify-between mb-2">
-                    <label for="password" class="block text-sm font-medium text-slate-300">Password</label>
-                    <a href="#" class="text-xs text-sky-400 hover:underline">Forgot password?</a>
-                </div>
+            <!-- Dynamic Registration Extra Field -->
+            <div id="extra-fields" class="hidden">
+                <label for="initialData" class="block text-sm font-medium mb-2 text-slate-300">Stage Bio or Details</label>
                 <div class="relative">
-                    <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
-                    <input type="password" id="password" required autocomplete="current-password" class="input-field w-full rounded-xl pl-11 pr-4 py-3 text-sm" placeholder="••••••••">
+                    <i data-lucide="file-text" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
+                    <input type="text" id="initialData" class="input-field w-full rounded-xl pl-11 pr-4 py-3 text-sm" placeholder="e.g. Lead Vocalist / Rock">
                 </div>
-            </div>
-
-            <div class="flex items-center justify-between pt-1">
-                <label class="flex items-center gap-2 cursor-pointer select-none">
-                    <input type="checkbox" id="remember-me" class="rounded border-white/10 bg-white/5 text-green-400 focus:ring-0 focus:ring-offset-0">
-                    <span class="text-xs text-slate-400">Remember me</span>
-                </label>
             </div>
 
             <button type="submit" id="submit-btn" class="w-full btn-primary py-3.5 rounded-xl font-bold text-black text-sm flex items-center justify-center gap-2 mt-2">
-                <span>Sign In</span>
+                <span id="btn-text">Sign In</span>
                 <i data-lucide="arrow-right" class="w-4 h-4"></i>
             </button>
         </form>
 
+        <!-- Toggle Mode Link -->
         <div class="mt-8 pt-6 border-t border-white/10 text-center">
             <p class="text-xs text-slate-400">
-                Don't have an account? 
-                <a href="#" class="text-green-400 font-bold hover:underline">Request Access</a>
+                <span id="toggle-label">Don't have an account?</span> 
+                <button type="button" id="toggle-mode-btn" onclick="toggleMode()" class="text-green-400 font-bold hover:underline ml-1">
+                    Request Access
+                </button>
             </p>
         </div>
     </div>
 
-    <!-- Application Script -->
     <script src="script.js"></script>
 </body>
 </html>
