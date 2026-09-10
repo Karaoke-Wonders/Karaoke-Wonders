@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     showAlert('Login verified! Redirecting to stage...', 'success');
 
                     setTimeout(() => {
-                        window.location.href = '/dashboard.html';
+                        window.location.href = '/main.html';
                     }, 1000);
                 }
 
