@@ -1,11 +1,9 @@
-// Worker API endpoint (Leave empty string if hosted on the same domain)
-const WORKER_BASE_URL = 'https://api.karaokewonders.com';
+const WORKER_BASE_URL = 'https://karaokewonders.com';
 
 let currentUser = null;
 let allSongs = [];
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Verify User Session
     const sessionData = localStorage.getItem('kw_session');
     if (!sessionData) {
         window.location.href = '/index.html';
@@ -14,27 +12,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     currentUser = JSON.parse(sessionData);
 
-    // 2. Initialize UI with User Info
     setupUserProfile();
-    
-    // 3. Initialize Lucide Icons
+
     lucide.createIcons();
 
-    // 4. Fetch initial data
     loadSongs();
     if (currentUser.isAdmin) {
         loadPendingRequests();
         loadUserList();
     }
 
-    // 5. Setup Form Listener for Submitting Tracks
     const uploadForm = document.getElementById('upload-form');
     if (uploadForm) {
         uploadForm.addEventListener('submit', handleTrackSubmit);
     }
 });
 
-// --- USER & NAVIGATION SETUP ---
 function setupUserProfile() {
     const displayName = document.getElementById('user-display-name');
     const roleBadge = document.getElementById('user-role-badge');
@@ -56,19 +49,14 @@ function setupUserProfile() {
     }
 }
 
-// Tab Switching
 window.switchTab = function(tabName) {
-    // Hide all tab sections
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
 
-    // Remove active class from all sidebar links
     document.querySelectorAll('.sidebar-link').forEach(btn => btn.classList.remove('active'));
 
-    // Show selected section
     const activeSection = document.getElementById(`content-${tabName}`);
     if (activeSection) activeSection.classList.remove('hidden');
 
-    // Highlight selected nav button
     const activeBtn = document.getElementById(`tab-${tabName}`);
     if (activeBtn) activeBtn.classList.add('active');
 
@@ -80,7 +68,6 @@ window.logout = function() {
     window.location.href = '/index.html';
 };
 
-// --- ALERT MESSAGING ---
 function showDashboardAlert(message, type = 'error') {
     const alertBox = document.getElementById('dashboard-alert');
     const alertText = document.getElementById('dashboard-alert-text');
@@ -102,12 +89,11 @@ function showDashboardAlert(message, type = 'error') {
     lucide.createIcons();
 }
 
-window.hideAlert = function() {
+window.hideDashboardAlert = function() {
     const alertBox = document.getElementById('dashboard-alert');
     if (alertBox) alertBox.classList.add('hidden');
 };
 
-// --- 1. SONG LIBRARY ---
 async function loadSongs() {
     const container = document.getElementById('song-list');
     if (!container) return;
@@ -119,7 +105,6 @@ async function loadSongs() {
         allSongs = await response.json();
         renderSongs(allSongs);
     } catch (err) {
-        // Fallback UI if API isn't populated yet
         container.innerHTML = `
             <div class="col-span-full text-center py-12 glass rounded-3xl border border-white/10">
                 <i data-lucide="music" class="w-10 h-10 mx-auto text-slate-500 mb-3"></i>
@@ -143,38 +128,59 @@ function renderSongs(songs) {
         return;
     }
 
-    container.innerHTML = songs.map(song => `
-        <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between hover:border-green-500/30 transition-all">
-            <div>
-                <div class="flex items-start justify-between gap-2 mb-2">
-                    <h3 class="font-bold text-base text-white line-clamp-1">${escapeHtml(song.title)}</h3>
-                    <span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded-md bg-green-500/20 text-green-400 border border-green-500/30">Karaoke</span>
+    container.innerHTML = songs.map(song => {
+        const title = song.songName || song.title || 'Untitled';
+        const videoId = song.videoId || '';
+        const playUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : (song.url || '#');
+        const uploader = song.submittedBy || song.uploader || 'Community';
+
+        return `
+            <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between hover:border-green-500/30 transition-all">
+                <div>
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <h3 class="font-bold text-base text-white line-clamp-1">${escapeHtml(title)}</h3>
+                        <span class="px-2 py-0.5 text-[10px] uppercase font-bold rounded-md bg-green-500/20 text-green-400 border border-green-500/30">Karaoke</span>
+                    </div>
+                    <p class="text-xs text-slate-400 font-medium mb-4">By ${escapeHtml(song.artist || 'Unknown Artist')}</p>
                 </div>
-                <p class="text-xs text-slate-400 font-medium mb-4">By ${escapeHtml(song.artist)}</p>
+                <div class="pt-4 border-t border-white/10 flex items-center justify-between">
+                    <span class="text-[11px] text-slate-500">Added by ${escapeHtml(uploader)}</span>
+                    <button onclick="copyVRUrl('${escapeHtml(playUrl)}')" class="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-green-500 hover:text-black rounded-lg transition-all flex items-center gap-1.5">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy VRChat Link
+                    </button>
+                </div>
             </div>
-            <div class="pt-4 border-t border-white/10 flex items-center justify-between">
-                <span class="text-[11px] text-slate-500">Added by ${escapeHtml(song.uploader || 'Community')}</span>
-                <button onclick="playTrack('${escapeHtml(song.url)}', '${escapeHtml(song.title)}')" class="px-3 py-1.5 text-xs font-bold bg-white/10 hover:bg-green-500 hover:text-black rounded-lg transition-all flex items-center gap-1.5">
-                    <i data-lucide="play" class="w-3.5 h-3.5"></i> Play
-                </button>
-            </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 
     lucide.createIcons();
 }
 
+window.copyVRUrl = function(url) {
+    if (!url || url === '#') {
+        showDashboardAlert('No valid YouTube URL available for this track.');
+        return;
+    }
+
+    navigator.clipboard.writeText(url).then(() => {
+        showDashboardAlert('Track URL copied to clipboard! Paste it into VRChat.', 'success');
+    }).catch(() => {
+        showDashboardAlert('Failed to copy track URL.');
+    });
+};
+
 window.filterSongs = function() {
     const query = document.getElementById('search-input').value.toLowerCase();
-    const filtered = allSongs.filter(s => 
-        s.title.toLowerCase().includes(query) || 
-        s.artist.toLowerCase().includes(query) ||
-        (s.uploader && s.uploader.toLowerCase().includes(query))
-    );
+    const filtered = allSongs.filter(s => {
+        const title = (s.songName || s.title || '').toLowerCase();
+        const artist = (s.artist || '').toLowerCase();
+        const uploader = (s.submittedBy || s.uploader || '').toLowerCase();
+
+        return title.includes(query) || artist.includes(query) || uploader.includes(query);
+    });
     renderSongs(filtered);
 };
 
-// --- 2. TRACK SUBMISSION ---
 async function handleTrackSubmit(e) {
     e.preventDefault();
 
@@ -188,6 +194,13 @@ async function handleTrackSubmit(e) {
         return;
     }
 
+    let videoId = url;
+    if (url.includes('v=')) {
+        videoId = url.split('v=')[1]?.split('&')[0];
+    } else if (url.includes('youtu.be/')) {
+        videoId = url.split('youtu.be/')[1]?.split('?')[0];
+    }
+
     submitBtn.disabled = true;
     submitBtn.innerHTML = `<span>Submitting...</span>`;
 
@@ -196,9 +209,10 @@ async function handleTrackSubmit(e) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                title,
-                artist,
-                url,
+                songName: title,
+                artist: artist,
+                videoId: videoId,
+                timestamp: 0,
                 submittedBy: currentUser.username,
                 threadId: currentUser.threadId
             })
@@ -222,7 +236,6 @@ async function handleTrackSubmit(e) {
     }
 }
 
-// --- 3. ADMIN: PENDING REQUESTS QUEUE ---
 async function loadPendingRequests() {
     const tableBody = document.getElementById('request-table-body');
     const badge = document.getElementById('pending-badge');
@@ -244,20 +257,23 @@ async function loadPendingRequests() {
             return;
         }
 
-        tableBody.innerHTML = requests.map(req => `
-            <tr>
-                <td class="px-6 py-4">
-                    <div class="font-bold text-white">${escapeHtml(req.title)}</div>
-                    <div class="text-xs text-slate-400">${escapeHtml(req.artist)}</div>
-                </td>
-                <td class="px-6 py-4 text-xs text-slate-300">${escapeHtml(req.submittedBy)}</td>
-                <td class="px-6 py-4 text-xs text-slate-500">${new Date(req.createdAt).toLocaleDateString()}</td>
-                <td class="px-6 py-4 text-right space-x-2">
-                    <button onclick="approveTrack('${req.id}')" class="px-3 py-1.5 bg-green-500/20 text-green-400 hover:bg-green-500/30 rounded-lg text-xs font-bold transition-all">Approve</button>
-                    <button onclick="rejectTrack('${req.id}')" class="px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-xs font-bold transition-all">Reject</button>
-                </td>
-            </tr>
-        `).join('');
+        tableBody.innerHTML = requests.map(req => {
+            const title = req.songName || req.title || 'Untitled';
+            return `
+                <tr>
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-white">${escapeHtml(title)}</div>
+                        <div class="text-xs text-slate-400">${escapeHtml(req.artist)}</div>
+                    </td>
+                    <td class="px-6 py-4 text-xs text-slate-300">${escapeHtml(req.submittedBy)}</td>
+                    <td class="px-6 py-4 text-xs text-slate-500">${new Date(req.createdAt).toLocaleDateString()}</td>
+                    <td class="px-6 py-4 text-right space-x-2">
+                        <button onclick="approveTrack('${req.id}')" class="px-3 py-1.5 bg-green-500/20 text-green-400 hover:bg-green-500/30 rounded-lg text-xs font-bold transition-all">Approve</button>
+                        <button onclick="rejectTrack('${req.id}')" class="px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg text-xs font-bold transition-all">Reject</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
 
     } catch (err) {
         if (badge) badge.textContent = '0';
@@ -294,7 +310,6 @@ window.rejectTrack = async function(trackId) {
     }
 };
 
-// --- 4. ADMIN: USER MANAGEMENT ---
 async function loadUserList() {
     const userContainer = document.getElementById('user-list');
     if (!userContainer) return;
@@ -338,37 +353,6 @@ window.toggleUserLock = async function(threadId, shouldLock) {
     }
 };
 
-// --- VIDEO MODAL PLAYER ---
-window.playTrack = function(url, title) {
-    const modal = document.getElementById('video-modal');
-    const iframe = document.getElementById('modal-iframe');
-    const modalTitle = document.getElementById('modal-title');
-
-    if (!modal || !iframe) return;
-
-    // Convert YouTube URLs to embed URLs if needed
-    let embedUrl = url;
-    if (url.includes('youtube.com/watch?v=')) {
-        const videoId = url.split('v=')[1]?.split('&')[0];
-        embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-    } else if (url.includes('youtu.be/')) {
-        const videoId = url.split('youtu.be/')[1]?.split('?')[0];
-        embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-    }
-
-    if (modalTitle) modalTitle.textContent = title;
-    iframe.src = embedUrl;
-    modal.classList.remove('hidden');
-};
-
-window.closeVideoModal = function() {
-    const modal = document.getElementById('video-modal');
-    const iframe = document.getElementById('modal-iframe');
-    if (iframe) iframe.src = '';
-    if (modal) modal.classList.add('hidden');
-};
-
-// Helper: Escape HTML to prevent XSS
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");

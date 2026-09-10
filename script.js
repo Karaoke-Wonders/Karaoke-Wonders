@@ -1,5 +1,5 @@
-// Replace with your deployed Cloudflare Worker domain if hosted on a separate URL
-const WORKER_BASE_URL = 'https://api.karaokewonders.com'; 
+// Using main domain path route for Worker API
+const WORKER_BASE_URL = 'https://karaokewonders.com'; 
 
 let isRegisterMode = false;
 
@@ -7,7 +7,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Lucide icons
     lucide.createIcons();
 
-    const loginForm = document.getElementById('login-form');
+    // Matched ID with HTML form: <form id="auth-form">
+    const loginForm = document.getElementById('auth-form');
     const alertBox = document.getElementById('alert-box');
     const alertText = document.getElementById('alert-text');
     const alertIcon = document.getElementById('alert-icon');
@@ -61,89 +62,91 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Form Submission Handler
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const username = document.getElementById('username').value.trim();
-        const initialData = document.getElementById('initialData') ? document.getElementById('initialData').value.trim() : '';
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const initialData = document.getElementById('initialData') ? document.getElementById('initialData').value.trim() : '';
 
-        if (!username) {
-            showAlert('Please enter your username.');
-            return;
-        }
-
-        // Disable button during network call
-        submitBtn.disabled = true;
-        const originalBtnHTML = submitBtn.innerHTML;
-        submitBtn.innerHTML = `<span>Connecting to Stage...</span>`;
-
-        try {
-            if (isRegisterMode) {
-                // --- REGISTRATION / CREATE FORUM THREAD ---
-                const response = await fetch(`${WORKER_BASE_URL}/api/create-account`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, initialData })
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.error || 'Failed to submit account request.');
-                }
-
-                showAlert('Access request created! A thread has been opened in Discord.', 'success');
-                
-                // Automatically switch back to login mode after 2 seconds
-                setTimeout(() => {
-                    toggleMode();
-                }, 2000);
-
-            } else {
-                // --- LOGIN / FETCH FORUM THREAD STATUS ---
-                const response = await fetch(`${WORKER_BASE_URL}/api/get-account?username=${encodeURIComponent(username)}`);
-                const data = await response.json();
-
-                if (!response.ok) {
-                    if (response.status === 404) {
-                        throw new Error('Account thread not found in Discord. Please request access.');
-                    }
-                    throw new Error(data.error || 'Server error occurred during sign in.');
-                }
-
-                // Check if account thread in Discord is locked (used as blacklist mechanism)
-                if (data.isLocked) {
-                    showAlert('This account has been locked or blacklisted.', 'error');
-                    return;
-                }
-
-                // Simple check: If username is "admin" or contains "admin", assign admin access
-                const isAdmin = username.toLowerCase().includes('admin');
-
-                // Save session payload to local storage
-                const userSession = {
-                    username: data.username,
-                    threadId: data.threadId,
-                    role: isAdmin ? 'administrator' : 'member',
-                    isAdmin: isAdmin,
-                    loggedInAt: new Date().toISOString()
-                };
-
-                localStorage.setItem('kw_session', JSON.stringify(userSession));
-                showAlert('Login verified! Redirecting to stage...', 'success');
-
-                // Redirect to dashboard page
-                setTimeout(() => {
-                    window.location.href = '/dashboard.html';
-                }, 1000);
+            if (!username) {
+                showAlert('Please enter your username.');
+                return;
             }
 
-        } catch (err) {
-            showAlert(err.message || 'An error occurred during authentication.');
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = originalBtnHTML;
-            lucide.createIcons();
-        }
-    });
+            // Disable button during network call
+            submitBtn.disabled = true;
+            const originalBtnHTML = submitBtn.innerHTML;
+            submitBtn.innerHTML = `<span>Connecting to Stage...</span>`;
+
+            try {
+                if (isRegisterMode) {
+                    // --- REGISTRATION / CREATE FORUM THREAD ---
+                    const response = await fetch(`${WORKER_BASE_URL}/api/create-account`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, initialData })
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Failed to submit account request.');
+                    }
+
+                    showAlert('Access request created! A thread has been opened in Discord.', 'success');
+                    
+                    // Automatically switch back to login mode after 2 seconds
+                    setTimeout(() => {
+                        toggleMode();
+                    }, 2000);
+
+                } else {
+                    // --- LOGIN / FETCH FORUM THREAD STATUS ---
+                    const response = await fetch(`${WORKER_BASE_URL}/api/get-account?username=${encodeURIComponent(username)}`);
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            throw new Error('Account thread not found in Discord. Please request access.');
+                        }
+                        throw new Error(data.error || 'Server error occurred during sign in.');
+                    }
+
+                    // Check if account thread in Discord is locked (used as blacklist mechanism)
+                    if (data.isLocked) {
+                        showAlert('This account has been locked or blacklisted.', 'error');
+                        return;
+                    }
+
+                    // Simple check: If username is "admin" or contains "admin", assign admin access
+                    const isAdmin = username.toLowerCase().includes('admin');
+
+                    // Save session payload to local storage
+                    const userSession = {
+                        username: data.username,
+                        threadId: data.threadId,
+                        role: isAdmin ? 'administrator' : 'member',
+                        isAdmin: isAdmin,
+                        loggedInAt: new Date().toISOString()
+                    };
+
+                    localStorage.setItem('kw_session', JSON.stringify(userSession));
+                    showAlert('Login verified! Redirecting to stage...', 'success');
+
+                    // Redirect to dashboard page
+                    setTimeout(() => {
+                        window.location.href = '/dashboard.html';
+                    }, 1000);
+                }
+
+            } catch (err) {
+                showAlert(err.message || 'An error occurred during authentication.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnHTML;
+                lucide.createIcons();
+            }
+        });
+    }
 });
