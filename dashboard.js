@@ -1,4 +1,4 @@
-const WORKER_BASE_URL = 'https://karaokewonders.fetched.workers.dev/';
+const WORKER_BASE_URL = 'https://karaokewonders.fetched.workers.dev';
 
 let currentUser = null;
 let allSongs = [];
