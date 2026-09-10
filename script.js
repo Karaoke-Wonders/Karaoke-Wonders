@@ -80,9 +80,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password') ? document.getElementById('password').value.trim() : '';
-            const initialData = document.getElementById('initialData') ? document.getElementById('initialData').value.trim() : '';
 
-                        if (!username || !password) {
+            if (!username || !password) {
                 showAlert('Username and password are required.');
                 return;
             }
@@ -98,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const response = await fetch(`${WORKER_BASE_URL}/api/create-account`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username, password, initialData })
+                        body: JSON.stringify({ username, password })
                     });
 
                     const data = await response.json();
@@ -113,22 +112,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         toggleMode();
                     }, 2000);
 
-                                } else {
-                                    // --- LOGIN / FETCH FORUM THREAD STATUS ---
-                                    // The Worker expects a POST request with a JSON body for authentication
-                                    const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ username, password })
-                                    });
-                                    const data = await response.json();
+                } else {
+                    // --- LOGIN / FETCH FORUM THREAD STATUS ---
+                    const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    const data = await response.json();
 
-                                    if (!response.ok) {
-                                        if (response.status === 404) {
-                                            throw new Error('Account not found in Discord. Ensure your username is correct and your thread is active.');
-                                        }
-                                        throw new Error(data.error || 'Invalid credentials or server error.');
-                                    }
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            throw new Error('Account not found in Discord. Ensure your username is correct and your thread is active.');
+                        }
+                        throw new Error(data.error || 'Invalid credentials or server error.');
+                    }
 
                     // Check if user is blacklisted using the tag array check
                     const userTags = data.tags || [];
@@ -154,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('kw_session', JSON.stringify(userSession));
                     showAlert('Login verified! Redirecting to stage...', 'success');
 
-                                        setTimeout(() => {
+                    setTimeout(() => {
                         window.location.href = '/admin.html';
                     }, 1000);
                 }
