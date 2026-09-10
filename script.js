@@ -73,10 +73,16 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             
             const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password') ? document.getElementById('password').value.trim() : '';
             const initialData = document.getElementById('initialData') ? document.getElementById('initialData').value.trim() : '';
 
             if (!username) {
                 showAlert('Please enter your username.');
+                return;
+            }
+
+            if (isRegisterMode && !password) {
+                showAlert('Username and password are required.');
                 return;
             }
 
@@ -91,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const response = await fetch(`${WORKER_BASE_URL}/api/create-account`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username, initialData })
+                        body: JSON.stringify({ username, password, initialData })
                     });
 
                     const data = await response.json();
