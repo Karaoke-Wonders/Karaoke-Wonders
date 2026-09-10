@@ -3,11 +3,17 @@ const WORKER_BASE_URL = 'https://karaokewonders.fetched.workers.dev/';
 
 let isRegisterMode = false;
 
+// Replace these with your actual Discord Forum Tag IDs from your server settings
+const TAG_IDS = {
+    staff: '1547672021364768848',
+    restricted: '1547672052750884864',
+    blacklisted: '1547672075395792947'
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize Lucide icons
     lucide.createIcons();
 
-    // Matched ID with HTML form: <form id="auth-form">
     const loginForm = document.getElementById('auth-form');
     const alertBox = document.getElementById('alert-box');
     const alertText = document.getElementById('alert-text');
@@ -96,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     showAlert('Access request created! A thread has been opened in Discord.', 'success');
                     
-                    // Automatically switch back to login mode after 2 seconds
                     setTimeout(() => {
                         toggleMode();
                     }, 2000);
@@ -113,28 +118,30 @@ document.addEventListener('DOMContentLoaded', () => {
                         throw new Error(data.error || 'Server error occurred during sign in.');
                     }
 
-                    // Check if account thread in Discord is locked (used as blacklist mechanism)
-                    if (data.isLocked) {
-                        showAlert('This account has been locked or blacklisted.', 'error');
+                    // Check if user is blacklisted using the tag array check
+                    const userTags = data.tags || [];
+                    if (userTags.includes(TAG_IDS.blacklisted)) {
+                        showAlert('This account has been blacklisted.', 'error');
                         return;
                     }
 
-                    // Simple check: If username is "admin" or contains "admin", assign admin access
-                    const isAdmin = username.toLowerCase().includes('admin');
+                    // Check if user is an admin via tags or naming convention fallback
+                    const isStaff = userTags.includes(TAG_IDS.staff) || username.toLowerCase().includes('admin');
 
                     // Save session payload to local storage
                     const userSession = {
                         username: data.username,
                         threadId: data.threadId,
-                        role: isAdmin ? 'administrator' : 'member',
-                        isAdmin: isAdmin,
+                        avatarUrl: data.avatarUrl || '',
+                        tags: userTags,
+                        role: isStaff ? 'administrator' : 'member',
+                        isAdmin: isStaff,
                         loggedInAt: new Date().toISOString()
                     };
 
                     localStorage.setItem('kw_session', JSON.stringify(userSession));
                     showAlert('Login verified! Redirecting to stage...', 'success');
 
-                    // Redirect to dashboard page
                     setTimeout(() => {
                         window.location.href = '/dashboard.html';
                     }, 1000);

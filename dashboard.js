@@ -3,6 +3,13 @@ const WORKER_BASE_URL = 'https://karaokewonders.fetched.workers.dev/';
 let currentUser = null;
 let allSongs = [];
 
+// Replace these with your actual Discord Forum Tag IDs from your server settings
+const TAG_IDS = {
+    staff: '1547672021364768848',
+    restricted: '1547672052750884864',
+    blacklisted: '1547672075395792947'
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     const sessionData = localStorage.getItem('kw_session');
     if (!sessionData) {
@@ -13,10 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
     currentUser = JSON.parse(sessionData);
 
     setupUserProfile();
-
     lucide.createIcons();
-
     loadSongs();
+
     if (currentUser.isAdmin) {
         loadPendingRequests();
         loadUserList();
@@ -35,7 +41,15 @@ function setupUserProfile() {
     const adminLinks = document.getElementById('admin-links');
 
     if (displayName) displayName.textContent = currentUser.username;
-    if (avatar) avatar.textContent = currentUser.username.charAt(0).toUpperCase();
+    
+    // If the user has a Discord avatarUrl saved, render it as an image, otherwise fallback to letter
+    if (avatar) {
+        if (currentUser.avatarUrl && currentUser.avatarUrl.startsWith('http')) {
+            avatar.innerHTML = `<img src="${currentUser.avatarUrl}" alt="Avatar" class="w-full h-full rounded-full object-cover">`;
+        } else {
+            avatar.textContent = currentUser.username.charAt(0).toUpperCase();
+        }
+    }
 
     if (currentUser.isAdmin) {
         if (roleBadge) {
@@ -51,7 +65,6 @@ function setupUserProfile() {
 
 window.switchTab = function(tabName) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-
     document.querySelectorAll('.sidebar-link').forEach(btn => btn.classList.remove('active'));
 
     const activeSection = document.getElementById(`content-${tabName}`);
@@ -319,37 +332,48 @@ async function loadUserList() {
         if (!response.ok) throw new Error('Failed to load user list');
 
         const users = await response.json();
-        userContainer.innerHTML = users.map(u => `
-            <div class="glass p-5 rounded-2xl border border-white/10 flex items-center justify-between">
-                <div>
-                    <div class="flex items-center gap-2">
-                        <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
-                        ${u.isLocked ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Locked</span>' : ''}
+        userContainer.innerHTML = users.map(u => {
+            const isBlacklisted = u.tags.includes(TAG_IDS.blacklisted);
+            const isRestricted = u.tags.includes(TAG_IDS.restricted);
+
+            return `
+                <div class="glass p-5 rounded-2xl border border-white/10 flex items-center justify-between">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
+                            ${isBlacklisted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Blacklisted</span>' : ''}
+                            ${isRestricted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">Restricted</span>' : ''}
+                        </div>
+                        <p class="text-xs text-slate-500 mt-1">Thread ID: ${u.threadId || 'N/A'}</p>
                     </div>
-                    <p class="text-xs text-slate-500 mt-1">Thread ID: ${u.threadId || 'N/A'}</p>
+                    <div class="flex gap-2">
+                        <button onclick="toggleUserTag('${u.threadId}', '${TAG_IDS.restricted}', ${!isRestricted})" class="px-3 py-1.5 bg-yellow-500/20 text-yellow-400 rounded-lg text-xs font-bold hover:opacity-80 transition-all">
+                            ${isRestricted ? 'Unrestrict' : 'Restrict'}
+                        </button>
+                        <button onclick="toggleUserTag('${u.threadId}', '${TAG_IDS.blacklisted}', ${!isBlacklisted})" class="px-3 py-1.5 ${isBlacklisted ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} rounded-lg text-xs font-bold hover:opacity-80 transition-all">
+                            ${isBlacklisted ? 'Unban' : 'Blacklist'}
+                        </button>
+                    </div>
                 </div>
-                <button onclick="toggleUserLock('${u.threadId}', ${!u.isLocked})" class="px-3 py-1.5 ${u.isLocked ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} rounded-lg text-xs font-bold hover:opacity-80 transition-all">
-                    ${u.isLocked ? 'Unlock' : 'Blacklist'}
-                </button>
-            </div>
-        `).join('');
+            `;
+        }).join('');
 
     } catch (err) {
         userContainer.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs">User management unavailable.</p>`;
     }
 }
 
-window.toggleUserLock = async function(threadId, shouldLock) {
+window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
     try {
         await fetch(`${WORKER_BASE_URL}/api/admin/toggle-lock`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ threadId, locked: shouldLock })
+            body: JSON.stringify({ threadId, tagId, add: shouldAdd })
         });
         showDashboardAlert(`User status updated.`, 'success');
         loadUserList();
     } catch (err) {
-        showDashboardAlert('Failed to update user lock status.');
+        showDashboardAlert('Failed to update user tag status.');
     }
 };
 
