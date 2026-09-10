@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karaoke Wonders</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-black: #0a0a0a;
+            --accent-green: #4ade80;
+            --accent-blue: #38bdf8;
+            --glass-white: rgba(255, 255, 255, 0.05);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-black);
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .glass {
+            background: var(--glass-white);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .gradient-text {
+            background: linear-gradient(90deg, var(--accent-green), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #22c55e, #0ea5e9);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(74, 222, 128, 0.2);
+        }
+        .sidebar-link.active {
+            background: var(--glass-white);
+            border-left: 4px solid var(--accent-green);
+        }
+        .hide { display: none; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Auth Wrapper -->
+    <div id="auth-page" class="min-h-screen flex items-center justify-center p-6">
+        <div class="glass max-w-md w-full p-8 rounded-3xl">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-extrabold gradient-text mb-2">KaraokeWonders</h1>
+                <p class="text-slate-400">Sign in to start your performance</p>
+            </div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Username</label>
+                    <input type="text" id="username" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-green-400 transition-colors" placeholder="Enter username">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Password</label>
+                    <input type="password" id="password" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-green-400 transition-colors" placeholder="••••••••">
+                </div>
+                <button type="submit" class="w-full btn-primary py-3 rounded-xl font-bold mt-4">Sign In</button>
+                <p class="text-center text-xs text-slate-500 mt-4 italic">Use 'admin' / 'admin' for dashboard or any user for member view.</p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App (Hidden by default) -->
+    <div id="app-shell" class="hide flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 glass border-r border-white/5 flex flex-col">
+            <div class="p-6">
+                <h2 class="text-xl font-bold gradient-text">KaraokeWonders</h2>
+            </div>
+            <nav class="flex-1 px-4 space-y-2">
+                <button onclick="switchTab('library')" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all" id="tab-library">
+                    <i data-lucide="music"></i> Song Library
+                </button>
+                <button onclick="switchTab('upload')" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all" id="tab-upload">
+                    <i data-lucide="upload"></i> Upload Song
+                </button>
+                <div id="admin-links" class="pt-6 mt-6 border-t border-white/10 hide">
+                    <p class="px-4 text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-2">Administration</p>
+                    <button onclick="switchTab('admin-requests')" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all" id="tab-admin-requests">
+                        <i data-lucide="clipboard-list"></i> Requests
+                    </button>
+                    <button onclick="switchTab('admin-users')" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 transition-all" id="tab-admin-users">
+                        <i data-lucide="users"></i> User Management
+                    </button>
+                </div>
+            </nav>
+            <div class="p-4 border-t border-white/5">
+                <div class="flex items-center gap-3 mb-4 px-2">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-blue-500"></div>
+                    <div>
+                        <p class="text-xs font-bold" id="user-display-name">User</p>
+                        <p class="text-[10px] text-slate-500" id="user-role">Member</p>
+                    </div>
+                </div>
+                <button onclick="logout()" class="w-full flex items-center gap-2 px-4 py-2 text-red-400 hover:bg-red-400/10 rounded-lg transition-all text-sm">
+                    <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto p-8">
+            <!-- Library Tab -->
+            <section id="content-library" class="tab-content">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h1 class="text-3xl font-bold">Song Library</h1>
+                        <p class="text-slate-400">Sing your heart out with these approved tracks.</p>
+                    </div>
+                    <div class="flex gap-4">
+                        <div class="relative">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
+                            <input type="text" placeholder="Search songs..." class="bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-green-400">
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="song-list">
+                    <!-- Songs will be injected here -->
+                </div>
+            </section>
+
+            <!-- Upload Tab -->
+            <section id="content-upload" class="tab-content hide max-w-2xl mx-auto">
+                <h1 class="text-3xl font-bold mb-2">Submit New Song</h1>
+                <p class="text-slate-400 mb-8">Contribute to the library and let others hear the music.</p>
+                
+                <div class="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-6 mb-8">
+                    <div class="flex items-center gap-3 text-blue-400 mb-3 font-bold">
+                        <i data-lucide="info" class="w-5 h-5"></i>
+                        <span>Upload Requirements</span>
+                    </div>
+                    <ul class="space-y-2 text-sm text-slate-300">
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i> No vocals in the background music</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i> Lyrics must be synced and on-screen</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i> High-quality audio (at least 192kbps)</li>
+                        <li class="flex gap-2"><i data-lucide="check" class="w-4 h-4 text-green-400"></i> Clear video (720p or higher)</li>
+                    </ul>
+                </div>
+
+                <form class="space-y-6 glass p-8 rounded-3xl" id="upload-form">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Song Title</label>
+                            <input type="text" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-green-400" placeholder="e.g. Bohemian Rhapsody">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Artist</label>
+                            <input type="text" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-green-400" placeholder="e.g. Queen">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Video Link (YouTube/Vimeo)</label>
+                        <input type="url" required class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-green-400" placeholder="https://youtube.com/...">
+                    </div>
+                    <div class="border-2 border-dashed border-white/10 rounded-2xl p-10 text-center">
+                        <i data-lucide="video" class="w-12 h-12 text-slate-500 mx-auto mb-4"></i>
+                        <p class="text-sm text-slate-400">Drag and drop song metadata or cover art</p>
+                        <button type="button" class="mt-4 text-xs font-bold text-green-400 hover:underline">Browse files</button>
+                    </div>
+                    <button type="submit" class="w-full btn-primary py-4 rounded-2xl font-bold">Submit for Approval</button>
+                </form>
+            </section>
+
+            <!-- Admin Requests Tab -->
+            <section id="content-admin-requests" class="tab-content hide">
+                <h1 class="text-3xl font-bold mb-2">Pending Requests</h1>
+                <p class="text-slate-400 mb-8">Review and moderate song submissions from the community.</p>
+                
+                <div class="glass rounded-3xl overflow-hidden">
+                    <table class="w-full text-left">
+                        <thead class="bg-white/5 border-b border-white/10">
+                            <tr>
+                                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Song Info</th>
+                                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Submitted By</th>
+                                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Date</th>
+                                <th class="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="request-table-body" class="divide-y divide-white/5">
+                            <!-- Requests injected here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Admin Users Tab -->
+            <section id="content-admin-users" class="tab-content hide">
+                <h1 class="text-3xl font-bold mb-2">User Management</h1>
+                <p class="text-slate-400 mb-8">Manage permissions and system access.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="user-list">
+                    <!-- Users injected here -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // Mock Data
+        let currentUser = null;
+        const songs = [
+            { id: 1, title: "Blinding Lights", artist: "The Weeknd", uploader: "music_fan_99", status: "approved" },
+            { id: 2, title: "Stay", artist: "The Kid LAROI & Justin Bieber", uploader: "karaoke_king", status: "approved" },
+            { id: 3, title: "Rolling in the Deep", artist: "Adele", uploader: "soul_singer", status: "approved" }
+        ];
+
+        const requests = [
+            { id: 101, title: "Heat Waves", artist: "Glass Animals", uploader: "indie_kid", date: "2024-05-20" },
+            { id: 102, title: "Levitating", artist: "Dua Lipa", uploader: "pop_star", date: "2024-05-21" }
+        ];
+
+        const users = [
+            { id: 1, username: "music_fan_99", status: "active", uploads: 12 },
+            { id: 2, username: "karaoke_king", status: "active", uploads: 45 },
+            { id: 3, username: "trouble_maker", status: "blacklisted", uploads: 2 },
+            { id: 4, username: "soul_singer", status: "active", uploads: 8 }
+        ];
+
+        // Auth Logic
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            
+            if (username.toLowerCase() === 'admin') {
+                currentUser = { name: 'Admin User', role: 'administrator', isAdmin: true };
+            } else {
+                currentUser = { name: username, role: 'Member', isAdmin: false };
+            }
+
+            login();
+        });
+
+        function login() {
+            document.getElementById('auth-page').classList.add('hide');
+            document.getElementById('app-shell').classList.remove('hide');
+            
+            document.getElementById('user-display-name').innerText = currentUser.name;
+            document.getElementById('user-role').innerText = currentUser.role;
+
+            if (currentUser.isAdmin) {
+                document.getElementById('admin-links').classList.remove('hide');
+            } else {
+                document.getElementById('admin-links').classList.add('hide');
+            }
+
+            renderSongs();
+            renderRequests();
+            renderUsers();
+            switchTab('library');
+        }
+
+        function logout() {
+            document.getElementById('auth-page').classList.remove('hide');
+            document.getElementById('app-shell').classList.add('hide');
+            currentUser = null;
+        }
+
+        // Tab Management
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hide'));
+            document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(`content-${tabId}`).classList.remove('hide');
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            lucide.createIcons();
+        }
+
+        // Rendering Functions
+        function renderSongs() {
+            const container = document.getElementById('song-list');
+            container.innerHTML = songs.map(song => `
+                <div class="glass p-6 rounded-3xl hover:bg-white/10 transition-all group">
+                    <div class="aspect-video bg-gradient-to-br from-green-400/20 to-blue-500/20 rounded-2xl mb-4 flex items-center justify-center group-hover:scale-[1.02] transition-transform">
+                        <i data-lucide="play-circle" class="w-12 h-12 text-green-400 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                    </div>
+                    <h3 class="font-bold text-lg">${song.title}</h3>
+                    <p class="text-sm text-slate-400 mb-4">${song.artist}</p>
+                    <div class="flex items-center justify-between pt-4 border-t border-white/5">
+                        <span class="text-[10px] text-slate-500">Uploaded by <span class="text-green-400">${song.uploader}</span></span>
+                        <button class="text-xs font-bold text-green-400 hover:underline">Play Now</button>
+                    </div>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function renderRequests() {
+            const container = document.getElementById('request-table-body');
+            container.innerHTML = requests.map(req => `
+                <tr>
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-sm">${req.title}</div>
+                        <div class="text-xs text-slate-500">${req.artist}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-300">@${req.uploader}</td>
+                    <td class="px-6 py-4 text-sm text-slate-500">${req.date}</td>
+                    <td class="px-6 py-4">
+                        <div class="flex gap-2">
+                            <button class="p-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500 hover:text-white transition-all"><i data-lucide="check" class="w-4 h-4"></i></button>
+                            <button class="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500 hover:text-white transition-all"><i data-lucide="x" class="w-4 h-4"></i></button>
+                            <button class="p-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500 hover:text-white transition-all"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function renderUsers() {
+            const container = document.getElementById('user-list');
+            container.innerHTML = users.map(user => `
+                <div class="glass p-6 rounded-3xl">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-12 h-12 rounded-full bg-white/5 flex items-center justify-center">
+                            <i data-lucide="user" class="text-slate-400"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold">@${user.username}</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${user.status === 'active' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'}">
+                                ${user.status.toUpperCase()}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-sm mb-6">
+                        <span class="text-slate-500">Total Uploads</span>
+                        <span class="font-bold">${user.uploads}</span>
+                    </div>
+                    <button class="w-full py-2 rounded-xl border border-red-500/50 text-red-400 text-sm font-bold hover:bg-red-500 hover:text-white transition-all">
+                        ${user.status === 'active' ? 'Blacklist User' : 'Restore Access'}
+                    </button>
+                </div>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        // Form Submit
+        document.getElementById('upload-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            alert('Song submitted for review! You will be notified once an admin approves it.');
+            e.target.reset();
+            switchTab('library');
+        });
+
+        // Init
+        lucide.createIcons();
+    </script>
+</body>
+</html>
