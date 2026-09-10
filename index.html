@@ -3,218 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Karaoke Wonders | Elevate Your Voice</title>
-    <meta name="description" content="Experience the next generation of karaoke with high-fidelity audio, 10M+ songs, and professional studio quality. Your stage awaits at Karaoke Wonders.">
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://karaokewonders.com/">
-    <meta property="og:title" content="Karaoke Wonders | Elevate Your Voice">
-    <meta property="og:description" content="Experience the next generation of karaoke with high-fidelity audio, 10M+ songs, and professional studio quality.">
-    <meta property="og:image" content="https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=1200">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://karaokewonders.com/">
-    <meta property="twitter:title" content="Karaoke Wonders | Elevate Your Voice">
-    <meta property="twitter:description" content="Experience the next generation of karaoke with high-fidelity audio, 10M+ songs, and professional studio quality.">
-    <meta property="twitter:image" content="https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=1200">
-
-    <!-- JSON-LD Schema -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Karaoke Wonders",
-      "url": "https://karaokewonders.com",
-      "logo": "https://karaokewonders.com/logo.png",
-      "description": "Premium karaoke experience with studio quality audio and a massive song library.",
-      "sameAs": [
-        "https://twitter.com/karaokewonders",
-        "https://instagram.com/karaokewonders",
-        "https://facebook.com/karaokewonders"
-      ],
-      "offers": {
-        "@type": "Offer",
-        "description": "Karaoke Streaming and Venue Services"
-      }
-    }
-    </script>
+    <title>Login - Karaoke Wonders</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0f172a;
-            color: #f8fafc;
-            overflow-x: hidden;
-        }
-        .glass {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .gradient-text {
-            background: linear-gradient(90deg, #38bdf8, #818cf8, #c084fc);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .glow {
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
-        }
-        .animated-bg {
-            background: radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.1) 0%, transparent 50%);
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-        }
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
-        .float {
-            animation: float 3s ease-in-out infinite;
-        }
-    </style>
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div class="animated-bg"></div>
-    
-    <!-- Navigation -->
-    <nav class="fixed w-full z-50 glass mt-4 mx-auto max-w-6xl left-0 right-0 rounded-2xl px-6 py-4 flex justify-between items-center">
-        <div class="text-2xl font-extrabold gradient-text">KaraokeWonders</div>
-        <div class="hidden md:flex space-x-8 text-sm font-medium">
-            <a href="#" class="hover:text-sky-400 transition-colors">Home</a>
-            <a href="#features" class="hover:text-sky-400 transition-colors">Features</a>
-            <a href="#venues" class="hover:text-sky-400 transition-colors">Venues</a>
-            <a href="#pricing" class="hover:text-sky-400 transition-colors">Pricing</a>
-        </div>
-        <button class="bg-sky-500 hover:bg-sky-600 px-6 py-2 rounded-full text-sm font-bold transition-all shadow-lg shadow-sky-500/20">
-            Sign In
-        </button>
-    </nav>
+<body class="p-6 relative">
+    <!-- Glowing background accent orbs -->
+    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-1/4 left-1/2 -translate-x-1/2 translate-y-1/2 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-    <!-- Hero Section -->
-    <section class="relative pt-40 pb-20 px-6 overflow-hidden">
-        <div class="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
-            <div class="relative z-10">
-                <span class="inline-block py-1 px-3 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-bold uppercase tracking-wider mb-6">
-                    Sing like a star
-                </span>
-                <h1 class="text-6xl md:text-7xl font-extrabold leading-tight mb-6">
-                    Your Stage <br/>
-                    <span class="gradient-text">Awaits.</span>
-                </h1>
-                <p class="text-lg text-slate-400 mb-8 max-w-md">
-                    Experience the next generation of karaoke. High-fidelity audio, thousands of songs, and an atmosphere that turns every night into a world tour.
-                </p>
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <a href="app.html" class="bg-sky-500 hover:bg-sky-600 px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
-                        Launch Application <i data-lucide="external-link" class="w-5 h-5"></i>
-                    </a>
-                    <button class="glass px-8 py-4 rounded-xl font-bold hover:bg-white/5 transition-all">
-                        View Demo
-                    </button>
-                </div>
+    <!-- Login Card -->
+    <div class="glass max-w-md w-full p-8 sm:p-10 rounded-3xl relative z-10 shadow-2xl">
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-tr from-green-400/20 to-blue-500/20 mb-4 border border-white/10">
+                <i data-lucide="mic" class="w-6 h-6 text-green-400"></i>
             </div>
-            <div class="relative">
-                <div class="absolute -top-20 -right-20 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl"></div>
-                <div class="absolute -bottom-20 -left-20 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl"></div>
-                <div class="glass p-4 rounded-3xl float shadow-2xl">
-                    <img src="https://images.unsplash.com/photo-1516280440614-37939bbacd81?auto=format&fit=crop&q=80&w=800" alt="Microphone" class="rounded-2xl w-full h-[400px] object-cover">
-                    <div class="mt-4 flex items-center justify-between p-2">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500"></div>
-                            <div>
-                                <p class="text-sm font-bold">Midnight Serenade</p>
-                                <p class="text-xs text-slate-400">Live Recording</p>
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            <div class="w-2 h-8 bg-sky-500/50 rounded-full"></div>
-                            <div class="w-2 h-12 bg-sky-500 rounded-full"></div>
-                            <div class="w-2 h-6 bg-sky-500/30 rounded-full"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <h1 class="text-3xl font-extrabold gradient-text mb-2">KaraokeWonders</h1>
+            <p class="text-slate-400 text-sm">Sign in to start your performance</p>
         </div>
-    </section>
 
-    <!-- Features Section -->
-    <section id="features" class="py-24 px-6 bg-slate-900/50">
-        <div class="max-w-6xl mx-auto">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold mb-4">Unmatched Features</h2>
-                <p class="text-slate-400">Everything you need to host the ultimate karaoke night.</p>
-            </div>
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="glass p-8 rounded-3xl hover:bg-white/5 transition-colors group">
-                    <div class="w-12 h-12 bg-sky-500/10 rounded-xl flex items-center justify-center mb-6 text-sky-400 group-hover:bg-sky-500 group-hover:text-white transition-all">
-                        <i data-lucide="music"></i>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3">10M+ Songs</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed">
-                        Access a massive library of high-quality tracks from every genre and era imaginable.
-                    </p>
-                </div>
-                <div class="glass p-8 rounded-3xl hover:bg-white/5 transition-colors group">
-                    <div class="w-12 h-12 bg-indigo-500/10 rounded-xl flex items-center justify-center mb-6 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all">
-                        <i data-lucide="mic-2"></i>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3">Studio Quality</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed">
-                        Professional-grade audio processing and real-time auto-tune features for that perfect sound.
-                    </p>
-                </div>
-                <div class="glass p-8 rounded-3xl hover:bg-white/5 transition-colors group">
-                    <div class="w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mb-6 text-purple-400 group-hover:bg-purple-500 group-hover:text-white transition-all">
-                        <i data-lucide="users"></i>
-                    </div>
-                    <h3 class="text-xl font-bold mb-3">Social Sync</h3>
-                    <p class="text-slate-400 text-sm leading-relaxed">
-                        Connect with friends, share your performances, and join global singing competitions.
-                    </p>
-                </div>
-            </div>
+        <!-- Alert Message Box -->
+        <div id="alert-box" class="hidden mb-6 p-4 rounded-xl text-xs font-medium border flex items-center gap-3">
+            <i id="alert-icon" class="w-4 h-4 shrink-0"></i>
+            <span id="alert-text"></span>
         </div>
-    </section>
 
-    <!-- Call to Action -->
-    <section class="py-24 px-6">
-        <div class="max-w-4xl mx-auto glass p-12 rounded-[3rem] text-center relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
-            <div class="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl -ml-32 -mb-32"></div>
-            <h2 class="text-4xl md:text-5xl font-extrabold mb-6 relative z-10">Ready to Take the <br/><span class="gradient-text">Spotlight?</span></h2>
-            <p class="text-slate-400 mb-10 text-lg relative z-10">Join thousands of performers and start your journey today.</p>
-            <button class="bg-white text-slate-900 px-10 py-4 rounded-2xl font-bold text-lg hover:bg-slate-100 transition-colors relative z-10">
-                Get Started Now
+        <form id="login-form" class="space-y-5">
+            <div>
+                <label for="username" class="block text-sm font-medium mb-2 text-slate-300">Username or Email</label>
+                <div class="relative">
+                    <i data-lucide="user" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
+                    <input type="text" id="username" required autocomplete="username" class="input-field w-full rounded-xl pl-11 pr-4 py-3 text-sm" placeholder="Enter your username">
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <label for="password" class="block text-sm font-medium text-slate-300">Password</label>
+                    <a href="#" class="text-xs text-sky-400 hover:underline">Forgot password?</a>
+                </div>
+                <div class="relative">
+                    <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
+                    <input type="password" id="password" required autocomplete="current-password" class="input-field w-full rounded-xl pl-11 pr-4 py-3 text-sm" placeholder="••••••••">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" id="remember-me" class="rounded border-white/10 bg-white/5 text-green-400 focus:ring-0 focus:ring-offset-0">
+                    <span class="text-xs text-slate-400">Remember me</span>
+                </label>
+            </div>
+
+            <button type="submit" id="submit-btn" class="w-full btn-primary py-3.5 rounded-xl font-bold text-black text-sm flex items-center justify-center gap-2 mt-2">
+                <span>Sign In</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
             </button>
-        </div>
-    </section>
+        </form>
 
-    <footer class="py-12 px-6 border-t border-white/5">
-        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-            <div class="text-xl font-bold gradient-text">KaraokeWonders</div>
-            <div class="text-slate-500 text-sm">
-                &copy; 2024 KaraokeWonders. All rights reserved.
-            </div>
-            <div class="flex gap-6">
-                <a href="#" class="text-slate-400 hover:text-white transition-colors"><i data-lucide="twitter" class="w-5 h-5"></i></a>
-                <a href="#" class="text-slate-400 hover:text-white transition-colors"><i data-lucide="instagram" class="w-5 h-5"></i></a>
-                <a href="#" class="text-slate-400 hover:text-white transition-colors"><i data-lucide="facebook" class="w-5 h-5"></i></a>
-            </div>
+        <div class="mt-8 pt-6 border-t border-white/10 text-center">
+            <p class="text-xs text-slate-400">
+                Don't have an account? 
+                <a href="#" class="text-green-400 font-bold hover:underline">Request Access</a>
+            </p>
         </div>
-    </footer>
+    </div>
 
-    <script>
-        // Initialize Lucide icons
-        lucide.createIcons();
-    </script>
+    <!-- Application Script -->
+    <script src="script.js"></script>
 </body>
 </html>
