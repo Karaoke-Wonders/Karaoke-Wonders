@@ -11,6 +11,12 @@ const TAG_IDS = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Check if session already exists
+    if (localStorage.getItem('kw_session')) {
+        window.location.href = '/admin.html';
+        return;
+    }
+
     // Initialize Lucide icons
     lucide.createIcons();
 
@@ -76,12 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const password = document.getElementById('password') ? document.getElementById('password').value.trim() : '';
             const initialData = document.getElementById('initialData') ? document.getElementById('initialData').value.trim() : '';
 
-            if (!username || !password) {
-                showAlert('Username and password are required.');
-                return;
-            }
-
-            if (isRegisterMode && !password) {
+                        if (!username || !password) {
                 showAlert('Username and password are required.');
                 return;
             }
@@ -148,8 +149,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('kw_session', JSON.stringify(userSession));
                     showAlert('Login verified! Redirecting to stage...', 'success');
 
-                    setTimeout(() => {
-                        window.location.href = '/main.html';
+                                        setTimeout(() => {
+                        window.location.href = '/admin.html';
                     }, 1000);
                 }
 

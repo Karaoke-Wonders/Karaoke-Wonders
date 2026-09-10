@@ -44,12 +44,21 @@
                 </div>
             </div>
 
-            <!-- Dynamic Registration Extra Field -->
-            <div id="extra-fields">
+            <!-- Password Field -->
+            <div>
                 <label for="password" class="block text-sm font-medium mb-2 text-slate-300">Password</label>
                 <div class="relative">
                     <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
-                    <input type="password" id="password" class="input-field w-full rounded-xl pl-11 pr-4 py-3 text-sm" placeholder="Password">
+                    <input type="password" id="password" required class="input-field w-full rounded-xl pl-11 pr-4 py-3 text-sm" placeholder="Password">
+                </div>
+            </div>
+
+            <!-- Dynamic Registration Extra Field -->
+            <div id="extra-fields" class="hidden">
+                <label for="initialData" class="block text-sm font-medium mb-2 text-slate-300">Additional Info (Optional)</label>
+                <div class="relative">
+                    <i data-lucide="info" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
+                    <input type="text" id="initialData" class="input-field w-full rounded-xl pl-11 pr-4 py-3 text-sm" placeholder="e.g. VRChat Username">
                 </div>
             </div>
 
