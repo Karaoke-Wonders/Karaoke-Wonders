@@ -113,17 +113,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         toggleMode();
                     }, 2000);
 
-                } else {
-                    // --- LOGIN / FETCH FORUM THREAD STATUS ---
-                    const response = await fetch(`${WORKER_BASE_URL}/api/get-account?username=${encodeURIComponent(username)}`);
-                    const data = await response.json();
+                                } else {
+                                    // --- LOGIN / FETCH FORUM THREAD STATUS ---
+                                    // The Worker expects a POST request with a JSON body for authentication
+                                    const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ username, password })
+                                    });
+                                    const data = await response.json();
 
-                    if (!response.ok) {
-                        if (response.status === 404) {
-                            throw new Error('Account thread not found in Discord. Please request access.');
-                        }
-                        throw new Error(data.error || 'Server error occurred during sign in.');
-                    }
+                                    if (!response.ok) {
+                                        if (response.status === 404) {
+                                            throw new Error('Account not found in Discord. Ensure your username is correct and your thread is active.');
+                                        }
+                                        throw new Error(data.error || 'Invalid credentials or server error.');
+                                    }
 
                     // Check if user is blacklisted using the tag array check
                     const userTags = data.tags || [];
