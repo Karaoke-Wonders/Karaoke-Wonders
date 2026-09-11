@@ -3,7 +3,7 @@ const WORKER_BASE_URL = 'https://karaokewonders.fetched.workers.dev';
 
 let isRegisterMode = false;
 
-// Replace these with your actual Discord Forum Tag IDs from your server settings
+// Discord Forum Tag IDs from your server settings
 const TAG_IDS = {
     staff: '1547672021364768848',
     restricted: '1547672052750884864',
@@ -11,14 +11,22 @@ const TAG_IDS = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Check if session already exists
-    if (localStorage.getItem('kw_session')) {
-        window.location.href = '/admin.html';
-        return;
+    // 1. Check if session already exists and route to the correct page
+    const existingSession = localStorage.getItem('kw_session');
+    if (existingSession) {
+        try {
+            const user = JSON.parse(existingSession);
+            window.location.href = user.isAdmin ? 'admin.html' : 'main.html';
+            return;
+        } catch (e) {
+            localStorage.removeItem('kw_session');
+        }
     }
 
     // Initialize Lucide icons
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 
     const loginForm = document.getElementById('auth-form');
     const alertBox = document.getElementById('alert-box');
@@ -28,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // UI Helper: Show Banner Alert
     function showAlert(message, type = 'error') {
+        if (!alertBox) return;
         alertBox.classList.remove('hidden', 'bg-red-500/10', 'border-red-500/20', 'text-red-400', 'bg-green-500/10', 'border-green-500/20', 'text-green-400');
         
         if (type === 'error') {
@@ -39,11 +48,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         alertText.textContent = message;
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
     }
 
     function hideAlert() {
-        alertBox.classList.add('hidden');
+        if (alertBox) alertBox.classList.add('hidden');
     }
 
     // Toggle between "Sign In" and "Request Access / Register"
@@ -78,8 +89,11 @@ document.addEventListener('DOMContentLoaded', () => {
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password') ? document.getElementById('password').value.trim() : '';
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+
+            const username = usernameInput ? usernameInput.value.trim() : '';
+            const password = passwordInput ? passwordInput.value.trim() : '';
 
             if (!username || !password) {
                 showAlert('Username and password are required.');
@@ -128,15 +142,19 @@ document.addEventListener('DOMContentLoaded', () => {
                         throw new Error(data.error || 'Invalid credentials or server error.');
                     }
 
-                    // Check if user is blacklisted using the tag array check
+                    // Check if user is blacklisted
                     const userTags = data.tags || [];
-                    if (userTags.includes(TAG_IDS.blacklisted)) {
+                    if (userTags.includes(TAG_IDS.blacklisted) || data.isLocked) {
                         showAlert('This account has been blacklisted.', 'error');
                         return;
                     }
 
-                    // Check if user is an admin via tags or naming convention fallback
-                    const isStaff = userTags.includes(TAG_IDS.staff) || username.toLowerCase().includes('admin');
+                    // Check if user is admin via worker response, staff tag, or username fallback
+                    const isStaff = Boolean(
+                        data.isAdmin || 
+                        userTags.includes(TAG_IDS.staff) || 
+                        username.toLowerCase().includes('admin')
+                    );
 
                     // Save session payload to local storage
                     const userSession = {
@@ -150,10 +168,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     };
 
                     localStorage.setItem('kw_session', JSON.stringify(userSession));
-                    showAlert('Login verified! Redirecting to stage...', 'success');
+                    
+                    if (isStaff) {
+                        showAlert('Staff credentials verified! Redirecting to Admin Hub...', 'success');
+                    } else {
+                        showAlert('Login verified! Redirecting to stage...', 'success');
+                    }
 
                     setTimeout(() => {
-                        window.location.href = '/main.html';
+                        window.location.href = isStaff ? 'admin.html' : 'main.html';
                     }, 1000);
                 }
 
@@ -162,7 +185,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnHTML;
-                lucide.createIcons();
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
             }
         });
     }

@@ -1,11 +1,34 @@
-// main.js - Page-specific logic for main.html (Song Library & Submission Modal)
+// main.js - Stage Portal Logic for main.html
 
 const WORKER_BASE_URL = 'https://karaokewonders.fetched.workers.dev';
 
+let currentUser = null;
+let allSongs = [];
+
 document.addEventListener('DOMContentLoaded', () => {
-    initUserSession();
+    // 1. Session check: redirect to index.html if not logged in
+    const sessionData = localStorage.getItem('kw_session');
+    if (!sessionData) {
+        window.location.href = 'index.html';
+        return;
+    }
+
+    try {
+        currentUser = JSON.parse(sessionData);
+    } catch (e) {
+        localStorage.removeItem('kw_session');
+        window.location.href = 'index.html';
+        return;
+    }
+
+    setupMemberProfile();
     loadSongLibrary();
 
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    // 2. Search input listener
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -13,57 +36,105 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    const modalForm = document.getElementById('modal-upload-form');
-    if (modalForm) {
-        modalForm.addEventListener('submit', async (e) => {
+    // 3. Track submission form listener (supports both in-page form and modal)
+    const uploadForm = document.getElementById('upload-form') || document.getElementById('modal-upload-form');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             await submitSongRequest();
         });
     }
 });
 
-function initUserSession() {
-    const sessionData = localStorage.getItem('kw_session');
-    
-    if (!sessionData) {
-        window.location.href = 'index.html';
-        return;
-    }
-
-    const user = JSON.parse(sessionData);
-    const avatarContainer = document.getElementById('user-avatar');
+// Configure Member Profile & reveal admin links if staff
+function setupMemberProfile() {
     const displayName = document.getElementById('user-display-name');
+    const avatar = document.getElementById('user-avatar');
+    const roleBadge = document.getElementById('user-role-badge');
+    const adminLinks = document.getElementById('admin-links');
 
     if (displayName) {
-        displayName.textContent = user.username;
+        displayName.textContent = currentUser.username || 'Member';
     }
 
-    if (avatarContainer) {
-        if (user.avatarUrl) {
-            avatarContainer.innerHTML = `<img src="${user.avatarUrl}" alt="${user.username}" class="w-full h-full object-cover rounded-xl">`;
-            avatarContainer.className = "w-10 h-10 rounded-xl overflow-hidden border border-white/20 shadow-md shrink-0";
+    if (avatar) {
+        if (currentUser.avatarUrl && currentUser.avatarUrl.startsWith('http')) {
+            avatar.innerHTML = `<img src="${currentUser.avatarUrl}" alt="Avatar" class="w-full h-full object-cover">`;
         } else {
-            avatarContainer.textContent = user.username.charAt(0).toUpperCase();
+            avatar.textContent = (currentUser.username || 'M').charAt(0).toUpperCase();
+        }
+    }
+
+    // If user is admin/staff, reveal the Admin Hub link in sidebar
+    if (currentUser.isAdmin) {
+        if (roleBadge) {
+            roleBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Staff Moderator`;
+        }
+        if (adminLinks) {
+            adminLinks.classList.remove('hidden');
+        }
+    } else {
+        if (roleBadge) {
+            roleBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> Member`;
         }
     }
 }
 
-function openSubmissionModal() {
-    const modal = document.getElementById('submission-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+// Tab switcher for main.html
+window.switchTab = function(tabName) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.sidebar-link').forEach(btn => btn.classList.remove('active'));
+
+    const activeSection = document.getElementById(`content-${tabName}`);
+    if (activeSection) activeSection.classList.remove('hidden');
+
+    const activeBtn = document.getElementById(`tab-${tabName}`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    hideAlert();
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+};
+
+window.logout = function() {
+    localStorage.removeItem('kw_session');
+    window.location.href = 'index.html';
+};
+
+// UI Alert Helper
+function showAlert(message, type = 'error') {
+    const alertBox = document.getElementById('main-alert');
+    const alertText = document.getElementById('main-alert-text');
+    const alertIcon = document.getElementById('main-alert-icon');
+
+    if (!alertBox) {
+        alert(message);
+        return;
+    }
+
+    alertBox.classList.remove('hidden', 'bg-red-500/10', 'border-red-500/20', 'text-red-400', 'bg-green-500/10', 'border-green-500/20', 'text-green-400');
+
+    if (type === 'error') {
+        alertBox.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-400');
+        if (alertIcon) alertIcon.setAttribute('data-lucide', 'alert-circle');
+    } else {
+        alertBox.classList.add('bg-green-500/10', 'border-green-500/20', 'text-green-400');
+        if (alertIcon) alertIcon.setAttribute('data-lucide', 'check-circle');
+    }
+
+    if (alertText) alertText.textContent = message;
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
     }
 }
 
-function closeSubmissionModal() {
-    const modal = document.getElementById('submission-modal');
-    if (modal) {
-        modal.classList.remove('flex');
-        modal.classList.add('hidden');
-    }
-}
+window.hideAlert = function() {
+    const alertBox = document.getElementById('main-alert');
+    if (alertBox) alertBox.classList.add('hidden');
+};
 
+// Load approved songs from Worker API
 async function loadSongLibrary() {
     const songListContainer = document.getElementById('song-list');
     if (!songListContainer) return;
@@ -71,21 +142,28 @@ async function loadSongLibrary() {
     try {
         const response = await fetch(`${WORKER_BASE_URL}/api/songs`);
         if (!response.ok) throw new Error('Failed to fetch songs.');
-        
-        const songs = await response.json();
-        renderSongs(songs);
+
+        allSongs = await response.json();
+        renderSongs(allSongs);
     } catch (err) {
         console.error('Error loading songs:', err);
-        songListContainer.innerHTML = `<p class="text-slate-500 text-xs col-span-full text-center py-8">Unable to load song library at this time.</p>`;
+        songListContainer.innerHTML = `<p class="text-slate-500 text-xs col-span-full text-center py-10">Unable to load songs at this time.</p>`;
     }
 }
 
+// Render song cards into the grid
 function renderSongs(songs) {
     const songListContainer = document.getElementById('song-list');
     if (!songListContainer) return;
 
     if (!songs || songs.length === 0) {
-        songListContainer.innerHTML = `<p class="text-slate-500 text-xs col-span-full text-center py-8">No approved tracks available yet.</p>`;
+        songListContainer.innerHTML = `
+            <div class="col-span-full text-center py-12 glass rounded-3xl border border-white/10">
+                <i data-lucide="music" class="w-8 h-8 mx-auto text-slate-500 mb-2"></i>
+                <p class="text-slate-400 text-sm">No approved songs available yet.</p>
+            </div>
+        `;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
         return;
     }
 
@@ -93,9 +171,8 @@ function renderSongs(songs) {
         const title = song.songName || song.title || 'Untitled';
         const artist = song.artist || 'Unknown Artist';
         const uploader = song.submittedBy || song.uploader || 'Member';
-        const playUrl = song.videoId 
-            ? (song.videoId.startsWith('http') ? song.videoId : `https://www.youtube.com/watch?v=${song.videoId}`)
-            : (song.url || '#');
+        const videoId = song.videoId || '';
+        const playUrl = videoId.startsWith('http') ? videoId : `https://www.youtube.com/watch?v=${videoId}`;
 
         return `
         <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-green-500/30 transition-all">
@@ -123,24 +200,34 @@ function renderSongs(songs) {
     }
 }
 
+// Search and filter songs
 function filterSongs(query) {
-    const cards = document.querySelectorAll('#song-list > div');
-    const searchTerm = query.toLowerCase();
-
-    cards.forEach(card => {
-        const text = card.textContent.toLowerCase();
-        card.style.display = text.includes(searchTerm) ? '' : 'none';
-    });
+    const q = (query || '').toLowerCase();
+    const filtered = allSongs.filter(song => 
+        (song.songName || song.title || '').toLowerCase().includes(q) ||
+        (song.artist || '').toLowerCase().includes(q) ||
+        (song.submittedBy || '').toLowerCase().includes(q)
+    );
+    renderSongs(filtered);
 }
 
+// Handle Song Request Form
 async function submitSongRequest() {
-    const title = document.getElementById('modal-track-title').value.trim();
-    const artist = document.getElementById('modal-track-artist').value.trim();
-    const url = document.getElementById('modal-track-url').value.trim();
+    const titleInput = document.getElementById('track-title') || document.getElementById('modal-track-title');
+    const artistInput = document.getElementById('track-artist') || document.getElementById('modal-track-artist');
+    const urlInput = document.getElementById('track-url') || document.getElementById('modal-track-url');
+    const submitBtn = document.getElementById('submit-track-btn');
 
-    if (!title || !artist || !url) return;
+    const title = titleInput ? titleInput.value.trim() : '';
+    const artist = artistInput ? artistInput.value.trim() : '';
+    const url = urlInput ? urlInput.value.trim() : '';
 
-    // Extract YouTube video ID
+    if (!title || !artist || !url) {
+        showAlert('Please fill in all track fields.', 'error');
+        return;
+    }
+
+    // Extract YouTube Video ID
     let videoId = url;
     if (url.includes('v=')) {
         videoId = url.split('v=')[1]?.split('&')[0];
@@ -148,8 +235,10 @@ async function submitSongRequest() {
         videoId = url.split('youtu.be/')[1]?.split('?')[0];
     }
 
-    const sessionData = localStorage.getItem('kw_session');
-    const user = sessionData ? JSON.parse(sessionData) : { username: 'Guest', threadId: null };
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span>Submitting to Queue...</span>`;
+    }
 
     try {
         const response = await fetch(`${WORKER_BASE_URL}/api/submit-track`, {
@@ -160,25 +249,42 @@ async function submitSongRequest() {
                 artist: artist, 
                 videoId: videoId,
                 timestamp: 0,
-                submittedBy: user.username,
-                threadId: user.threadId 
+                submittedBy: currentUser.username,
+                threadId: currentUser.threadId 
             })
         });
 
+        const data = await response.json();
+
         if (!response.ok) {
-            const data = await response.json();
             throw new Error(data.error || 'Failed to submit track request.');
         }
 
-        closeSubmissionModal();
-        document.getElementById('modal-upload-form').reset();
-        alert('Song successfully submitted to the moderation queue!');
+        // Reset form inputs
+        if (titleInput) titleInput.value = '';
+        if (artistInput) artistInput.value = '';
+        if (urlInput) urlInput.value = '';
+
+        showAlert('Song successfully submitted! A staff member will review it shortly.', 'success');
+        
+        // Auto-switch back to the library after 2 seconds
+        setTimeout(() => {
+            switchTab('library');
+        }, 2000);
+
     } catch (err) {
         console.error('Submission error:', err);
-        alert(err.message || 'Error submitting track. Please try again.');
+        showAlert(err.message || 'Error submitting track. Please try again.', 'error');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<i data-lucide="send" class="w-4 h-4"></i><span>Submit to Moderation Queue</span>`;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
     }
 }
 
+// Helper utilities
 function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/[&<>'"]/g, 
