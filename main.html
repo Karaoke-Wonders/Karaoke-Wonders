@@ -3,91 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Song Library - Karaoke Wonders</title>
+    <title>Dashboard - Karaoke Wonders</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 p-6 sm:p-10 relative overflow-x-hidden">
+<body class="min-h-screen relative flex overflow-x-hidden">
 
-    <!-- Background Glow Effects -->
     <div class="fixed top-1/4 left-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
     <div class="fixed bottom-10 right-10 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
-    <main class="max-w-7xl mx-auto space-y-8">
-        <!-- Header & Action Row -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <h2 class="text-3xl font-extrabold tracking-tight">Song Library</h2>
-                <p class="text-slate-400 text-sm mt-1">Browse approved karaoke backing tracks ready for your performance.</p>
+    <aside class="w-72 glass border-r border-white/10 flex flex-col justify-between h-screen sticky top-0 z-20 shrink-0">
+        <div>
+            <div class="p-6 pb-4 border-b border-white/10 flex items-center gap-3">
+                <div class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-green-400/20 to-blue-500/20 border border-white/10 shrink-0">
+                    <i data-lucide="mic" class="w-5 h-5 text-green-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold gradient-text leading-tight">KaraokeWonders</h1>
+                    <span class="text-[10px] text-slate-400 tracking-wider uppercase font-semibold">Stage Portal</span>
+                </div>
             </div>
+
+            <nav class="p-4 space-y-1.5">
+                <button onclick="switchTab('library')" id="tab-library" class="sidebar-link active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
+                    <i data-lucide="music" class="w-4 h-4 text-green-400"></i>
+                    <span>Song Library</span>
+                </button>
+                <button onclick="switchTab('upload')" id="tab-upload" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
+                    <i data-lucide="upload-cloud" class="w-4 h-4 text-sky-400"></i>
+                    <span>Submit Track</span>
+                </button>
+
+                <div id="admin-links" class="pt-6 mt-6 border-t border-white/10 hidden">
+                    <p class="px-4 text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-3">Moderation Hub</p>
+                    <button onclick="switchTab('admin-requests')" id="tab-admin-requests" class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
+                        <div class="flex items-center gap-3">
+                            <i data-lucide="clipboard-list" class="w-4 h-4 text-amber-400"></i>
+                            <span>Pending Track Queue</span>
+                        </div>
+                        <span id="pending-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">0</span>
+                    </button>
+                    <button onclick="switchTab('admin-users')" id="tab-admin-users" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
+                        <i data-lucide="shield-alert" class="w-4 h-4 text-purple-400"></i>
+                        <span>User Access & Blacklist</span>
+                    </button>
+                </div>
+            </nav>
+        </div>
+
+        <div class="p-4 border-t border-white/10 bg-white/5">
+            <div class="flex items-center gap-3 mb-4 px-2">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-green-400 to-blue-500 flex items-center justify-center text-black font-extrabold text-sm border border-white/20 shadow-md" id="user-avatar">
+                    U
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-sm font-bold truncate text-slate-200" id="user-display-name">Guest User</p>
+                    <p class="text-[11px] text-slate-400 capitalize flex items-center gap-1" id="user-role-badge">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> Member
+                    </p>
+                </div>
+            </div>
+            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500/10 border border-red-500/20 rounded-xl transition-all">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 p-8 sm:p-10 max-w-7xl mx-auto overflow-y-auto min-h-screen">
+
+        <div id="dashboard-alert" class="hidden mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="relative w-full md:w-72">
-                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
-                    <input type="text" id="search-input" placeholder="Search title or artist..." class="input-field w-full rounded-xl pl-11 pr-4 py-2.5 text-xs bg-slate-900 border border-white/10 text-white focus:outline-none focus:border-green-500">
-                </div>
-                <!-- Button to open Submission Popup -->
-                <button onclick="openSubmissionModal()" class="px-4 py-2.5 bg-green-500 hover:bg-green-400 text-black font-bold text-xs rounded-xl transition-all flex items-center gap-2 shrink-0">
-                    <i data-lucide="plus" class="w-4 h-4"></i> Request Song
-                </button>
+                <i id="dashboard-alert-icon" class="w-4 h-4 shrink-0"></i>
+                <span id="dashboard-alert-text"></span>
             </div>
+            <button onclick="hideAlert()" class="opacity-70 hover:opacity-100"><i data-lucide="x" class="w-4 h-4"></i></button>
         </div>
 
-        <!-- Main Songs Grid Container -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="song-list">
-            <!-- Dynamic song cards will load here via JavaScript -->
-        </div>
-    </main>
-
-    <!-- Submission Modal Popup (Hidden by default) -->
-    <div id="submission-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-        <div class="glass bg-slate-900/90 border border-white/10 max-w-md w-full p-6 sm:p-8 rounded-3xl relative shadow-2xl">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-xl font-bold text-white">Request a Song</h3>
-                <button onclick="closeSubmissionModal()" class="text-slate-400 hover:text-white">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+        <section id="content-library" class="tab-content space-y-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-3xl font-extrabold tracking-tight">Song Library</h2>
+                    <p class="text-slate-400 text-sm mt-1">Browse approved karaoke backing tracks ready for your performance.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <div class="relative w-full md:w-72">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
+                        <input type="text" id="search-input" onkeyup="filterSongs()" placeholder="Search title, artist or uploader..." class="input-field w-full rounded-xl pl-11 pr-4 py-2.5 text-xs">
+                    </div>
+                </div>
             </div>
 
-            <form id="modal-upload-form" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Track Title</label>
-                    <input type="text" id="modal-track-title" required class="w-full rounded-xl px-4 py-2.5 text-sm bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-green-500" placeholder="e.g. Stay With Me">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="song-list">
+            </div>
+        </section>
+
+        <section id="content-upload" class="tab-content hidden max-w-2xl mx-auto space-y-8">
+            <div>
+                <h2 class="text-3xl font-extrabold tracking-tight">Submit Karaoke Track</h2>
+                <p class="text-slate-400 text-sm mt-1">Submit a high-quality video or audio link to be reviewed for the community library.</p>
+            </div>
+
+            <div class="glass p-6 rounded-2xl border border-sky-500/20 bg-sky-500/5">
+                <div class="flex items-center gap-3 text-sky-400 mb-3 font-bold text-sm">
+                    <i data-lucide="info" class="w-5 h-5"></i>
+                    <span>Track Submission Requirements</span>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Original Artist</label>
-                    <input type="text" id="modal-track-artist" required class="w-full rounded-xl px-4 py-2.5 text-sm bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-green-500" placeholder="e.g. Miki Matsubara">
+                <ul class="space-y-2 text-xs text-slate-300">
+                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-green-400 shrink-0"></i> Must be instrumental/karaoke version (no lead vocal tracks)</li>
+                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-green-400 shrink-0"></i> On-screen synchronized lyrics are strongly preferred</li>
+                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-green-400 shrink-0"></i> Provide valid YouTube, Vimeo, or direct audio URLs</li>
+                </ul>
+            </div>
+
+            <form id="upload-form" class="glass p-8 rounded-3xl space-y-6">
+                <div class="grid sm:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Track Title</label>
+                        <input type="text" id="track-title" required class="input-field w-full rounded-xl px-4 py-3 text-sm" placeholder="e.g. Bohemian Rhapsody">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Original Artist</label>
+                        <input type="text" id="track-artist" required class="input-field w-full rounded-xl px-4 py-3 text-sm" placeholder="e.g. Queen">
+                    </div>
                 </div>
+
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">YouTube URL</label>
-                    <input type="url" id="modal-track-url" required class="w-full rounded-xl px-4 py-2.5 text-sm bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-green-500" placeholder="https://www.youtube.com/watch?v=...">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Media Link (YouTube/Vimeo URL)</label>
+                    <div class="relative">
+                        <i data-lucide="link" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
+                        <input type="url" id="track-url" required class="input-field w-full rounded-xl pl-11 pr-4 py-3 text-sm" placeholder="https://www.youtube.com/watch?v=...">
+                    </div>
                 </div>
-                <button type="submit" class="w-full py-3 bg-green-500 hover:bg-green-400 text-black font-bold text-sm rounded-xl transition-all mt-4">
-                    Submit to Queue
+
+                <button type="submit" id="submit-track-btn" class="btn-primary w-full py-3.5 rounded-xl font-bold text-black text-sm flex items-center justify-center gap-2">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    <span>Submit to Moderation Queue</span>
                 </button>
             </form>
-        </div>
-    </div>
+        </section>
 
-    <!-- Script to handle modal behavior -->
-    <script>
-        function openSubmissionModal() {
-            document.getElementById('submission-modal').classList.remove('hidden');
-            document.getElementById('submission-modal').classList.add('flex');
-        }
+        <section id="content-admin-requests" class="tab-content hidden space-y-8">
+            <div>
+                <h2 class="text-3xl font-extrabold tracking-tight">Pending Track Requests</h2>
+                <p class="text-slate-400 text-sm mt-1">Review community track submissions before publishing them to the public library.</p>
+            </div>
 
-        function closeSubmissionModal() {
-            document.getElementById('submission-modal').classList.remove('flex');
-            document.getElementById('submission-modal').classList.add('hidden');
-        }
+            <div class="glass rounded-3xl overflow-hidden border border-white/10">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-white/5 border-b border-white/10">
+                            <tr>
+                                <th class="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Song Info</th>
+                                <th class="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Submitted By</th>
+                                <th class="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Date</th>
+                                <th class="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="request-table-body" class="divide-y divide-white/5 text-sm">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
 
-        // Initialize Lucide icons on load
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-        });
-    </script>
+        <section id="content-admin-users" class="tab-content hidden space-y-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-3xl font-extrabold tracking-tight">User Access & Blacklist</h2>
+                    <p class="text-slate-400 text-sm mt-1">Manage user thread access, toggle lock/blacklist status, and monitor user profiles.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="user-list">
+            </div>
+        </section>
+
+    </main>
+
     <script src="dashboard.js"></script>
-    <script src="main.js"></script>
 </body>
 </html>
