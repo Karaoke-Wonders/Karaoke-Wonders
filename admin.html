@@ -3,91 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Song Library - Karaoke Wonders</title>
+    <title>Admin Moderation Hub - Karaoke Wonders</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 p-6 sm:p-10 relative overflow-x-hidden">
+<body class="min-h-screen relative flex overflow-x-hidden bg-slate-950 text-slate-100">
 
     <!-- Background Glow Effects -->
     <div class="fixed top-1/4 left-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
-    <div class="fixed bottom-10 right-10 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div class="fixed bottom-10 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
-    <main class="max-w-7xl mx-auto space-y-8">
-        <!-- Header & Action Row -->
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-                <h2 class="text-3xl font-extrabold tracking-tight">Song Library</h2>
-                <p class="text-slate-400 text-sm mt-1">Browse approved karaoke backing tracks ready for your performance.</p>
+    <!-- Sidebar Navigation -->
+    <aside class="w-72 glass border-r border-white/10 flex flex-col justify-between h-screen sticky top-0 z-20 shrink-0">
+        <div>
+            <!-- Brand Header -->
+            <div class="p-6 pb-4 border-b border-white/10 flex items-center gap-3">
+                <div class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-500/20 to-sky-500/20 border border-purple-500/30 shrink-0">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-purple-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold gradient-text leading-tight">KaraokeWonders</h1>
+                    <span class="text-[10px] text-purple-400 tracking-wider uppercase font-bold">Admin Hub</span>
+                </div>
             </div>
+
+            <!-- Tab Links -->
+            <nav class="p-4 space-y-1.5">
+                <p class="px-4 text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-2">Moderation</p>
+                
+                <button onclick="switchTab('queue')" id="tab-queue" class="sidebar-link active w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="inbox" class="w-4 h-4 text-amber-400"></i>
+                        <span>Pending Queue</span>
+                    </div>
+                    <span id="pending-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">0</span>
+                </button>
+
+                <button onclick="switchTab('users')" id="tab-users" class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="users" class="w-4 h-4 text-sky-400"></i>
+                        <span>User Access & Bans</span>
+                    </div>
+                    <span id="users-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">0</span>
+                </button>
+
+                <button onclick="switchTab('library')" id="tab-library" class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="music" class="w-4 h-4 text-green-400"></i>
+                        <span>Live Song Library</span>
+                    </div>
+                    <span id="songs-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/20 text-green-400 border border-green-500/30">0</span>
+                </button>
+
+                <div class="pt-4 mt-4 border-t border-white/10">
+                    <a href="main.html" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium">
+                        <i data-lucide="external-link" class="w-4 h-4 text-slate-400"></i>
+                        <span>View Member Stage</span>
+                    </a>
+                </div>
+            </nav>
+        </div>
+
+        <!-- User Profile & Sign Out Footer -->
+        <div class="p-4 border-t border-white/10 bg-white/5">
+            <div class="flex items-center gap-3 mb-4 px-2">
+                <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-extrabold text-sm overflow-hidden" id="user-avatar">
+                    A
+                </div>
+                <div class="overflow-hidden">
+                    <p class="text-sm font-bold truncate text-slate-200" id="user-display-name">Admin</p>
+                    <p class="text-[11px] text-purple-400 font-semibold flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Staff Moderator
+                    </p>
+                </div>
+            </div>
+            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500/10 border border-red-500/20 rounded-xl transition-all">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Workspace -->
+    <main class="flex-1 p-8 sm:p-10 max-w-7xl mx-auto overflow-y-auto min-h-screen">
+
+        <!-- Global Dashboard Alert Banner -->
+        <div id="dashboard-alert" class="hidden mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between">
             <div class="flex items-center gap-3">
+                <i id="dashboard-alert-icon" class="w-4 h-4 shrink-0"></i>
+                <span id="dashboard-alert-text"></span>
+            </div>
+            <button onclick="hideDashboardAlert()" class="opacity-70 hover:opacity-100"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+
+        <!-- Quick Summary Stats Bar -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+            <div class="glass p-5 rounded-2xl border border-amber-500/20 bg-amber-500/5 flex items-center gap-4">
+                <div class="p-3 bg-amber-500/20 text-amber-400 rounded-xl">
+                    <i data-lucide="clock" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-extrabold text-white" id="stat-pending-count">0</h3>
+                    <p class="text-xs text-slate-400">Pending Review</p>
+                </div>
+            </div>
+            <div class="glass p-5 rounded-2xl border border-sky-500/20 bg-sky-500/5 flex items-center gap-4">
+                <div class="p-3 bg-sky-500/20 text-sky-400 rounded-xl">
+                    <i data-lucide="users" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-extrabold text-white" id="stat-users-count">0</h3>
+                    <p class="text-xs text-slate-400">Active Accounts</p>
+                </div>
+            </div>
+            <div class="glass p-5 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 flex items-center gap-4">
+                <div class="p-3 bg-emerald-500/20 text-emerald-400 rounded-xl">
+                    <i data-lucide="check-circle" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-extrabold text-white" id="stat-songs-count">0</h3>
+                    <p class="text-xs text-slate-400">Approved Songs</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: PENDING SONG QUEUE -->
+        <section id="content-queue" class="tab-content space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-3xl font-extrabold tracking-tight">Pending Song Queue</h2>
+                    <p class="text-slate-400 text-sm mt-1">Review song submissions from the community. Approving publishes the song to GitHub batches.</p>
+                </div>
+                <button onclick="loadPendingRequests()" class="px-3.5 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border border-white/10 self-start sm:self-auto">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Queue
+                </button>
+            </div>
+
+            <!-- Queue Table -->
+            <div class="glass rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-white/5 border-b border-white/10">
+                            <tr>
+                                <th class="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Track Details</th>
+                                <th class="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Preview Link</th>
+                                <th class="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Submitted By</th>
+                                <th class="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">Date</th>
+                                <th class="px-6 py-4 text-[11px] font-bold uppercase tracking-wider text-slate-400 text-right">Moderation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="request-table-body" class="divide-y divide-white/5 text-sm">
+                            <tr>
+                                <td colspan="5" class="px-6 py-8 text-center text-slate-500 text-xs">Loading pending queue...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: USER ACCESS & MODERATION -->
+        <section id="content-users" class="tab-content hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-3xl font-extrabold tracking-tight">User Access & Permissions</h2>
+                    <p class="text-slate-400 text-sm mt-1">Restrict song submissions or blacklist malicious accounts via Discord forum tags.</p>
+                </div>
+                <button onclick="loadUserList()" class="px-3.5 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border border-white/10 self-start sm:self-auto">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Users
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="user-list">
+                <p class="col-span-full text-center text-slate-500 text-xs py-10">Loading user directory...</p>
+            </div>
+        </section>
+
+        <!-- TAB 3: LIVE SONG LIBRARY OVERVIEW -->
+        <section id="content-library" class="tab-content hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-3xl font-extrabold tracking-tight">Live Approved Songs</h2>
+                    <p class="text-slate-400 text-sm mt-1">All tracks currently published and available in the VRChat playlist.</p>
+                </div>
                 <div class="relative w-full md:w-72">
                     <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
-                    <input type="text" id="search-input" placeholder="Search title or artist..." class="input-field w-full rounded-xl pl-11 pr-4 py-2.5 text-xs bg-slate-900 border border-white/10 text-white focus:outline-none focus:border-green-500">
+                    <input type="text" id="admin-search-input" onkeyup="filterSongs(this.value)" placeholder="Search songs..." class="input-field w-full rounded-xl pl-11 pr-4 py-2.5 text-xs">
                 </div>
-                <!-- Button to open Submission Popup -->
-                <button onclick="openSubmissionModal()" class="px-4 py-2.5 bg-green-500 hover:bg-green-400 text-black font-bold text-xs rounded-xl transition-all flex items-center gap-2 shrink-0">
-                    <i data-lucide="plus" class="w-4 h-4"></i> Request Song
-                </button>
             </div>
-        </div>
 
-        <!-- Main Songs Grid Container -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="song-list">
-            <!-- Dynamic song cards will load here via JavaScript -->
-        </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="song-list">
+                <!-- Loaded via JS -->
+            </div>
+        </section>
+
     </main>
 
-    <!-- Submission Modal Popup (Hidden by default) -->
-    <div id="submission-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
-        <div class="glass bg-slate-900/90 border border-white/10 max-w-md w-full p-6 sm:p-8 rounded-3xl relative shadow-2xl">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="text-xl font-bold text-white">Request a Song</h3>
-                <button onclick="closeSubmissionModal()" class="text-slate-400 hover:text-white">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
-            </div>
-
-            <form id="modal-upload-form" class="space-y-4">
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Track Title</label>
-                    <input type="text" id="modal-track-title" required class="w-full rounded-xl px-4 py-2.5 text-sm bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-green-500" placeholder="e.g. Stay With Me">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Original Artist</label>
-                    <input type="text" id="modal-track-artist" required class="w-full rounded-xl px-4 py-2.5 text-sm bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-green-500" placeholder="e.g. Miki Matsubara">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">YouTube URL</label>
-                    <input type="url" id="modal-track-url" required class="w-full rounded-xl px-4 py-2.5 text-sm bg-slate-950 border border-white/10 text-white focus:outline-none focus:border-green-500" placeholder="https://www.youtube.com/watch?v=...">
-                </div>
-                <button type="submit" class="w-full py-3 bg-green-500 hover:bg-green-400 text-black font-bold text-sm rounded-xl transition-all mt-4">
-                    Submit to Queue
-                </button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Script to handle modal behavior -->
-    <script>
-        function openSubmissionModal() {
-            document.getElementById('submission-modal').classList.remove('hidden');
-            document.getElementById('submission-modal').classList.add('flex');
-        }
-
-        function closeSubmissionModal() {
-            document.getElementById('submission-modal').classList.remove('flex');
-            document.getElementById('submission-modal').classList.add('hidden');
-        }
-
-        // Initialize Lucide icons on load
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-        });
-    </script>
     <script src="dashboard.js"></script>
-    <script src="main.js"></script>
 </body>
 </html>
