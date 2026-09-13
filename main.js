@@ -12,6 +12,47 @@ const TAG_IDS = {
 let currentUser = null;
 let allSongs = [];
 
+/**
+ * Normalizes user session data regardless of whether properties are 
+ * top-level or nested inside user/account/data objects.
+ */
+function normalizeUserData(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+
+    // Support nested wrappers like { user: { ... } }, { account: { ... } }, or { data: { ... } }
+    const base = raw.user || raw.account || raw.data || raw;
+
+    const username = base.username || base.name || base.user || base.displayName || raw.username || '';
+    const password = base.password || base.pass || base.token || raw.password || '';
+    const avatarUrl = base.avatarUrl || base.avatar || base.pfp || base.profilePicture || raw.avatarUrl || '';
+    const tags = Array.isArray(base.tags) ? base.tags : (Array.isArray(raw.tags) ? raw.tags : []);
+    const threadId = base.threadId || raw.threadId || '';
+
+    // Determine staff/admin privilege
+    const isAdmin = Boolean(
+        base.isAdmin || 
+        raw.isAdmin || 
+        base.admin || 
+        raw.admin || 
+        base.role === 'admin' || 
+        base.role === 'administrator' || 
+        tags.includes(TAG_IDS.staff) || 
+        (username && username.toLowerCase().includes('admin'))
+    );
+
+    return {
+        ...raw,
+        ...base,
+        username,
+        password,
+        avatarUrl,
+        tags,
+        threadId,
+        isAdmin,
+        role: isAdmin ? 'administrator' : 'member'
+    };
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Session check: verify local storage first to prevent initial blank freeze or instant redirect
     const sessionData = localStorage.getItem('kw_session');
@@ -22,7 +63,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-        currentUser = JSON.parse(sessionData);
+        const parsed = JSON.parse(sessionData);
+        currentUser = normalizeUserData(parsed);
     } catch (e) {
         console.error('Failed to parse session JSON:', e);
         localStorage.removeItem('kw_session');
@@ -30,7 +72,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // 2. Render UI immediately using stored credentials
+    if (!currentUser || !currentUser.username) {
+        console.warn('Session is missing valid user information. Redirecting to login.');
+        localStorage.removeItem('kw_session');
+        window.location.href = 'index.html';
+        return;
+    }
+
+    // 2. Render UI immediately using normalized credentials
     setupMemberProfile();
     loadSongLibrary();
 
@@ -72,10 +121,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 function setupMemberProfile() {
     if (!currentUser) return;
 
-    const displayName = document.getElementById('user-display-name');
-    const avatar = document.getElementById('user-avatar');
-    const roleBadge = document.getElementById('user-role-badge');
-    const adminLinks = document.getElementById('admin-links');
+    const displayName = document.getElementById('user-display-name') || document.getElementById('display-name') || document.getElementById('username-display');
+    const avatar = document.getElementById('user-avatar') || document.getElementById('avatar-container');
+    const roleBadge = document.getElementById('user-role-badge') || document.getElementById('role-badge');
+    const adminLinks = document.getElementById('admin-links') || document.getElementById('admin-nav');
 
     if (displayName) {
         displayName.textContent = currentUser.username || 'Member';
@@ -131,10 +180,12 @@ async function refreshUserSession() {
     if (!sessionData) return;
 
     try {
-        const user = JSON.parse(sessionData);
+        const rawUser = JSON.parse(sessionData);
+        const user = normalizeUserData(rawUser);
         
-        if (!user.username || !user.password) {
-            console.warn('Session missing username or password payload. Skipping remote refresh.');
+        // Safety Guard: Don't query Worker API if credentials are missing
+        if (!user || !user.username || !user.password) {
+            console.warn('Session missing valid username or password. Keeping local session active.');
             return;
         }
 
@@ -182,6 +233,7 @@ async function refreshUserSession() {
         // Update local session object while retaining existing properties
         const updatedUser = {
             ...user,
+            ...data,
             tags: userTags,
             isAdmin: isStaff,
             role: isStaff ? 'administrator' : 'member',
@@ -192,7 +244,7 @@ async function refreshUserSession() {
         currentUser = updatedUser;
         localStorage.setItem('kw_session', JSON.stringify(updatedUser));
         
-        // Refresh UI state with updated staff privileges
+        // Refresh UI state with updated privileges
         setupMemberProfile();
 
     } catch (err) {
