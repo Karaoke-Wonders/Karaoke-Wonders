@@ -13,18 +13,27 @@ const TAG_IDS = {
     blacklisted: '1548667978181247027'
 };
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Refresh and validate session data against Discord/Worker in real time first
+    await refreshUserSession();
+
     const sessionData = localStorage.getItem('kw_session');
     
-    // 1. Session check: Must be logged in
+    // 2. Session check: Must be logged in
     if (!sessionData) {
         window.location.href = 'index.html';
         return;
     }
 
-    currentUser = JSON.parse(sessionData);
+    try {
+        currentUser = JSON.parse(sessionData);
+    } catch (e) {
+        localStorage.removeItem('kw_session');
+        window.location.href = 'index.html';
+        return;
+    }
 
-    // 2. Admin authorization check: If not admin, redirect to member stage
+    // 3. Admin authorization check: If not admin, redirect to member stage
     if (!currentUser.isAdmin) {
         alert('Access denied. Admin privileges required.');
         window.location.href = 'main.html';
@@ -32,13 +41,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     setupUserProfile();
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 
-    // 3. Load all admin moderation datasets
-    loadPendingRequests();
-    loadUserList();
-    loadSongs();
-    await refreshUserSession();
+    // 4. Load all admin moderation datasets
+    await loadPendingRequests();
+    await loadUserList();
+    await loadSongs();
 });
 
 function setupUserProfile() {
@@ -68,7 +78,9 @@ window.switchTab = function(tabName) {
     if (activeBtn) activeBtn.classList.add('active');
 
     hideDashboardAlert();
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 };
 
 window.logout = function() {
@@ -139,17 +151,19 @@ function showDashboardAlert(message, type = 'error') {
 
     if (type === 'error') {
         alertBox.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-400');
-        alertIcon.setAttribute('data-lucide', 'alert-circle');
+        if (alertIcon) alertIcon.setAttribute('data-lucide', 'alert-circle');
     } else if (type === 'success') {
         alertBox.classList.add('bg-green-500/10', 'border-green-500/20', 'text-green-400');
-        alertIcon.setAttribute('data-lucide', 'check-circle');
+        if (alertIcon) alertIcon.setAttribute('data-lucide', 'check-circle');
     } else {
         alertBox.classList.add('bg-sky-500/10', 'border-sky-500/20', 'text-sky-400');
-        alertIcon.setAttribute('data-lucide', 'info');
+        if (alertIcon) alertIcon.setAttribute('data-lucide', 'info');
     }
 
-    alertText.textContent = message;
-    lucide.createIcons();
+    if (alertText) alertText.textContent = message;
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 window.hideDashboardAlert = function() {
@@ -186,7 +200,7 @@ async function loadPendingRequests() {
                     </td>
                 </tr>
             `;
-            lucide.createIcons();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
             return;
         }
 
@@ -228,7 +242,7 @@ async function loadPendingRequests() {
             `;
         }).join('');
 
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
 
     } catch (err) {
         console.error(err);
@@ -254,7 +268,7 @@ window.approveTrack = async function(trackId) {
 
         if (!res.ok) throw new Error('Failed to approve track');
 
-        showDashboardAlert('Track approved and published to GitHub library!', 'success');
+        showDashboardAlert('Track approved successfully!', 'success');
         await loadPendingRequests();
         await loadSongs();
     } catch (err) {
@@ -366,7 +380,7 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
         if (!response.ok) throw new Error('Failed to update tag');
 
         showDashboardAlert('User access status updated.', 'success');
-        loadUserList();
+        await loadUserList();
     } catch (err) {
         showDashboardAlert('Failed to update user tag.', 'error');
     }
@@ -435,7 +449,9 @@ function renderSongs(songs) {
         `;
     }).join('');
 
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 window.filterSongs = function(query) {

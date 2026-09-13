@@ -10,30 +10,7 @@ const TAG_IDS = {
     blacklisted: '1548667978181247027'
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Check if session already exists and route to the correct page
-    const existingSession = localStorage.getItem('kw_session');
-    await refreshUserSession();
-    if (existingSession) {
-        try {
-            const user = JSON.parse(existingSession);
-            window.location.href = user.isAdmin ? 'admin.html' : 'main.html';
-            return;
-        } catch (e) {
-            localStorage.removeItem('kw_session');
-        }
-    }
-    // Initialize Lucide icons
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
-
-    const loginForm = document.getElementById('auth-form');
-    const alertBox = document.getElementById('alert-box');
-    const alertText = document.getElementById('alert-text');
-    const alertIcon = document.getElementById('alert-icon');
-    const submitBtn = document.getElementById('submit-btn');
-
+document.addEventListener('DOMContentLoaded', async () => {
     // UI Helper: Show Banner Alert
     function showAlert(message, type = 'error') {
         if (!alertBox) return;
@@ -54,55 +31,78 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function refreshUserSession() {
-    const sessionData = localStorage.getItem('kw_session');
-    if (!sessionData) return;
+        const sessionData = localStorage.getItem('kw_session');
+        if (!sessionData) return;
 
-    try {
-        const user = JSON.parse(sessionData);
-        
-        // Ping your worker endpoint to get the freshest tags/status from Discord
-        const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: user.username, threadId: user.threadId })
-        });
+        try {
+            const user = JSON.parse(sessionData);
+            
+            const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user.username, threadId: user.threadId })
+            });
 
-        if (!response.ok) {
-            // If account was deleted or worker errors out, clear session
-            localStorage.removeItem('kw_session');
-            window.location.href = 'index.html';
-            return;
+            if (!response.ok) {
+                localStorage.removeItem('kw_session');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const data = await response.json();
+            const userTags = data.tags || [];
+
+            if (userTags.includes(TAG_IDS.blacklisted) || data.isLocked) {
+                localStorage.removeItem('kw_session');
+                alert('Your account has been restricted or blacklisted.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const isStaff = Boolean(
+                data.isAdmin || 
+                userTags.includes(TAG_IDS.staff) || 
+                user.username.toLowerCase().includes('admin')
+            );
+
+            user.tags = userTags;
+            user.isAdmin = isStaff;
+            user.role = isStaff ? 'administrator' : 'member';
+            
+            localStorage.setItem('kw_session', JSON.stringify(user));
+
+        } catch (err) {
+            console.error('Failed to sync session background state:', err);
         }
-
-        const data = await response.json();
-        const userTags = data.tags || [];
-
-        // Check if blacklisted or locked in real time
-        if (userTags.includes(TAG_IDS.blacklisted) || data.isLocked) {
-            localStorage.removeItem('kw_session');
-            alert('Your account has been restricted or blacklisted.');
-            window.location.href = 'index.html';
-            return;
-        }
-
-        // Recalculate staff status dynamically
-        const isStaff = Boolean(
-            data.isAdmin || 
-            userTags.includes(TAG_IDS.staff) || 
-            user.username.toLowerCase().includes('admin')
-        );
-
-        // Update local session data with fresh tags and roles
-        user.tags = userTags;
-        user.isAdmin = isStaff;
-        user.role = isStaff ? 'administrator' : 'member';
-        
-        localStorage.setItem('kw_session', JSON.stringify(user));
-
-    } catch (err) {
-        console.error('Failed to sync session background state:', err);
     }
-}
+
+    // 1. First, check and refresh existing session on load
+    const existingSession = localStorage.getItem('kw_session');
+    if (existingSession) {
+        await refreshUserSession();
+        // Re-read localstorage after refresh incase tags/admin status changed
+        const updatedSession = localStorage.getItem('kw_session');
+        if (updatedSession) {
+            try {
+                const user = JSON.parse(updatedSession);
+                window.location.href = user.isAdmin ? 'admin.html' : 'main.html';
+                return;
+            } catch (e) {
+                localStorage.removeItem('kw_session');
+            }
+        }
+    }
+
+    // Initialize Lucide icons
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
+    const loginForm = document.getElementById('auth-form');
+    const alertBox = document.getElementById('alert-box');
+    const alertText = document.getElementById('alert-text');
+    const alertIcon = document.getElementById('alert-icon');
+    const submitBtn = document.getElementById('submit-btn');
 
     function hideAlert() {
         if (alertBox) alertBox.classList.add('hidden');
@@ -151,14 +151,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Disable button during network call
             submitBtn.disabled = true;
             const originalBtnHTML = submitBtn.innerHTML;
             submitBtn.innerHTML = `<span>Connecting to Stage...</span>`;
 
             try {
                 if (isRegisterMode) {
-                    // --- REGISTRATION / CREATE FORUM THREAD ---
                     const response = await fetch(`${WORKER_BASE_URL}/api/create-account`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -178,7 +176,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, 2000);
 
                 } else {
-                    // --- LOGIN / FETCH FORUM THREAD STATUS ---
                     const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -193,21 +190,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         throw new Error(data.error || 'Invalid credentials or server error.');
                     }
 
-                    // Check if user is blacklisted
                     const userTags = data.tags || [];
                     if (userTags.includes(TAG_IDS.blacklisted) || data.isLocked) {
                         showAlert('This account has been blacklisted.', 'error');
                         return;
                     }
 
-                    // Check if user is admin via worker response, staff tag, or username fallback
                     const isStaff = Boolean(
                         data.isAdmin || 
                         userTags.includes(TAG_IDS.staff) || 
                         username.toLowerCase().includes('admin')
                     );
 
-                    // Save session payload to local storage
                     const userSession = {
                         username: data.username,
                         threadId: data.threadId,

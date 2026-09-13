@@ -2,11 +2,21 @@
 
 const WORKER_BASE_URL = 'https://karaokewonders.fetched.workers.dev';
 
+// Discord Forum Tag IDs from your server settings
+const TAG_IDS = {
+    staff: '1548667928881139712',
+    restricted: '1548667951069007964',
+    blacklisted: '1548667978181247027'
+};
+
 let currentUser = null;
 let allSongs = [];
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 1. Session check: redirect to index.html if not logged in
+document.addEventListener('DOMContentLoaded', async () => {
+    // 1. Refresh and validate session data against Discord/Worker in real time first
+    await refreshUserSession();
+
+    // 2. Session check: redirect to index.html if not logged in
     const sessionData = localStorage.getItem('kw_session');
     if (!sessionData) {
         window.location.href = 'index.html';
@@ -23,13 +33,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupMemberProfile();
     loadSongLibrary();
-    await refreshUserSession();
 
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
 
-    // 2. Search input listener
+    // 3. Search input listener
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
@@ -37,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 3. Track submission form listener (supports both in-page form and modal)
+    // 4. Track submission form listener (supports both in-page form and modal)
     const uploadForm = document.getElementById('upload-form') || document.getElementById('modal-upload-form');
     if (uploadForm) {
         uploadForm.addEventListener('submit', async (e) => {
