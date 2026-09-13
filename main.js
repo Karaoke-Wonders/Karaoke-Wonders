@@ -2,7 +2,7 @@
 
 const WORKER_BASE_URL = 'https://karaokewonders.fetched.workers.dev';
 
-// Discord Forum Tag IDs from your server settings
+// Discord Forum Tag IDs from server settings
 const TAG_IDS = {
     staff: '1548667928881139712',
     restricted: '1548667951069007964',
@@ -55,7 +55,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    // 5. Sync session state against Worker/Discord backend in the background
+    // 5. Logout listeners for any logout buttons in navbar or sidebar
+    const logoutBtns = document.querySelectorAll('.logout-btn, #logout-btn');
+    logoutBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.logout();
+        });
+    });
+
+    // 6. Sync session state against Worker/Discord backend in the background
     await refreshUserSession();
 });
 
@@ -74,7 +83,7 @@ function setupMemberProfile() {
 
     if (avatar) {
         if (currentUser.avatarUrl && currentUser.avatarUrl.startsWith('http')) {
-            avatar.innerHTML = `<img src="${currentUser.avatarUrl}" alt="Avatar" class="w-full h-full object-cover">`;
+            avatar.innerHTML = `<img src="${escapeUrl(currentUser.avatarUrl)}" alt="Avatar" class="w-full h-full object-cover rounded-full">`;
         } else {
             avatar.textContent = (currentUser.username || 'M').charAt(0).toUpperCase();
         }
@@ -170,19 +179,20 @@ async function refreshUserSession() {
             (user.username && user.username.toLowerCase().includes('admin'))
         );
 
-        // Update local session object while retaining existing properties like password
+        // Update local session object while retaining existing properties
         const updatedUser = {
             ...user,
             tags: userTags,
             isAdmin: isStaff,
             role: isStaff ? 'administrator' : 'member',
-            threadId: data.threadId || user.threadId
+            threadId: data.threadId || user.threadId,
+            avatarUrl: data.avatarUrl || user.avatarUrl
         };
         
         currentUser = updatedUser;
         localStorage.setItem('kw_session', JSON.stringify(updatedUser));
         
-        // Refresh UI state with updated staff privileges if changed
+        // Refresh UI state with updated staff privileges
         setupMemberProfile();
 
     } catch (err) {
@@ -259,8 +269,22 @@ function renderSongs(songs) {
         const title = song.songName || song.title || 'Untitled';
         const artist = song.artist || 'Unknown Artist';
         const uploader = song.submittedBy || song.uploader || 'Member';
-        const videoId = song.videoId || '';
-        const playUrl = videoId.startsWith('http') ? videoId : `https://www.youtube.com/watch?v=${videoId}`;
+        const rawVideoId = song.videoId || '';
+
+        let playUrl = '#';
+        if (rawVideoId.startsWith('http://') || rawVideoId.startsWith('https://')) {
+            playUrl = rawVideoId;
+        } else if (rawVideoId.trim().length > 0) {
+            playUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(rawVideoId.trim())}`;
+        }
+
+        const playButtonHtml = playUrl !== '#' 
+            ? `<a href="${escapeUrl(playUrl)}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-lg transition-all flex items-center gap-1.5 border border-white/10">
+                    <i data-lucide="play" class="w-3.5 h-3.5 text-green-400"></i> Play Track
+               </a>`
+            : `<span class="px-3 py-1.5 bg-white/5 text-slate-500 font-medium rounded-lg text-xs cursor-not-allowed border border-white/5">
+                    No Link
+               </span>`;
 
         return `
         <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-green-500/30 transition-all">
@@ -275,9 +299,7 @@ function renderSongs(songs) {
             </div>
             <div class="pt-4 border-t border-white/5 flex items-center justify-between text-xs">
                 <span class="text-slate-500 text-[11px]">Requested by ${escapeHtml(uploader)}</span>
-                <a href="${escapeUrl(playUrl)}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-lg transition-all flex items-center gap-1.5 border border-white/10">
-                    <i data-lucide="play" class="w-3.5 h-3.5 text-green-400"></i> Play Track
-                </a>
+                ${playButtonHtml}
             </div>
         </div>
         `;
@@ -290,13 +312,37 @@ function renderSongs(songs) {
 
 // Search and filter songs
 function filterSongs(query) {
-    const q = (query || '').toLowerCase();
+    const q = (query || '').toLowerCase().trim();
+    if (!q) {
+        renderSongs(allSongs);
+        return;
+    }
+
     const filtered = allSongs.filter(song => 
         (song.songName || song.title || '').toLowerCase().includes(q) ||
         (song.artist || '').toLowerCase().includes(q) ||
         (song.submittedBy || '').toLowerCase().includes(q)
     );
     renderSongs(filtered);
+}
+
+// Extract YouTube Video ID from any URL format or raw ID
+function extractYouTubeId(urlOrId) {
+    if (!urlOrId) return '';
+    const str = urlOrId.trim();
+    
+    // YouTube URL regex matching standard, shortlink, embed, and shorts formats
+    const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([^"&?\/\s]{11})/;
+    const match = str.match(ytRegex);
+    if (match && match[1]) {
+        return match[1];
+    }
+    
+    // Return direct 11-char ID if passed
+    if (/^[a-zA-Z0-9_-]{11}$/.test(str)) {
+        return str;
+    }
+    return str;
 }
 
 // Handle Song Request Form
@@ -315,13 +361,7 @@ async function submitSongRequest() {
         return;
     }
 
-    // Extract YouTube Video ID
-    let videoId = url;
-    if (url.includes('v=')) {
-        videoId = url.split('v=')[1]?.split('&')[0];
-    } else if (url.includes('youtu.be/')) {
-        videoId = url.split('youtu.be/')[1]?.split('?')[0];
-    }
+    const videoId = extractYouTubeId(url);
 
     if (submitBtn) {
         submitBtn.disabled = true;
@@ -354,7 +394,13 @@ async function submitSongRequest() {
         if (urlInput) urlInput.value = '';
 
         showAlert('Song successfully submitted! A staff member will review it shortly.', 'success');
-        
+
+        // Close modal overlay if present
+        const modal = document.getElementById('upload-modal') || document.getElementById('track-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+
         // Auto-switch back to the library after 2 seconds
         setTimeout(() => {
             switchTab('library');
