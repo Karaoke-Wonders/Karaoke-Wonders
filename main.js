@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupMemberProfile();
     loadSongLibrary();
+    await refreshUserSession();
 
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
@@ -101,6 +102,57 @@ window.logout = function() {
     localStorage.removeItem('kw_session');
     window.location.href = 'index.html';
 };
+
+async function refreshUserSession() {
+    const sessionData = localStorage.getItem('kw_session');
+    if (!sessionData) return;
+
+    try {
+        const user = JSON.parse(sessionData);
+        
+        // Ping your worker endpoint to get the freshest tags/status from Discord
+        const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: user.username, threadId: user.threadId })
+        });
+
+        if (!response.ok) {
+            // If account was deleted or worker errors out, clear session
+            localStorage.removeItem('kw_session');
+            window.location.href = 'index.html';
+            return;
+        }
+
+        const data = await response.json();
+        const userTags = data.tags || [];
+
+        // Check if blacklisted or locked in real time
+        if (userTags.includes(TAG_IDS.blacklisted) || data.isLocked) {
+            localStorage.removeItem('kw_session');
+            alert('Your account has been restricted or blacklisted.');
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // Recalculate staff status dynamically
+        const isStaff = Boolean(
+            data.isAdmin || 
+            userTags.includes(TAG_IDS.staff) || 
+            user.username.toLowerCase().includes('admin')
+        );
+
+        // Update local session data with fresh tags and roles
+        user.tags = userTags;
+        user.isAdmin = isStaff;
+        user.role = isStaff ? 'administrator' : 'member';
+        
+        localStorage.setItem('kw_session', JSON.stringify(user));
+
+    } catch (err) {
+        console.error('Failed to sync session background state:', err);
+    }
+}
 
 // UI Alert Helper
 function showAlert(message, type = 'error') {
