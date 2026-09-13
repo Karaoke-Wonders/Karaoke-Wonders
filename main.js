@@ -13,12 +13,10 @@ let currentUser = null;
 let allSongs = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Refresh and validate session data against Discord/Worker in real time first
-    await refreshUserSession();
-
-    // 2. Session check: redirect to index.html if not logged in
+    // 1. Session check: verify local storage first to prevent initial blank freeze or instant redirect
     const sessionData = localStorage.getItem('kw_session');
     if (!sessionData) {
+        console.warn('No active session found in localStorage. Redirecting to login.');
         window.location.href = 'index.html';
         return;
     }
@@ -26,11 +24,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         currentUser = JSON.parse(sessionData);
     } catch (e) {
+        console.error('Failed to parse session JSON:', e);
         localStorage.removeItem('kw_session');
         window.location.href = 'index.html';
         return;
     }
 
+    // 2. Render UI immediately using stored credentials
     setupMemberProfile();
     loadSongLibrary();
 
@@ -54,10 +54,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             await submitSongRequest();
         });
     }
+
+    // 5. Sync session state against Worker/Discord backend in the background
+    await refreshUserSession();
 });
 
 // Configure Member Profile & reveal admin links if staff
 function setupMemberProfile() {
+    if (!currentUser) return;
+
     const displayName = document.getElementById('user-display-name');
     const avatar = document.getElementById('user-avatar');
     const roleBadge = document.getElementById('user-role-badge');
@@ -119,7 +124,11 @@ async function refreshUserSession() {
     try {
         const user = JSON.parse(sessionData);
         
-        // Include password so the worker's handleGetAccount validation passes successfully
+        if (!user.username || !user.password) {
+            console.warn('Session missing username or password payload. Skipping remote refresh.');
+            return;
+        }
+
         const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -129,10 +138,16 @@ async function refreshUserSession() {
             })
         });
 
-        if (!response.ok) {
-            // If account was deleted, password changed, or worker errors out, clear session
+        // Only redirect on explicit authorization rejections (401/403)
+        if (response.status === 401 || response.status === 403) {
+            console.error('Account authentication rejected by worker:', response.status);
             localStorage.removeItem('kw_session');
             window.location.href = 'index.html';
+            return;
+        }
+
+        if (!response.ok) {
+            console.warn(`Background session check received status ${response.status}. Retaining local session.`);
             return;
         }
 
@@ -141,6 +156,7 @@ async function refreshUserSession() {
 
         // Check if blacklisted or locked in real time
         if (userTags.includes(TAG_IDS.blacklisted) || data.isLocked) {
+            console.warn('User account is restricted or blacklisted.');
             localStorage.removeItem('kw_session');
             alert('Your account has been restricted or blacklisted.');
             window.location.href = 'index.html';
@@ -151,18 +167,26 @@ async function refreshUserSession() {
         const isStaff = Boolean(
             data.isAdmin || 
             userTags.includes(TAG_IDS.staff) || 
-            user.username.toLowerCase().includes('admin')
+            (user.username && user.username.toLowerCase().includes('admin'))
         );
 
-        // Update local session data with fresh tags and roles
-        user.tags = userTags;
-        user.isAdmin = isStaff;
-        user.role = isStaff ? 'administrator' : 'member';
+        // Update local session object while retaining existing properties like password
+        const updatedUser = {
+            ...user,
+            tags: userTags,
+            isAdmin: isStaff,
+            role: isStaff ? 'administrator' : 'member',
+            threadId: data.threadId || user.threadId
+        };
         
-        localStorage.setItem('kw_session', JSON.stringify(user));
+        currentUser = updatedUser;
+        localStorage.setItem('kw_session', JSON.stringify(updatedUser));
+        
+        // Refresh UI state with updated staff privileges if changed
+        setupMemberProfile();
 
     } catch (err) {
-        console.error('Failed to sync session background state:', err);
+        console.error('Failed to sync session background state (network issue):', err);
     }
 }
 
@@ -205,7 +229,7 @@ async function loadSongLibrary() {
 
     try {
         const response = await fetch(`${WORKER_BASE_URL}/api/songs`);
-        if (!response.ok) throw new Error('Failed to fetch songs.');
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
 
         allSongs = await response.json();
         renderSongs(allSongs);
@@ -313,8 +337,8 @@ async function submitSongRequest() {
                 artist: artist, 
                 videoId: videoId,
                 timestamp: 0,
-                submittedBy: currentUser.username,
-                threadId: currentUser.threadId 
+                submittedBy: currentUser ? currentUser.username : 'Guest',
+                threadId: currentUser ? currentUser.threadId : '' 
             })
         });
 
