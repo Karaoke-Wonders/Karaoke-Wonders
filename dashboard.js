@@ -8,9 +8,9 @@ let pendingQueue = [];
 
 // Discord Forum Tag IDs for moderation
 const TAG_IDS = {
-    staff: '1547672021364768848',
-    restricted: '1547672052750884864',
-    blacklisted: '1547672075395792947'
+    staff: '1548667928881139712',
+    restricted: '1548667951069007964',
+    blacklisted: '1548667978181247027'
 };
 
 document.addEventListener('DOMContentLoaded', () => {
