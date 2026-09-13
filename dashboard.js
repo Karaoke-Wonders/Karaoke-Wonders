@@ -99,7 +99,7 @@ async function refreshUserSession() {
         const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: user.username, threadId: user.threadId })
+            body: JSON.stringify({ username: user.username, password: user.password })
         });
 
         if (!response.ok) {
@@ -127,7 +127,7 @@ async function refreshUserSession() {
             user.username.toLowerCase().includes('admin')
         );
 
-        // Update local session data with fresh tags and roles
+        // Update local session data with fresh tags and roles while maintaining password
         user.tags = userTags;
         user.isAdmin = isStaff;
         user.role = isStaff ? 'administrator' : 'member';

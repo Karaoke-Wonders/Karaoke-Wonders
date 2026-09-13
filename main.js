@@ -119,15 +119,18 @@ async function refreshUserSession() {
     try {
         const user = JSON.parse(sessionData);
         
-        // Ping your worker endpoint to get the freshest tags/status from Discord
+        // Include password so the worker's handleGetAccount validation passes successfully
         const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: user.username, threadId: user.threadId })
+            body: JSON.stringify({ 
+                username: user.username, 
+                password: user.password 
+            })
         });
 
         if (!response.ok) {
-            // If account was deleted or worker errors out, clear session
+            // If account was deleted, password changed, or worker errors out, clear session
             localStorage.removeItem('kw_session');
             window.location.href = 'index.html';
             return;

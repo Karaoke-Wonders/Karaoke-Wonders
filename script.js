@@ -11,6 +11,10 @@ const TAG_IDS = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const alertBox = document.getElementById('alert-box');
+    const alertText = document.getElementById('alert-text');
+    const alertIcon = document.getElementById('alert-icon');
+
     // UI Helper: Show Banner Alert
     function showAlert(message, type = 'error') {
         if (!alertBox) return;
@@ -18,13 +22,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         if (type === 'error') {
             alertBox.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-400');
-            alertIcon.setAttribute('data-lucide', 'alert-circle');
+            if (alertIcon) alertIcon.setAttribute('data-lucide', 'alert-circle');
         } else {
             alertBox.classList.add('bg-green-500/10', 'border-green-500/20', 'text-green-400');
-            alertIcon.setAttribute('data-lucide', 'check-circle');
+            if (alertIcon) alertIcon.setAttribute('data-lucide', 'check-circle');
         }
         
-        alertText.textContent = message;
+        if (alertText) alertText.textContent = message;
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
@@ -40,7 +44,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: user.username, threadId: user.threadId })
+                body: JSON.stringify({ username: user.username, password: user.password })
             });
 
             if (!response.ok) {
@@ -80,7 +84,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const existingSession = localStorage.getItem('kw_session');
     if (existingSession) {
         await refreshUserSession();
-        // Re-read localstorage after refresh incase tags/admin status changed
         const updatedSession = localStorage.getItem('kw_session');
         if (updatedSession) {
             try {
@@ -99,9 +102,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const loginForm = document.getElementById('auth-form');
-    const alertBox = document.getElementById('alert-box');
-    const alertText = document.getElementById('alert-text');
-    const alertIcon = document.getElementById('alert-icon');
     const submitBtn = document.getElementById('submit-btn');
 
     function hideAlert() {
@@ -205,6 +205,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     const userSession = {
                         username: data.username,
                         threadId: data.threadId,
+                        password: password, // Stored so background sessions can authenticate
                         avatarUrl: data.avatarUrl || '',
                         tags: userTags,
                         role: isStaff ? 'administrator' : 'member',
