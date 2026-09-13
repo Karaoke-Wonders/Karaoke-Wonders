@@ -39,17 +39,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!sessionData) return;
 
         try {
-            const user = JSON.parse(sessionData);
-            
+            const rawUser = JSON.parse(sessionData);
+            const user = rawUser.user || rawUser;
+
+            const username = user.username || rawUser.username || '';
+            const password = user.password || rawUser.password || '';
+
+            if (!username || !password) {
+                console.warn('Session is missing credentials. Retaining local session.');
+                return;
+            }
+
             const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username: user.username, password: user.password })
+                body: JSON.stringify({ username, password })
             });
 
-            if (!response.ok) {
+            // Only clear session on explicit authentication rejection
+            if (response.status === 401 || response.status === 403) {
+                console.error('Session validation rejected by worker:', response.status);
                 localStorage.removeItem('kw_session');
-                window.location.href = 'index.html';
+                return;
+            }
+
+            if (!response.ok) {
+                console.warn(`Background session check returned HTTP ${response.status}. Retaining local session.`);
                 return;
             }
 
@@ -66,21 +81,28 @@ document.addEventListener('DOMContentLoaded', async () => {
             const isStaff = Boolean(
                 data.isAdmin || 
                 userTags.includes(TAG_IDS.staff) || 
-                user.username.toLowerCase().includes('admin')
+                username.toLowerCase().includes('admin')
             );
 
-            user.tags = userTags;
-            user.isAdmin = isStaff;
-            user.role = isStaff ? 'administrator' : 'member';
+            const updatedSession = {
+                ...rawUser,
+                username: data.username || username,
+                password: password,
+                threadId: data.threadId || user.threadId || '',
+                avatarUrl: data.avatarUrl || user.avatarUrl || '',
+                tags: userTags,
+                isAdmin: isStaff,
+                role: isStaff ? 'administrator' : 'member'
+            };
             
-            localStorage.setItem('kw_session', JSON.stringify(user));
+            localStorage.setItem('kw_session', JSON.stringify(updatedSession));
 
         } catch (err) {
             console.error('Failed to sync session background state:', err);
         }
     }
 
-    // 1. First, check and refresh existing session on load
+    // 1. Check and refresh existing session on load
     const existingSession = localStorage.getItem('kw_session');
     if (existingSession) {
         await refreshUserSession();
@@ -88,8 +110,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (updatedSession) {
             try {
                 const user = JSON.parse(updatedSession);
-                window.location.href = user.isAdmin ? 'admin.html' : 'main.html';
-                return;
+                if (user && user.username) {
+                    window.location.href = user.isAdmin ? 'admin.html' : 'main.html';
+                    return;
+                }
             } catch (e) {
                 localStorage.removeItem('kw_session');
             }
@@ -202,10 +226,11 @@ document.addEventListener('DOMContentLoaded', async () => {
                         username.toLowerCase().includes('admin')
                     );
 
+                    // Guarantees username and password are never undefined
                     const userSession = {
-                        username: data.username,
-                        threadId: data.threadId,
-                        password: password, // Stored so background sessions can authenticate
+                        username: data.username || username,
+                        threadId: data.threadId || '',
+                        password: password,
                         avatarUrl: data.avatarUrl || '',
                         tags: userTags,
                         role: isStaff ? 'administrator' : 'member',
