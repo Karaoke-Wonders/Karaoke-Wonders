@@ -1,9 +1,10 @@
-// dashboard.js - Dedicated logic for admin.html (Moderation, Approve/Reject, Users)
+// dashboard.js - Dedicated logic for admin.html (Moderation, Approve/Reject, Users, Songs)
 
 const WORKER_BASE_URL = 'https://karaokewonders.fetched.workers.dev';
 
 let currentUser = null;
 let allSongs = [];
+let allUsers = [];
 let pendingQueue = [];
 
 // Discord Forum Tag IDs for moderation
@@ -323,52 +324,71 @@ async function loadUserList() {
         const response = await fetch(`${WORKER_BASE_URL}/api/admin/users`);
         if (!response.ok) throw new Error('Failed to load user list');
 
-        const users = await response.json();
+        allUsers = await response.json();
 
-        if (usersBadge) usersBadge.textContent = users.length;
-        if (statUsers) statUsers.textContent = users.length;
+        if (usersBadge) usersBadge.textContent = allUsers.length;
+        if (statUsers) statUsers.textContent = allUsers.length;
 
-        if (users.length === 0) {
-            userContainer.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No user forum accounts found.</p>`;
-            return;
-        }
+        renderUserList(allUsers);
+    } catch (err) {
+        console.error(err);
+        userContainer.innerHTML = `<p class="col-span-full text-center text-red-400 text-xs py-8">User management service unavailable.</p>`;
+    }
+}
 
-        userContainer.innerHTML = users.map(u => {
-            const isBlacklisted = (u.tags || []).includes(TAG_IDS.blacklisted) || u.isLocked;
-            const isRestricted = (u.tags || []).includes(TAG_IDS.restricted);
-            const isStaff = (u.tags || []).includes(TAG_IDS.staff);
+function renderUserList(users) {
+    const userContainer = document.getElementById('user-list');
+    if (!userContainer) return;
 
-            return `
-                <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-white/20 transition-all">
-                    <div>
-                        <div class="flex items-center justify-between gap-2 mb-1">
-                            <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
-                            <div class="flex items-center gap-1.5">
-                                ${isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
-                                ${isBlacklisted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
-                                ${isRestricted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">Restricted</span>' : ''}
-                            </div>
+    if (users.length === 0) {
+        userContainer.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No user forum accounts found.</p>`;
+        return;
+    }
+
+    userContainer.innerHTML = users.map(u => {
+        const isBlacklisted = (u.tags || []).includes(TAG_IDS.blacklisted) || u.isLocked;
+        const isRestricted = (u.tags || []).includes(TAG_IDS.restricted);
+        const isStaff = (u.tags || []).includes(TAG_IDS.staff);
+
+        return `
+            <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-white/20 transition-all">
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
+                        <div class="flex items-center gap-1.5">
+                            ${isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
+                            ${isBlacklisted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
+                            ${isRestricted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">Restricted</span>' : ''}
                         </div>
-                        <p class="text-[11px] text-slate-500">Thread ID: ${u.threadId || 'N/A'}</p>
                     </div>
+                    <p class="text-[11px] text-slate-500">Thread ID: ${escapeHtml(u.threadId || 'N/A')}</p>
+                </div>
 
-                    <div class="flex items-center gap-2 pt-3 border-t border-white/5">
+                <div class="flex items-center gap-2 pt-3 border-t border-white/5">
+                    ${isStaff ? `
+                        <span class="text-[11px] text-slate-500 italic w-full text-center py-1">Staff actions disabled</span>
+                    ` : `
                         <button onclick="toggleUserTag('${u.threadId}', '${TAG_IDS.restricted}', ${!isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
                             ${isRestricted ? 'Unrestrict' : 'Restrict'}
                         </button>
                         <button onclick="toggleUserTag('${u.threadId}', '${TAG_IDS.blacklisted}', ${!isBlacklisted})" class="flex-1 py-1.5 px-2 ${isBlacklisted ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20'} border rounded-lg text-xs font-bold transition-all">
                             ${isBlacklisted ? 'Unban' : 'Blacklist'}
                         </button>
-                    </div>
+                    `}
                 </div>
-            `;
-        }).join('');
-
-    } catch (err) {
-        console.error(err);
-        userContainer.innerHTML = `<p class="col-span-full text-center text-red-400 text-xs py-8">User management service unavailable.</p>`;
-    }
+            </div>
+        `;
+    }).join('');
 }
+
+window.filterUsers = function(query) {
+    const q = (query || '').toLowerCase();
+    const filtered = allUsers.filter(u => 
+        (u.username || '').toLowerCase().includes(q) ||
+        (u.threadId || '').toLowerCase().includes(q)
+    );
+    renderUserList(filtered);
+};
 
 window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
     try {
@@ -387,7 +407,7 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
 };
 
 // ==========================================
-// 3. LIVE APPROVED SONGS OVERVIEW
+// 3. LIVE APPROVED SONGS OVERVIEW & MANAGEMENT
 // ==========================================
 
 async function loadSongs() {
@@ -422,6 +442,7 @@ function renderSongs(songs) {
     }
 
     container.innerHTML = songs.map(song => {
+        const songId = song.id || song._id || '';
         const title = song.songName || song.title || 'Untitled';
         const artist = song.artist || 'Unknown Artist';
         const uploader = song.submittedBy || song.uploader || 'Member';
@@ -439,11 +460,16 @@ function renderSongs(songs) {
                         <i data-lucide="mic-2" class="w-3.5 h-3.5 text-slate-500"></i> ${escapeHtml(artist)}
                     </p>
                 </div>
-                <div class="pt-4 border-t border-white/5 flex items-center justify-between text-xs">
-                    <span class="text-slate-500 text-[11px]">Added by ${escapeHtml(uploader)}</span>
-                    <button onclick="copyVRUrl('${escapeHtml(playUrl)}')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-lg transition-all flex items-center gap-1.5 border border-white/10">
-                        <i data-lucide="copy" class="w-3.5 h-3.5 text-green-400"></i> Copy URL
-                    </button>
+                <div class="pt-4 border-t border-white/5 flex items-center justify-between text-xs gap-2">
+                    <span class="text-slate-500 text-[11px] truncate">By ${escapeHtml(uploader)}</span>
+                    <div class="flex items-center gap-1.5">
+                        <button onclick="copyVRUrl('${escapeHtml(playUrl)}')" class="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-lg transition-all flex items-center gap-1 border border-white/10 text-xs">
+                            <i data-lucide="copy" class="w-3.5 h-3.5 text-green-400"></i> Copy
+                        </button>
+                        <button onclick="deleteSong('${songId}')" id="btn-delete-${songId}" class="px-2.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold rounded-lg transition-all flex items-center gap-1 border border-red-500/20 text-xs">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Delete
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -453,6 +479,95 @@ function renderSongs(songs) {
         lucide.createIcons();
     }
 }
+
+// FEATURE 1: Delete approved live song directly from catalog
+window.deleteSong = async function(songId) {
+    if (!songId) {
+        showDashboardAlert('Cannot delete track: Missing song ID.');
+        return;
+    }
+
+    if (!confirm('Are you sure you want to remove this song from the live catalog?')) return;
+
+    const btn = document.getElementById(`btn-delete-${songId}`);
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Deleting...';
+    }
+
+    try {
+        const res = await fetch(`${WORKER_BASE_URL}/api/admin/delete-song`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ songId })
+        });
+
+        if (!res.ok) throw new Error('Failed to delete song');
+
+        showDashboardAlert('Song removed from live catalog successfully!', 'success');
+        await loadSongs();
+    } catch (err) {
+        showDashboardAlert('Error deleting song. Please try again.', 'error');
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Delete';
+        }
+    }
+};
+
+// FEATURE 2: Direct Admin Add Track bypasses pending queue
+window.addTrackDirectly = async function(event) {
+    if (event) event.preventDefault();
+
+    const titleInput = document.getElementById('add-song-title');
+    const artistInput = document.getElementById('add-song-artist');
+    const videoIdInput = document.getElementById('add-song-videoid');
+    const submitBtn = document.getElementById('btn-add-song');
+
+    const songName = titleInput ? titleInput.value.trim() : '';
+    const artist = artistInput ? artistInput.value.trim() : '';
+    const videoId = videoIdInput ? videoIdInput.value.trim() : '';
+
+    if (!songName || !artist || !videoId) {
+        showDashboardAlert('Please fill out Title, Artist, and Video ID / URL.', 'error');
+        return;
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding...';
+    }
+
+    try {
+        const res = await fetch(`${WORKER_BASE_URL}/api/admin/add-song`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                songName,
+                artist,
+                videoId,
+                submittedBy: currentUser ? currentUser.username : 'Admin'
+            })
+        });
+
+        if (!res.ok) throw new Error('Failed to add track');
+
+        showDashboardAlert('Track added directly to the live catalog!', 'success');
+
+        if (titleInput) titleInput.value = '';
+        if (artistInput) artistInput.value = '';
+        if (videoIdInput) videoIdInput.value = '';
+
+        await loadSongs();
+    } catch (err) {
+        showDashboardAlert('Failed to add track directly. Check backend connection.', 'error');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Add Track';
+        }
+    }
+};
 
 window.filterSongs = function(query) {
     const q = (query || '').toLowerCase();
