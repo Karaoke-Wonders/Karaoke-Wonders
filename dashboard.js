@@ -346,9 +346,19 @@ function renderUserList(users) {
     }
 
     userContainer.innerHTML = users.map(u => {
-        const isBlacklisted = (u.tags || []).includes(TAG_IDS.blacklisted) || u.isLocked;
-        const isRestricted = (u.tags || []).includes(TAG_IDS.restricted);
-        const isStaff = (u.tags || []).includes(TAG_IDS.staff);
+        // Convert all tags to strings to prevent string vs number comparison mismatches
+        const userTags = (u.tags || []).map(tag => String(tag));
+        
+        // Comprehensive staff detection (Tag ID, isAdmin flag, or admin role)
+        const isStaff = Boolean(
+            u.isAdmin ||
+            (u.role && u.role.toLowerCase() === 'administrator') ||
+            userTags.includes(String(TAG_IDS.staff)) ||
+            (u.username && u.username.toLowerCase().includes('admin'))
+        );
+
+        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
+        const isRestricted = userTags.includes(String(TAG_IDS.restricted));
 
         return `
             <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-white/20 transition-all">
@@ -366,7 +376,11 @@ function renderUserList(users) {
 
                 <div class="flex items-center gap-2 pt-3 border-t border-white/5">
                     ${isStaff ? `
-                        <span class="text-[11px] text-slate-500 italic w-full text-center py-1">Staff actions disabled</span>
+                        <div class="w-full text-center py-1 px-3 bg-slate-800/40 border border-slate-700/50 rounded-lg">
+                            <span class="text-[11px] text-slate-400 font-semibold flex items-center justify-center gap-1.5">
+                                <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-purple-400"></i> Staff Actions Protected
+                            </span>
+                        </div>
                     ` : `
                         <button onclick="toggleUserTag('${u.threadId}', '${TAG_IDS.restricted}', ${!isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
                             ${isRestricted ? 'Unrestrict' : 'Restrict'}
@@ -379,6 +393,10 @@ function renderUserList(users) {
             </div>
         `;
     }).join('');
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 }
 
 window.filterUsers = function(query) {
