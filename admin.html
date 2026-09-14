@@ -187,22 +187,68 @@
 </section>
 
         <!-- TAB 3: LIVE SONG LIBRARY OVERVIEW -->
-        <section id="content-library" class="tab-content hidden space-y-6">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 class="text-3xl font-extrabold tracking-tight">Live Approved Songs</h2>
-                    <p class="text-slate-400 text-sm mt-1">All tracks currently published and available in the VRChat playlist.</p>
+<section id="content-library" class="tab-content hidden space-y-6">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h2 class="text-3xl font-extrabold tracking-tight">Live Approved Songs</h2>
+            <p class="text-slate-400 text-sm mt-1">All tracks currently published and available in the VRChat playlist.</p>
+        </div>
+        <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+            <div class="relative w-full sm:w-64">
+                <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
+                <input type="text" id="admin-search-input" onkeyup="filterSongs(this.value)" placeholder="Search songs..." class="input-field w-full rounded-xl pl-11 pr-4 py-2.5 text-xs">
+            </div>
+            <button onclick="openAddTrackModal()" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-purple-500 to-sky-500 hover:opacity-90 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shrink-0">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Track
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="song-list">
+        <!-- Loaded via JS -->
+    </div>
+</section>
+
+<!-- ADD TRACK MODAL -->
+<div id="add-track-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass border border-white/10 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-white/10 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-purple-500/20 text-purple-400 rounded-xl border border-purple-500/30">
+                    <i data-lucide="music" class="w-5 h-5"></i>
                 </div>
-                <div class="relative w-full md:w-72">
-                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
-                    <input type="text" id="admin-search-input" onkeyup="filterSongs(this.value)" placeholder="Search songs..." class="input-field w-full rounded-xl pl-11 pr-4 py-2.5 text-xs">
-                </div>
+                <h3 class="text-lg font-extrabold text-white">Add New Track</h3>
+            </div>
+            <button onclick="closeAddTrackModal()" class="text-slate-400 hover:text-white p-1">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <form id="add-track-form" onsubmit="addTrackDirectly(event)" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Song Title</label>
+                <input type="text" id="add-song-title" required placeholder="e.g. Bohemian Rhapsody" class="input-field w-full rounded-xl px-4 py-2.5 text-xs">
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Artist</label>
+                <input type="text" id="add-song-artist" required placeholder="e.g. Queen" class="input-field w-full rounded-xl px-4 py-2.5 text-xs">
+            </div>
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">YouTube Video ID or URL</label>
+                <input type="text" id="add-song-videoid" required placeholder="e.g. dQw4w9WgXcQ or https://youtu.be/..." class="input-field w-full rounded-xl px-4 py-2.5 text-xs">
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="song-list">
-                <!-- Loaded via JS -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+                <button type="button" onclick="closeAddTrackModal()" class="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-bold transition-all border border-white/10">
+                    Cancel
+                </button>
+                <button type="submit" id="btn-add-song" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Add Track
+                </button>
             </div>
-        </section>
+        </form>
+    </div>
+</div>
 
     </main>
 

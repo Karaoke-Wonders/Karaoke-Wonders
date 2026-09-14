@@ -424,6 +424,97 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
     }
 };
 
+window.openAddTrackModal = function() {
+    const modal = document.getElementById('add-track-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        resetModalStatus();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+};
+
+window.closeAddTrackModal = function() {
+    const modal = document.getElementById('add-track-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        const form = document.getElementById('add-track-form');
+        if (form) form.reset();
+        resetModalStatus();
+    }
+};
+
+// Clear modal error messages
+function resetModalStatus() {
+    const statusBox = document.getElementById('modal-status-message');
+    if (statusBox) {
+        statusBox.classList.add('hidden');
+        statusBox.textContent = '';
+    }
+}
+
+// Display error messages inside the modal without closing it
+function showModalError(message) {
+    const statusBox = document.getElementById('modal-status-message');
+    if (statusBox) {
+        statusBox.className = 'p-3 text-xs font-semibold rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 mb-4';
+        statusBox.textContent = message;
+        statusBox.classList.remove('hidden');
+    }
+}
+
+// Handler with success and failure logic integrated
+window.addTrackDirectly = async function(event) {
+    if (event) event.preventDefault();
+
+    const titleInput = document.getElementById('add-song-title');
+    const artistInput = document.getElementById('add-song-artist');
+    const videoIdInput = document.getElementById('add-song-videoid');
+    const submitBtn = document.getElementById('btn-add-song');
+
+    const songName = titleInput ? titleInput.value.trim() : '';
+    const artist = artistInput ? artistInput.value.trim() : '';
+    const videoId = videoIdInput ? videoIdInput.value.trim() : '';
+
+    if (!songName || !artist || !videoId) {
+        showModalError('Please fill out all required fields.');
+        return;
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding...';
+    }
+
+    try {
+        const res = await fetch(`${WORKER_BASE_URL}/api/admin/add-song`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                songName,
+                artist,
+                videoId,
+                submittedBy: currentUser ? currentUser.username : 'Admin'
+            })
+        });
+
+        if (!res.ok) throw new Error('Failed to add track');
+
+        // SUCCESS: Show alert, close modal, and refresh song list
+        showDashboardAlert('Track added directly to the live catalog!', 'success');
+        closeAddTrackModal();
+        await loadSongs();
+
+    } catch (err) {
+        // FAILURE: Keep modal open and display error inside the modal
+        showModalError('Failed to add track. Please check your connection and try again.');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Add Track';
+        }
+    }
+};
+
 // ==========================================
 // 3. LIVE APPROVED SONGS OVERVIEW & MANAGEMENT
 // ==========================================
