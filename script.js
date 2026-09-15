@@ -7,7 +7,8 @@ let isRegisterMode = false;
 const TAG_IDS = {
     staff: '1548667928881139712',
     restricted: '1548667951069007964',
-    blacklisted: '1548667978181247027'
+    blacklisted: '1548667978181247027',
+    manager: '1549308000664031323'
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -80,8 +81,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const isStaff = Boolean(
                 data.isAdmin || 
-                userTags.includes(TAG_IDS.staff) || 
-                username.toLowerCase().includes('admin')
+                userTags.includes(TAG_IDS.staff)
+            );
+
+            const isManager = Boolean(
+                data.isManager || userTags.includes(TAG_IDS.manager)
             );
 
             const updatedSession = {
@@ -92,6 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 avatarUrl: data.avatarUrl || user.avatarUrl || '',
                 tags: userTags,
                 isAdmin: isStaff,
+                isManager: isManager,
                 role: isStaff ? 'administrator' : 'member'
             };
             

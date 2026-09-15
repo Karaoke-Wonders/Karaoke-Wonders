@@ -141,13 +141,21 @@ async function refreshUserSession() {
         // Dynamic privilege recalculation
         const isStaff = Boolean(
             data.isAdmin || 
-            userTags.includes(TAG_IDS.staff) || 
-            (user.username && user.username.toLowerCase().includes('admin'))
+            userTags.includes(TAG_IDS.staff)
         );
+
+        const isManager = Boolean(
+            data.isManager || userTags.includes(TAG_IDS.manager)
+        )
 
         user.tags = userTags;
         user.isAdmin = isStaff;
         user.role = isStaff ? 'administrator' : 'member';
+        user.isManager = isManager;
+
+        if (isManager) {
+            user.role = 'manager'
+        };
         
         localStorage.setItem('kw_session', JSON.stringify(user));
 
@@ -791,8 +799,8 @@ function renderUserList(users) {
         );
 
         const isManagement = Boolean(
-            (u.role && u.role.toLowerCase() === 'management') ||
-            (TAG_IDS.management && userTags.includes(String(TAG_IDS.management)))
+            (u.role && u.role.toLowerCase() === 'manager') ||
+            (TAG_IDS.manager && userTags.includes(TAG_IDS.manager))
         );
         const isStaff = Boolean(
             u.isAdmin ||
@@ -822,14 +830,13 @@ function renderUserList(users) {
         const threadId = escapeAttr(u.threadId || '');
         
         const isManagement = Boolean(
-            (u.role && u.role.toLowerCase() === 'management') ||
-            (TAG_IDS.management && userTags.includes(String(TAG_IDS.management)))
+            (u.role && u.role.toLowerCase() === 'manager') ||
+            (TAG_IDS.manager && userTags.includes(String(TAG_IDS.manager)))
         );
         const isStaff = Boolean(
             u.isAdmin ||
             (u.role && u.role.toLowerCase() === 'administrator') ||
-            userTags.includes(String(TAG_IDS.staff)) ||
-            (u.username && u.username.toLowerCase().includes('admin'))
+            userTags.includes(String(TAG_IDS.staff))
         );
 
         const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
@@ -851,7 +858,7 @@ function renderUserList(users) {
                 </div>
 
                 <div class="flex items-center gap-2 pt-3 border-t border-white/5 flex-wrap">
-                    <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.management}', ${!isManagement})" class="py-1.5 px-2 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg text-xs font-bold transition-all">
+                    <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.manager}', ${!isManagement})" class="py-1.5 px-2 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg text-xs font-bold transition-all">
                         ${isManagement ? 'Demote Mgr' : 'Promote Mgr'}
                     </button>
                     ${isStaff ? `
