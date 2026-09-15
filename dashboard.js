@@ -934,7 +934,7 @@ function renderManagementList(users) {
 
     const mainTotalUsers = document.getElementById('stat-staff-count')
 
-    if (totalStaffUsers) {
+    if (mainTotalUsers) {
         mainTotalUsers.textContent = total;
     };
 }
