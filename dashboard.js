@@ -851,26 +851,27 @@ function renderManagementList(users) {
             (u.threadId || '').toLowerCase().includes(q)
         );
 
-        const isManagement = Boolean(
-            (u.role && u.role.toLowerCase() === 'manager') ||
-            (TAG_IDS.manager && userTags.includes(TAG_IDS.manager))
-        );
-        const isStaff = Boolean(
-            u.isAdmin ||
-            (u.role && u.role.toLowerCase() === 'administrator') ||
-            userTags.includes(String(TAG_IDS.staff))
-        );
-        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
-        const isRestricted = userTags.includes(String(TAG_IDS.restricted));
-
         if (!matchesQuery) return false;
 
-        if (userRoleFilter === 'manager') return isManagement;
-        if (userRoleFilter === 'staff') return isStaff;
-        if (userRoleFilter === 'banned') return isBlacklisted;
-        if (userRoleFilter === 'restricted') return isRestricted;
+        let pass = false;
 
-        return true;
+        const isManager = Boolean(
+            userTags.includes(String(TAG_IDS.manager))
+        );
+
+        const isStaff = Boolean(
+            userTags.includes(String(TAG_IDS.staff))
+        );
+
+        if (isManager) {
+            pass = true;
+        };
+
+        if (isStaff) {
+            pass = true;
+        };
+
+        return pass;
     });
 
     if (filtered.length === 0) {
