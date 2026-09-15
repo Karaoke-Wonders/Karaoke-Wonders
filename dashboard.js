@@ -853,27 +853,38 @@ function renderManagementList(users) {
             (u.threadId || '').toLowerCase().includes(q)
         );
 
-        if (!matchesQuery) return false;
-
-        let pass = false;
-
-        const isManager = Boolean(
-            userTags.includes(String(TAG_IDS.manager))
+        const isManagement = Boolean(
+            (u.role && u.role.toLowerCase() === 'manager') ||
+            (TAG_IDS.manager && userTags.includes(TAG_IDS.manager))
         );
-
         const isStaff = Boolean(
+            u.isAdmin ||
+            (u.role && u.role.toLowerCase() === 'administrator') ||
             userTags.includes(String(TAG_IDS.staff))
         );
 
-        if (isManager) {
-            pass = true;
+        let added = false;
+        if (isManagement) {
+            added = true;
+            total++;
         };
 
         if (isStaff) {
-            pass = true;
-        };
+            if (added == false){
+                total++;
+            }
+        }
+        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
+        const isRestricted = userTags.includes(String(TAG_IDS.restricted));
 
-        return pass;
+        if (!matchesQuery) return false;
+
+        if (userRoleFilter === 'manager') return isManagement;
+        if (userRoleFilter === 'staff') return isStaff;
+        if (userRoleFilter === 'banned') return isBlacklisted;
+        if (userRoleFilter === 'restricted') return isRestricted;
+
+        return true;
     });
 
     if (filtered.length === 0) {
@@ -918,12 +929,12 @@ function renderManagementList(users) {
                 <div class="flex items-center gap-2 pt-3 border-t border-white/5 flex-wrap">
                     ${isStaff ? `
                         <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', false)" class="flex-1 py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
-                            Demote Staff
-                        </button>
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', true)" class="py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
-                            Promote Staff
+                            Remove Staff
                         </button>
                     ` : `
+                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', true)" class="py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
+                            Give Staff
+                        </button>
                     `}
                 </div>
             </div>
