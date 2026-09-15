@@ -60,9 +60,9 @@ function setupUserProfile() {
     
     if (avatar) {
         if (currentUser.avatarUrl && currentUser.avatarUrl.startsWith('http')) {
-            avatar.innerHTML = `<img src="${escapeHtml(currentUser.avatarUrl)}" alt="Avatar" class="w-full h-full object-cover">`;
+            avatar.innerHTML = `<img src="${currentUser.avatarUrl}" alt="Avatar" class="w-full h-full object-cover">`;
         } else {
-            avatar.textContent = (currentUser.username || 'A').charAt(0).toUpperCase();
+            avatar.textContent = currentUser.username.charAt(0).toUpperCase();
         }
     }
 }
@@ -96,7 +96,7 @@ async function refreshUserSession() {
     try {
         const user = JSON.parse(sessionData);
         
-        // Ping worker endpoint to get freshest tags/status from Discord
+        // Ping your worker endpoint to get the freshest tags/status from Discord
         const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -104,13 +104,14 @@ async function refreshUserSession() {
         });
 
         if (!response.ok) {
+            // If account was deleted or worker errors out, clear session
             localStorage.removeItem('kw_session');
             window.location.href = 'index.html';
             return;
         }
 
         const data = await response.json();
-        const userTags = (data.tags || []).map(tag => String(tag));
+        const userTags = data.tags || [];
 
         // Check if blacklisted or locked in real time
         if (userTags.includes(TAG_IDS.blacklisted) || data.isLocked) {
@@ -124,10 +125,10 @@ async function refreshUserSession() {
         const isStaff = Boolean(
             data.isAdmin || 
             userTags.includes(TAG_IDS.staff) || 
-            (user.username && user.username.toLowerCase().includes('admin'))
+            user.username.toLowerCase().includes('admin')
         );
 
-        // Update local session data with fresh tags and roles while maintaining credentials
+        // Update local session data with fresh tags and roles while maintaining password
         user.tags = userTags;
         user.isAdmin = isStaff;
         user.role = isStaff ? 'administrator' : 'member';
@@ -147,11 +148,7 @@ function showDashboardAlert(message, type = 'error') {
 
     if (!alertBox) return;
 
-    alertBox.classList.remove(
-        'hidden', 'bg-red-500/10', 'border-red-500/20', 'text-red-400',
-        'bg-green-500/10', 'border-green-500/20', 'text-green-400',
-        'bg-sky-500/10', 'border-sky-500/20', 'text-sky-400'
-    );
+    alertBox.classList.remove('hidden', 'bg-red-500/10', 'border-red-500/20', 'text-red-400', 'bg-green-500/10', 'border-green-500/20', 'text-green-400', 'bg-sky-500/10', 'border-sky-500/20', 'text-sky-400');
 
     if (type === 'error') {
         alertBox.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-400');
@@ -209,7 +206,6 @@ async function loadPendingRequests() {
         }
 
         tableBody.innerHTML = pendingQueue.map(req => {
-            const reqId = escapeAttr(req.id || '');
             const title = req.songName || req.title || 'Untitled';
             const artist = req.artist || 'Unknown';
             const videoId = req.videoId || '';
@@ -236,10 +232,10 @@ async function loadPendingRequests() {
                         ${dateStr}
                     </td>
                     <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                        <button onclick="approveTrack('${reqId}')" id="btn-approve-${reqId}" class="px-3 py-1.5 bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1">
+                        <button onclick="approveTrack('${req.id}')" id="btn-approve-${req.id}" class="px-3 py-1.5 bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1">
                             <i data-lucide="check" class="w-3.5 h-3.5"></i> Approve
                         </button>
-                        <button onclick="rejectTrack('${reqId}')" id="btn-reject-${reqId}" class="px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1">
+                        <button onclick="rejectTrack('${req.id}')" id="btn-reject-${req.id}" class="px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1">
                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Reject
                         </button>
                     </td>
@@ -350,9 +346,10 @@ function renderUserList(users) {
     }
 
     userContainer.innerHTML = users.map(u => {
+        // Convert all tags to strings to prevent string vs number comparison mismatches
         const userTags = (u.tags || []).map(tag => String(tag));
-        const threadId = escapeAttr(u.threadId || '');
         
+        // Comprehensive staff detection (Tag ID, isAdmin flag, or admin role)
         const isStaff = Boolean(
             u.isAdmin ||
             (u.role && u.role.toLowerCase() === 'administrator') ||
@@ -385,10 +382,10 @@ function renderUserList(users) {
                             </span>
                         </div>
                     ` : `
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.restricted}', ${!isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
+                        <button onclick="toggleUserTag('${u.threadId}', '${TAG_IDS.restricted}', ${!isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
                             ${isRestricted ? 'Unrestrict' : 'Restrict'}
                         </button>
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.blacklisted}', ${!isBlacklisted})" class="flex-1 py-1.5 px-2 ${isBlacklisted ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20'} border rounded-lg text-xs font-bold transition-all">
+                        <button onclick="toggleUserTag('${u.threadId}', '${TAG_IDS.blacklisted}', ${!isBlacklisted})" class="flex-1 py-1.5 px-2 ${isBlacklisted ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20'} border rounded-lg text-xs font-bold transition-all">
                             ${isBlacklisted ? 'Unban' : 'Blacklist'}
                         </button>
                     `}
@@ -427,7 +424,6 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
     }
 };
 
-// Modal helpers
 window.openAddTrackModal = function() {
     const modal = document.getElementById('add-track-modal');
     if (modal) {
@@ -447,6 +443,7 @@ window.closeAddTrackModal = function() {
     }
 };
 
+// Clear modal error messages
 function resetModalStatus() {
     const statusBox = document.getElementById('modal-status-message');
     if (statusBox) {
@@ -455,6 +452,7 @@ function resetModalStatus() {
     }
 }
 
+// Display error messages inside the modal without closing it
 function showModalError(message) {
     const statusBox = document.getElementById('modal-status-message');
     if (statusBox) {
@@ -464,7 +462,7 @@ function showModalError(message) {
     }
 }
 
-// Single consolidated Handler for direct track addition via Modal / Admin form
+// Handler with success and failure logic integrated
 window.addTrackDirectly = async function(event) {
     if (event) event.preventDefault();
 
@@ -478,7 +476,7 @@ window.addTrackDirectly = async function(event) {
     const videoId = videoIdInput ? videoIdInput.value.trim() : '';
 
     if (!songName || !artist || !videoId) {
-        showModalError('Please fill out Title, Artist, and Video ID / URL.');
+        showModalError('Please fill out all required fields.');
         return;
     }
 
@@ -501,17 +499,14 @@ window.addTrackDirectly = async function(event) {
 
         if (!res.ok) throw new Error('Failed to add track');
 
+        // SUCCESS: Show alert, close modal, and refresh song list
         showDashboardAlert('Track added directly to the live catalog!', 'success');
-
-        if (titleInput) titleInput.value = '';
-        if (artistInput) artistInput.value = '';
-        if (videoIdInput) videoIdInput.value = '';
-
         closeAddTrackModal();
         await loadSongs();
 
     } catch (err) {
-        showModalError('Failed to add track directly. Please check connection and try again.');
+        // FAILURE: Keep modal open and display error inside the modal
+        showModalError('Failed to add track. Please check your connection and try again.');
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
@@ -556,13 +551,12 @@ function renderSongs(songs) {
     }
 
     container.innerHTML = songs.map(song => {
-        const songId = escapeAttr(song.id || song._id || '');
+        const songId = song.id || song._id || '';
         const title = song.songName || song.title || 'Untitled';
         const artist = song.artist || 'Unknown Artist';
         const uploader = song.submittedBy || song.uploader || 'Member';
         const videoId = song.videoId || '';
         const playUrl = videoId.startsWith('http') ? videoId : `https://www.youtube.com/watch?v=${videoId}`;
-        const escapedPlayUrl = escapeAttr(playUrl);
 
         return `
             <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-green-500/30 transition-all">
@@ -578,7 +572,7 @@ function renderSongs(songs) {
                 <div class="pt-4 border-t border-white/5 flex items-center justify-between text-xs gap-2">
                     <span class="text-slate-500 text-[11px] truncate">By ${escapeHtml(uploader)}</span>
                     <div class="flex items-center gap-1.5">
-                        <button onclick="copyVRUrl('${escapedPlayUrl}')" class="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-lg transition-all flex items-center gap-1 border border-white/10 text-xs">
+                        <button onclick="copyVRUrl('${escapeHtml(playUrl)}')" class="px-2.5 py-1.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-lg transition-all flex items-center gap-1 border border-white/10 text-xs">
                             <i data-lucide="copy" class="w-3.5 h-3.5 text-green-400"></i> Copy
                         </button>
                         <button onclick="deleteSong('${songId}')" id="btn-delete-${songId}" class="px-2.5 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold rounded-lg transition-all flex items-center gap-1 border border-red-500/20 text-xs">
@@ -595,6 +589,7 @@ function renderSongs(songs) {
     }
 }
 
+// FEATURE 1: Delete approved live song directly from catalog
 window.deleteSong = async function(songId) {
     if (!songId) {
         showDashboardAlert('Cannot delete track: Missing song ID.');
@@ -629,6 +624,60 @@ window.deleteSong = async function(songId) {
     }
 };
 
+// FEATURE 2: Direct Admin Add Track bypasses pending queue
+window.addTrackDirectly = async function(event) {
+    if (event) event.preventDefault();
+
+    const titleInput = document.getElementById('add-song-title');
+    const artistInput = document.getElementById('add-song-artist');
+    const videoIdInput = document.getElementById('add-song-videoid');
+    const submitBtn = document.getElementById('btn-add-song');
+
+    const songName = titleInput ? titleInput.value.trim() : '';
+    const artist = artistInput ? artistInput.value.trim() : '';
+    const videoId = videoIdInput ? videoIdInput.value.trim() : '';
+
+    if (!songName || !artist || !videoId) {
+        showDashboardAlert('Please fill out Title, Artist, and Video ID / URL.', 'error');
+        return;
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding...';
+    }
+
+    try {
+        const res = await fetch(`${WORKER_BASE_URL}/api/admin/add-song`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                songName,
+                artist,
+                videoId,
+                submittedBy: currentUser ? currentUser.username : 'Admin'
+            })
+        });
+
+        if (!res.ok) throw new Error('Failed to add track');
+
+        showDashboardAlert('Track added directly to the live catalog!', 'success');
+
+        if (titleInput) titleInput.value = '';
+        if (artistInput) artistInput.value = '';
+        if (videoIdInput) videoIdInput.value = '';
+
+        await loadSongs();
+    } catch (err) {
+        showDashboardAlert('Failed to add track directly. Check backend connection.', 'error');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Add Track';
+        }
+    }
+};
+
 window.filterSongs = function(query) {
     const q = (query || '').toLowerCase();
     const filtered = allSongs.filter(s => 
@@ -656,9 +705,4 @@ function escapeHtml(str) {
     return str.replace(/[&<>'"]/g, 
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
-}
-
-function escapeAttr(str) {
-    if (!str) return '';
-    return str.replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
