@@ -110,6 +110,7 @@ function setupUserProfile() {
 
 async function refreshUserSession() {
     const sessionData = localStorage.getItem('kw_session');
+    const managerPage = document.getElementById('tab-management');
     if (!sessionData) return;
 
     try {
@@ -154,7 +155,10 @@ async function refreshUserSession() {
         user.isManager = isManager;
 
         if (isManager) {
-            user.role = 'manager'
+            user.role = 'manager';
+            if (managerPage) {
+                managerPage.classList.remove('hidden');
+            }
         };
         
         localStorage.setItem('kw_session', JSON.stringify(user));
@@ -188,6 +192,7 @@ window.logout = function() {
 
 async function refreshUserSession() {
     const sessionData = localStorage.getItem('kw_session');
+    const managerPage = document.getElementById('tab-management');
     if (!sessionData) return;
 
     try {
@@ -235,6 +240,9 @@ async function refreshUserSession() {
 
         if (isManager) {
             user.role = 'manager';
+            if (managerPage) {
+                managerPage.classList.remove('hidden');
+            }
         };
         
         localStorage.setItem('kw_session', JSON.stringify(user));
