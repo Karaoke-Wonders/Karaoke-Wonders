@@ -4,14 +4,77 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Moderation Hub - Karaoke Wonders</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Glassmorphism Styles */
+        .glass {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #c084fc 0%, #38bdf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar-link.active {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(192, 132, 252, 0.4);
+            color: #ffffff;
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .input-field {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            transition: all 0.2s ease-in-out;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #a855f7;
+            box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.2);
+        }
+    </style>
 </head>
 <body class="min-h-screen relative flex overflow-x-hidden bg-slate-950 text-slate-100 font-sans">
 
-    <!-- Background Glow Effects -->
+    <!-- Ambient Background Glow Effects -->
     <div class="fixed top-1/4 left-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
     <div class="fixed bottom-10 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
     <div class="fixed top-1/2 right-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
@@ -30,11 +93,11 @@
                 </div>
             </div>
 
-            <!-- Tab Links -->
+            <!-- Tab Links Navigation -->
             <nav class="p-4 space-y-1.5">
                 <p class="px-4 text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-2">Moderation</p>
                 
-                <button onclick="switchTab('queue')" id="tab-queue" class="sidebar-link active w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
+                <button onclick="switchTab('queue')" id="tab-queue" class="sidebar-link active w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium border border-transparent">
                     <div class="flex items-center gap-3">
                         <i data-lucide="inbox" class="w-4 h-4 text-amber-400"></i>
                         <span>Pending Queue</span>
@@ -42,7 +105,7 @@
                     <span id="pending-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">0</span>
                 </button>
 
-                <button onclick="switchTab('users')" id="tab-users" class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
+                <button onclick="switchTab('users')" id="tab-users" class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium border border-transparent">
                     <div class="flex items-center gap-3">
                         <i data-lucide="users" class="w-4 h-4 text-sky-400"></i>
                         <span>User Access & Bans</span>
@@ -50,7 +113,7 @@
                     <span id="users-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">0</span>
                 </button>
 
-                <button onclick="switchTab('library')" id="tab-library" class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
+                <button onclick="switchTab('library')" id="tab-library" class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium border border-transparent">
                     <div class="flex items-center gap-3">
                         <i data-lucide="music" class="w-4 h-4 text-green-400"></i>
                         <span>Live Song Library</span>
@@ -58,7 +121,7 @@
                     <span id="songs-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-500/20 text-green-400 border border-green-500/30">0</span>
                 </button>
 
-                <!-- RED MANAGEMENT TAB (Manager Tag Only) -->
+                <!-- RED MANAGEMENT TAB (Manager Role Only) -->
                 <button onclick="switchTab('management')" id="tab-management" class="sidebar-link hidden w-full flex items-center justify-between px-4 py-3 rounded-xl text-red-300 hover:text-white hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all text-sm font-medium">
                     <div class="flex items-center gap-3">
                         <i data-lucide="shield-alert" class="w-4 h-4 text-red-500"></i>
@@ -68,7 +131,7 @@
                 </button>
 
                 <div class="pt-4 mt-4 border-t border-white/10">
-                    <a href="main.html" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium">
+                    <a href="#" onclick="showDashboardAlert('Navigating to Member Stage...', 'info')" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium">
                         <i data-lucide="external-link" class="w-4 h-4 text-slate-400"></i>
                         <span>View Member Stage</span>
                     </a>
@@ -76,19 +139,26 @@
             </nav>
         </div>
 
-        <!-- User Profile & Sign Out Footer -->
-        <div class="p-4 border-t border-white/10 bg-white/5">
-            <div class="flex items-center gap-3 mb-4 px-2">
+        <!-- User Profile & Sign Out Footer with Role Demo Toggle -->
+        <div class="p-4 border-t border-white/10 bg-white/5 space-y-3">
+            <div class="flex items-center gap-3 px-2">
                 <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-extrabold text-sm overflow-hidden" id="user-avatar">
                     A
                 </div>
-                <div class="overflow-hidden">
-                    <p class="text-sm font-bold truncate text-slate-200" id="user-display-name">Admin</p>
-                    <p class="text-[11px] text-purple-400 font-semibold flex items-center gap-1" id="user-role-label">
+                <div class="overflow-hidden flex-1">
+                    <p class="text-sm font-bold truncate text-slate-200" id="user-display-name">Admin User</p>
+                    <p class="text-[11px] text-purple-400 font-semibold flex items-center gap-1.5" id="user-role-label">
                         <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Staff Moderator
                     </p>
                 </div>
             </div>
+
+            <!-- Role Simulator Toggle Button (For Testing Roles) -->
+            <button onclick="toggleUserRoleDemo()" class="w-full py-1.5 px-3 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-slate-300 flex items-center justify-between transition-all">
+                <span class="text-slate-400">Role Preview:</span>
+                <span id="role-toggle-badge" class="text-purple-400 font-bold">Staff</span>
+            </button>
+
             <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500/10 border border-red-500/20 rounded-xl transition-all">
                 <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
             </button>
@@ -99,12 +169,14 @@
     <main class="flex-1 p-8 sm:p-10 max-w-7xl mx-auto overflow-y-auto min-h-screen">
 
         <!-- Global Dashboard Alert Banner -->
-        <div id="dashboard-alert" class="hidden mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between">
+        <div id="dashboard-alert" class="hidden mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between transition-all duration-300">
             <div class="flex items-center gap-3">
                 <i id="dashboard-alert-icon" class="w-4 h-4 shrink-0"></i>
                 <span id="dashboard-alert-text"></span>
             </div>
-            <button onclick="hideDashboardAlert()" class="opacity-70 hover:opacity-100"><i data-lucide="x" class="w-4 h-4"></i></button>
+            <button onclick="hideDashboardAlert()" class="opacity-70 hover:opacity-100 p-1">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
         </div>
 
         <!-- Quick Summary Stats Bar -->
@@ -136,8 +208,8 @@
                     <p class="text-xs text-slate-400">Approved Songs</p>
                 </div>
             </div>
-            <!-- Red Management Stats Card -->
-            <div id="stat-card-staff" class="glass p-5 rounded-2xl border border-red-500/20 bg-red-500/5 flex items-center gap-4 hidden">
+            <!-- Red Management Stats Card (Shown for Managers) -->
+            <div id="stat-card-staff" class="glass p-5 rounded-2xl border border-red-500/20 bg-red-500/5 items-center gap-4 hidden">
                 <div class="p-3 bg-red-500/20 text-red-400 rounded-xl">
                     <i data-lucide="shield-alert" class="w-6 h-6"></i>
                 </div>
@@ -153,7 +225,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                     <h2 class="text-3xl font-extrabold tracking-tight">Pending Song Queue</h2>
-                    <p class="text-slate-400 text-sm mt-1">Review song submissions from the community. Approving publishes the song to GitHub batches.</p>
+                    <p class="text-slate-400 text-sm mt-1">Review song submissions from the community. Approving publishes the song to live batches.</p>
                 </div>
                 <button onclick="loadPendingRequests()" class="px-3.5 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-bold transition-all flex items-center gap-2 border border-white/10 self-start sm:self-auto">
                     <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Queue
@@ -174,9 +246,7 @@
                             </tr>
                         </thead>
                         <tbody id="request-table-body" class="divide-y divide-white/5 text-sm">
-                            <tr>
-                                <td colspan="5" class="px-6 py-8 text-center text-slate-500 text-xs">Loading pending queue...</td>
-                            </tr>
+                            <!-- Populated dynamically -->
                         </tbody>
                     </table>
                 </div>
@@ -193,7 +263,7 @@
                 <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
                     <div class="relative w-full sm:w-64">
                         <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
-                        <input type="text" id="user-search-input" onkeyup="filterUsers(this.value)" placeholder="Search users by name or tag..." class="input-field w-full rounded-xl pl-11 pr-4 py-2.5 text-xs">
+                        <input type="text" id="user-search-input" onkeyup="filterUsers(this.value)" placeholder="Search users by name or ID..." class="input-field w-full rounded-xl pl-11 pr-4 py-2.5 text-xs">
                     </div>
                     <button onclick="loadUserList()" class="w-full sm:w-auto px-3.5 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 border border-white/10">
                         <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Users
@@ -202,52 +272,7 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="user-list">
-                <!-- Standard Member Card Example -->
-                <div class="glass p-5 rounded-2xl border border-white/10 space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold text-sm">
-                                JD
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-bold text-white">JaneDoe</h4>
-                                <span class="text-[10px] text-slate-400">ID: 987654321</span>
-                            </div>
-                        </div>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">
-                            Member
-                        </span>
-                    </div>
-                    <div class="flex items-center gap-2 pt-2 border-t border-white/10">
-                        <button onclick="toggleUserBan('987654321')" class="w-full py-2 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
-                            <i data-lucide="user-x" class="w-3.5 h-3.5"></i> Ban Member
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Staff Member Card Example (Actions Blocked) -->
-                <div class="glass p-5 rounded-2xl border border-purple-500/20 bg-purple-950/10 space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold text-sm">
-                                AS
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-bold text-white">AlexStaff</h4>
-                                <span class="text-[10px] text-slate-400">ID: 456789123</span>
-                            </div>
-                        </div>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                            Staff
-                        </span>
-                    </div>
-                    <!-- Staff Action Blocked Badge (No Add/Remove Staff Buttons Here) -->
-                    <div class="pt-2 border-t border-white/10">
-                        <button disabled class="w-full py-2 px-3 rounded-xl bg-slate-800/60 text-slate-500 border border-slate-700/50 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed opacity-75">
-                            <i data-lucide="shield-off" class="w-3.5 h-3.5"></i> Staff - Action Blocked
-                        </button>
-                    </div>
-                </div>
+                <!-- Populated dynamically -->
             </div>
         </section>
 
@@ -261,7 +286,7 @@
                 <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
                     <div class="relative w-full sm:w-64">
                         <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
-                        <input type="text" id="admin-search-input" onkeyup="filterSongs(this.value)" placeholder="Search songs..." class="input-field w-full rounded-xl pl-11 pr-4 py-2.5 text-xs">
+                        <input type="text" id="admin-search-input" onkeyup="filterSongs(this.value)" placeholder="Search songs or artists..." class="input-field w-full rounded-xl pl-11 pr-4 py-2.5 text-xs">
                     </div>
                     <button onclick="openAddTrackModal()" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-purple-500 to-sky-500 hover:opacity-90 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shrink-0">
                         <i data-lucide="plus-circle" class="w-4 h-4"></i> Add Track
@@ -270,7 +295,7 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="song-list">
-                <!-- Loaded via JS -->
+                <!-- Populated dynamically -->
             </div>
         </section>
 
@@ -295,32 +320,9 @@
                 </div>
             </div>
 
-            <!-- Management User List (Only Managers can access Add/Remove Staff actions) -->
+            <!-- Management User List -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="management-user-list">
-                <div class="glass p-5 rounded-2xl border border-red-500/20 bg-red-950/10 space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-300 font-bold text-sm">
-                                JS
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-bold text-white">JohnSmith</h4>
-                                <span class="text-[10px] text-slate-400">ID: 123456789</span>
-                            </div>
-                        </div>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                            Staff
-                        </span>
-                    </div>
-                    <div class="flex items-center gap-2 pt-2 border-t border-white/10">
-                        <button onclick="addStaff('123456789')" class="flex-1 py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
-                            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Add Staff
-                        </button>
-                        <button onclick="removeStaff('123456789')" class="flex-1 py-2 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
-                            <i data-lucide="user-minus" class="w-3.5 h-3.5"></i> Remove Staff
-                        </button>
-                    </div>
-                </div>
+                <!-- Populated dynamically -->
             </div>
         </section>
 
@@ -357,7 +359,7 @@
                         <button type="button" onclick="closeAddTrackModal()" class="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-bold transition-all border border-white/10">
                             Cancel
                         </button>
-                        <button type="submit" id="btn-add-song" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                        <button type="submit" id="btn-add-song" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-lg">
                             <i data-lucide="plus" class="w-4 h-4"></i> Add Track
                         </button>
                     </div>
@@ -365,8 +367,550 @@
             </div>
         </div>
 
+        <!-- REJECT REASON MODAL -->
+        <div id="reject-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+            <div class="glass border border-red-500/20 rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 shadow-2xl">
+                <div class="flex items-center gap-3 text-red-400 border-b border-white/10 pb-4">
+                    <div class="p-2.5 bg-red-500/20 rounded-xl border border-red-500/30">
+                        <i data-lucide="x-circle" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-extrabold text-white">Reject Song Submission</h3>
+                        <p class="text-xs text-slate-400" id="reject-song-title">Song Name</p>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Reason for Rejection</label>
+                    <textarea id="reject-reason-text" rows="3" placeholder="e.g., Audio quality issue, broken video link, invalid karaoke version..." class="input-field w-full rounded-xl p-3 text-xs"></textarea>
+                </div>
+                <div class="flex items-center justify-end gap-3 pt-2">
+                    <button onclick="closeRejectModal()" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-bold border border-white/10">
+                        Cancel
+                    </button>
+                    <button onclick="confirmRejectSubmission()" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-lg">
+                        Confirm Rejection
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </main>
 
-    <script src="dashboard.js"></script>
+    <!-- INLINE DASHBOARD JS ENGINE -->
+    <script>
+        // --- DATA STATE ---
+        let currentRole = 'Staff'; // Options: 'Staff' or 'Manager'
+        let pendingTrackIdToReject = null;
+
+        let pendingQueue = [
+            { id: 'req-1', title: 'Fly Me to the Moon', artist: 'Frank Sinatra', videoId: 'ZEcqHA7dbwM', submittedBy: 'VocalChamp99', submittedByAvatar: 'VC', date: '2026-09-14' },
+            { id: 'req-2', title: 'Unstoppable', artist: 'Sia', videoId: 'h3h035EIn50', submittedBy: 'MelodyQueen', submittedByAvatar: 'MQ', date: '2026-09-15' },
+            { id: 'req-3', title: 'Sweet Child O\' Mine', artist: 'Guns N\' Roses', videoId: '1w7OgIMMRc4', submittedBy: 'RockLegend', submittedByAvatar: 'RL', date: '2026-09-15' }
+        ];
+
+        let users = [
+            { id: '987654321', name: 'JaneDoe', initials: 'JD', role: 'Member', isBanned: false },
+            { id: '456789123', name: 'AlexStaff', initials: 'AS', role: 'Staff', isBanned: false },
+            { id: '123456789', name: 'JohnSmith', initials: 'JS', role: 'Staff', isBanned: false },
+            { id: '555444333', name: 'TroubleMaker', initials: 'TM', role: 'Member', isBanned: true },
+            { id: '777888999', name: 'SarahConner', initials: 'SC', role: 'Manager', isBanned: false }
+        ];
+
+        let songs = [
+            { id: 'song-1', title: 'Bohemian Rhapsody', artist: 'Queen', videoId: 'fJ9rUzIMcZQ', addedBy: 'Staff', date: '2026-08-10' },
+            { id: 'song-2', title: 'Hotel California', artist: 'Eagles', videoId: '09839483921', addedBy: 'Manager', date: '2026-08-15' },
+            { id: 'song-3', title: 'Don\'t Stop Believin\'', artist: 'Journey', videoId: '1k8craCGpgs', addedBy: 'Staff', date: '2026-09-01' }
+        ];
+
+        // Initialize App on DOM Load
+        document.addEventListener('DOMContentLoaded', () => {
+            updateUserRoleUI();
+            renderAllData();
+            lucide.createIcons();
+        });
+
+        // --- ROLE TOGGLE (DEMO) ---
+        function toggleUserRoleDemo() {
+            currentRole = (currentRole === 'Staff') ? 'Manager' : 'Staff';
+            updateUserRoleUI();
+            showDashboardAlert(`Switched user perspective to: ${currentRole} Mode`, 'info');
+        }
+
+        function updateUserRoleUI() {
+            const roleLabel = document.getElementById('user-role-label');
+            const roleBadge = document.getElementById('role-toggle-badge');
+            const mgmtTab = document.getElementById('tab-management');
+            const mgmtStat = document.getElementById('stat-card-staff');
+            const userDisplayName = document.getElementById('user-display-name');
+            const userAvatar = document.getElementById('user-avatar');
+
+            if (currentRole === 'Manager') {
+                userDisplayName.innerText = 'Alex (Manager)';
+                userAvatar.innerText = 'AM';
+                roleLabel.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Community Manager';
+                roleLabel.className = 'text-[11px] text-red-400 font-semibold flex items-center gap-1.5';
+                roleBadge.innerText = 'Manager';
+                roleBadge.className = 'text-red-400 font-bold';
+
+                mgmtTab.classList.remove('hidden');
+                mgmtStat.classList.remove('hidden');
+                mgmtStat.classList.add('flex');
+            } else {
+                userDisplayName.innerText = 'Alex (Staff)';
+                userAvatar.innerText = 'AS';
+                roleLabel.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Staff Moderator';
+                roleLabel.className = 'text-[11px] text-purple-400 font-semibold flex items-center gap-1.5';
+                roleBadge.innerText = 'Staff';
+                roleBadge.className = 'text-purple-400 font-bold';
+
+                mgmtTab.classList.add('hidden');
+                mgmtStat.classList.add('hidden');
+                mgmtStat.classList.remove('flex');
+
+                // If currently on management tab and switched to staff, fallback to queue
+                const currentActiveTab = document.querySelector('.sidebar-link.active');
+                if (currentActiveTab && currentActiveTab.id === 'tab-management') {
+                    switchTab('queue');
+                }
+            }
+
+            renderUsers(); // Refresh cards based on current permissions
+            renderManagementUsers();
+        }
+
+        // --- TAB SWITCHING ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active'));
+
+            const contentEl = document.getElementById(`content-${tabName}`);
+            const tabBtn = document.getElementById(`tab-${tabName}`);
+
+            if (contentEl && tabBtn) {
+                contentEl.classList.remove('hidden');
+                tabBtn.classList.add('active');
+            }
+        }
+
+        // --- RENDER FUNCTIONS ---
+        function renderAllData() {
+            renderPendingQueue();
+            renderUsers();
+            renderSongs();
+            renderManagementUsers();
+            updateBadgesAndStats();
+        }
+
+        function updateBadgesAndStats() {
+            document.getElementById('pending-badge').innerText = pendingQueue.length;
+            document.getElementById('stat-pending-count').innerText = pendingQueue.length;
+
+            const activeUserCount = users.filter(u => !u.isBanned).length;
+            document.getElementById('users-badge').innerText = users.length;
+            document.getElementById('stat-users-count').innerText = activeUserCount;
+
+            document.getElementById('songs-badge').innerText = songs.length;
+            document.getElementById('stat-songs-count').innerText = songs.length;
+
+            const staffCount = users.filter(u => u.role === 'Staff' || u.role === 'Manager').length;
+            document.getElementById('management-badge').innerText = staffCount;
+            document.getElementById('stat-staff-count').innerText = staffCount;
+        }
+
+        // 1. Pending Queue Renderer
+        function renderPendingQueue() {
+            const tbody = document.getElementById('request-table-body');
+            tbody.innerHTML = '';
+
+            if (pendingQueue.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center text-slate-500 text-xs font-semibold">
+                            <i data-lucide="check-circle-2" class="w-8 h-8 text-emerald-500/50 mx-auto mb-2"></i>
+                            The queue is clean! No pending requests for review.
+                        </td>
+                    </tr>`;
+                lucide.createIcons();
+                return;
+            }
+
+            pendingQueue.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-white/5 transition-all';
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-white text-sm">${escapeHtml(item.title)}</div>
+                        <div class="text-xs text-slate-400 font-medium">${escapeHtml(item.artist)}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <a href="https://youtu.be/${item.videoId}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold transition-all">
+                            <i data-lucide="youtube" class="w-3.5 h-3.5"></i> Preview Video
+                        </a>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-[10px] font-bold text-purple-300">
+                                ${item.submittedByAvatar}
+                            </div>
+                            <span class="text-xs text-slate-300 font-medium">${escapeHtml(item.submittedBy)}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-xs text-slate-400">${item.date}</td>
+                    <td class="px-6 py-4 text-right space-x-2">
+                        <button onclick="approveRequest('${item.id}')" class="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs inline-flex items-center gap-1 transition-all">
+                            <i data-lucide="check" class="w-3.5 h-3.5"></i> Approve
+                        </button>
+                        <button onclick="openRejectModal('${item.id}')" class="px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-bold text-xs inline-flex items-center gap-1 transition-all">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i> Reject
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        // 2. User Access Renderer
+        function renderUsers(filterText = '') {
+            const container = document.getElementById('user-list');
+            container.innerHTML = '';
+
+            const filtered = users.filter(u => 
+                u.name.toLowerCase().includes(filterText.toLowerCase()) || 
+                u.id.includes(filterText)
+            );
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="col-span-full text-center text-xs text-slate-500 py-8">No users match your search query.</p>`;
+                return;
+            }
+
+            filtered.forEach(u => {
+                const isStaff = u.role === 'Staff' || u.role === 'Manager';
+                const card = document.createElement('div');
+                card.className = `glass p-5 rounded-2xl border space-y-4 ${isStaff ? 'border-purple-500/20 bg-purple-950/10' : 'border-white/10'}`;
+
+                let roleBadgeColor = 'bg-sky-500/20 text-sky-400 border-sky-500/30';
+                if (u.role === 'Staff') roleBadgeColor = 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+                if (u.role === 'Manager') roleBadgeColor = 'bg-red-500/20 text-red-400 border-red-500/30';
+
+                let actionAreaHtml = '';
+                if (isStaff) {
+                    actionAreaHtml = `
+                        <div class="pt-2 border-t border-white/10">
+                            <button disabled class="w-full py-2 px-3 rounded-xl bg-slate-800/60 text-slate-500 border border-slate-700/50 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed opacity-75">
+                                <i data-lucide="shield-off" class="w-3.5 h-3.5"></i> Staff - Action Blocked
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    const btnText = u.isBanned ? 'Unban Member' : 'Ban Member';
+                    const btnClass = u.isBanned ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30';
+                    const iconName = u.isBanned ? 'user-check' : 'user-x';
+                    
+                    actionAreaHtml = `
+                        <div class="flex items-center gap-2 pt-2 border-t border-white/10">
+                            <button onclick="toggleUserBan('${u.id}')" class="w-full py-2 px-3 rounded-xl border font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${btnClass}">
+                                <i data-lucide="${iconName}" class="w-3.5 h-3.5"></i> ${btnText}
+                            </button>
+                        </div>
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold text-sm">
+                                ${u.initials}
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                                    ${escapeHtml(u.name)}
+                                    ${u.isBanned ? '<span class="px-1.5 py-0.2 text-[9px] uppercase bg-red-500/20 text-red-400 rounded font-bold border border-red-500/30">Banned</span>' : ''}
+                                </h4>
+                                <span class="text-[10px] text-slate-400">ID: ${u.id}</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border ${roleBadgeColor}">
+                            ${u.role}
+                        </span>
+                    </div>
+                    ${actionAreaHtml}
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        // 3. Songs Library Renderer
+        function renderSongs(filterText = '') {
+            const container = document.getElementById('song-list');
+            container.innerHTML = '';
+
+            const filtered = songs.filter(s => 
+                s.title.toLowerCase().includes(filterText.toLowerCase()) || 
+                s.artist.toLowerCase().includes(filterText.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="col-span-full text-center text-xs text-slate-500 py-8">No approved songs found in library.</p>`;
+                return;
+            }
+
+            filtered.forEach(s => {
+                const card = document.createElement('div');
+                card.className = 'glass p-5 rounded-2xl border border-white/10 space-y-3 flex flex-col justify-between';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <h4 class="text-sm font-extrabold text-white leading-snug">${escapeHtml(s.title)}</h4>
+                                <p class="text-xs text-slate-400 font-medium">${escapeHtml(s.artist)}</p>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                                Approved
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between pt-3 border-t border-white/10 text-xs">
+                        <a href="https://youtu.be/${s.videoId}" target="_blank" class="text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1">
+                            <i data-lucide="play-circle" class="w-3.5 h-3.5"></i> Video Link
+                        </a>
+                        <button onclick="deleteSong('${s.id}')" class="text-slate-500 hover:text-red-400 p-1 transition-all">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        // 4. Red Management Renderer (Manager View)
+        function renderManagementUsers(filterText = '') {
+            const container = document.getElementById('management-user-list');
+            container.innerHTML = '';
+
+            const filtered = users.filter(u => 
+                u.name.toLowerCase().includes(filterText.toLowerCase()) || 
+                u.id.includes(filterText)
+            );
+
+            filtered.forEach(u => {
+                const card = document.createElement('div');
+                card.className = 'glass p-5 rounded-2xl border border-red-500/20 bg-red-950/10 space-y-4';
+                
+                let isStaff = u.role === 'Staff' || u.role === 'Manager';
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-300 font-bold text-sm">
+                                ${u.initials}
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-white">${escapeHtml(u.name)}</h4>
+                                <span class="text-[10px] text-slate-400">ID: ${u.id}</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isStaff ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'}">
+                            ${u.role}
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2 pt-2 border-t border-white/10">
+                        <button onclick="addStaff('${u.id}')" ${u.role === 'Staff' || u.role === 'Manager' ? 'disabled class="flex-1 py-2 px-3 rounded-xl bg-slate-800/40 text-slate-600 border border-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed"' : 'class="flex-1 py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"'}>
+                            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Add Staff
+                        </button>
+                        <button onclick="removeStaff('${u.id}')" ${u.role === 'Member' ? 'disabled class="flex-1 py-2 px-3 rounded-xl bg-slate-800/40 text-slate-600 border border-slate-800 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed"' : 'class="flex-1 py-2 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"'}>
+                            <i data-lucide="user-minus" class="w-3.5 h-3.5"></i> Remove Staff
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        // --- ACTIONS ---
+        function approveRequest(id) {
+            const index = pendingQueue.findIndex(item => item.id === id);
+            if (index !== -1) {
+                const item = pendingQueue[index];
+                songs.unshift({
+                    id: 'song-' + Date.now(),
+                    title: item.title,
+                    artist: item.artist,
+                    videoId: item.videoId,
+                    addedBy: 'Approved Request',
+                    date: new Date().toISOString().split('T')[0]
+                });
+                pendingQueue.splice(index, 1);
+                renderAllData();
+                showDashboardAlert(`Approved track: "${item.title}" and published to live library!`, 'success');
+            }
+        }
+
+        function openRejectModal(id) {
+            pendingTrackIdToReject = id;
+            const item = pendingQueue.find(i => i.id === id);
+            if (item) {
+                document.getElementById('reject-song-title').innerText = `${item.title} - ${item.artist}`;
+                document.getElementById('reject-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeRejectModal() {
+            pendingTrackIdToReject = null;
+            document.getElementById('reject-reason-text').value = '';
+            document.getElementById('reject-modal').classList.add('hidden');
+        }
+
+        function confirmRejectSubmission() {
+            if (!pendingTrackIdToReject) return;
+            const index = pendingQueue.findIndex(item => item.id === pendingTrackIdToReject);
+            if (index !== -1) {
+                const title = pendingQueue[index].title;
+                pendingQueue.splice(index, 1);
+                closeRejectModal();
+                renderAllData();
+                showDashboardAlert(`Rejected submission for: "${title}".`, 'warning');
+            }
+        }
+
+        function toggleUserBan(userId) {
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                user.isBanned = !user.isBanned;
+                renderUsers(document.getElementById('user-search-input').value);
+                updateBadgesAndStats();
+                showDashboardAlert(`User ${user.name} has been ${user.isBanned ? 'banned' : 'unbanned'}.`, user.isBanned ? 'warning' : 'success');
+            }
+        }
+
+        function addStaff(userId) {
+            if (currentRole !== 'Manager') {
+                showDashboardAlert('Permission Denied: Manager privilege required.', 'error');
+                return;
+            }
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                user.role = 'Staff';
+                renderAllData();
+                showDashboardAlert(`Promoted ${user.name} to Staff Moderator!`, 'success');
+            }
+        }
+
+        function removeStaff(userId) {
+            if (currentRole !== 'Manager') {
+                showDashboardAlert('Permission Denied: Manager privilege required.', 'error');
+                return;
+            }
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                user.role = 'Member';
+                renderAllData();
+                showDashboardAlert(`Demoted ${user.name} to Standard Member.`, 'warning');
+            }
+        }
+
+        function deleteSong(songId) {
+            const index = songs.findIndex(s => s.id === songId);
+            if (index !== -1) {
+                const title = songs[index].title;
+                songs.splice(index, 1);
+                renderSongs(document.getElementById('admin-search-input').value);
+                updateBadgesAndStats();
+                showDashboardAlert(`Removed "${title}" from live library.`, 'warning');
+            }
+        }
+
+        // --- ADD TRACK MODAL CONTROLS ---
+        function openAddTrackModal() {
+            document.getElementById('add-track-modal').classList.remove('hidden');
+        }
+
+        function closeAddTrackModal() {
+            document.getElementById('add-track-modal').classList.add('hidden');
+            document.getElementById('add-track-form').reset();
+        }
+
+        function addTrackDirectly(e) {
+            e.preventDefault();
+            const title = document.getElementById('add-song-title').value.trim();
+            const artist = document.getElementById('add-song-artist').value.trim();
+            let videoId = document.getElementById('add-song-videoid').value.trim();
+
+            // Simple YouTube URL parser for video IDs
+            if (videoId.includes('v=')) {
+                videoId = videoId.split('v=')[1].split('&')[0];
+            } else if (videoId.includes('youtu.be/')) {
+                videoId = videoId.split('youtu.be/')[1].split('?')[0];
+            }
+
+            songs.unshift({
+                id: 'song-' + Date.now(),
+                title: title,
+                artist: artist,
+                videoId: videoId,
+                addedBy: currentRole,
+                date: new Date().toISOString().split('T')[0]
+            });
+
+            closeAddTrackModal();
+            renderSongs();
+            updateBadgesAndStats();
+            showDashboardAlert(`Added new track: "${title}" directly to Live Library!`, 'success');
+        }
+
+        // --- SEARCH FILTERS ---
+        function filterUsers(val) { renderUsers(val); }
+        function filterSongs(val) { renderSongs(val); }
+        function filterManagementUsers(val) { renderManagementUsers(val); }
+
+        function loadPendingRequests() { renderPendingQueue(); showDashboardAlert('Pending Queue refreshed.', 'info'); }
+        function loadUserList() { renderUsers(); showDashboardAlert('User directory refreshed.', 'info'); }
+        function loadManagementUserList() { renderManagementUsers(); showDashboardAlert('Staff directory refreshed.', 'info'); }
+
+        // --- DASHBOARD ALERTS / TOASTS ---
+        function showDashboardAlert(message, type = 'info') {
+            const alert = document.getElementById('dashboard-alert');
+            const icon = document.getElementById('dashboard-alert-icon');
+            const text = document.getElementById('dashboard-alert-text');
+
+            text.innerText = message;
+            alert.className = "mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between transition-all duration-300 ";
+
+            if (type === 'success') {
+                alert.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-300');
+                icon.setAttribute('data-lucide', 'check-circle-2');
+            } else if (type === 'warning') {
+                alert.classList.add('bg-amber-500/10', 'border-amber-500/30', 'text-amber-300');
+                icon.setAttribute('data-lucide', 'alert-triangle');
+            } else if (type === 'error') {
+                alert.classList.add('bg-red-500/10', 'border-red-500/30', 'text-red-300');
+                icon.setAttribute('data-lucide', 'alert-circle');
+            } else {
+                alert.classList.add('bg-purple-500/10', 'border-purple-500/30', 'text-purple-300');
+                icon.setAttribute('data-lucide', 'info');
+            }
+
+            alert.classList.remove('hidden');
+            lucide.createIcons();
+
+            setTimeout(() => { hideDashboardAlert(); }, 4000);
+        }
+
+        function hideDashboardAlert() {
+            document.getElementById('dashboard-alert').classList.add('hidden');
+        }
+
+        function logout() {
+            showDashboardAlert('Signing out of KaraokeWonders Admin Hub...', 'info');
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
 </body>
 </html>
