@@ -31,7 +31,7 @@ const TAG_IDS = {
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Refresh and validate session data against backend in real-time
     console.log("REFRESH EVENT FIRED!")
-    await refreshUserSession();
+    refreshUserSession();
 
     const sessionData = localStorage.getItem('kw_session');
     
