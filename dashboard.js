@@ -937,8 +937,6 @@ function renderManagementList(users) {
     if (totalStaffUsers) {
         totalStaffUsers.textContent = total;
     };
-
-    console.log(total);
 }
 
 window.filterUsers = function(query) {
