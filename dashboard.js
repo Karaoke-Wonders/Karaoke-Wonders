@@ -932,6 +932,12 @@ function renderManagementList(users) {
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
+    const totalStaffUsers = document.getElementById('management-badge');
+
+    if (totalStaffUsers) {
+        totalStaffUsers.textContent = total;
+    };
+
     console.log(total);
 }
 
