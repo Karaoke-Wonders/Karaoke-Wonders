@@ -821,6 +821,7 @@ function renderUserList(users) {
 
                 <div class="flex items-center gap-2 pt-3 border-t border-white/5 flex-wrap">
                     ${isStaff ? `
+
                     ` : `
                         <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.restricted}', ${!isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
                             ${isRestricted ? 'Unrestrict' : 'Restrict'}
@@ -842,6 +843,7 @@ function renderManagementList(users) {
     if (!userContainer) return;
 
     // Filter Users by Search Query & Role Filter
+    let total = 0;
     const filtered = users.filter(u => {
         const userTags = (u.tags || []).map(tag => String(tag));
         const q = userSearchQuery.toLowerCase();
@@ -882,6 +884,8 @@ function renderManagementList(users) {
     userContainer.innerHTML = filtered.map(u => {
         const userTags = (u.tags || []).map(tag => String(tag));
         const threadId = escapeAttr(u.threadId || '');
+
+        total++;
         
         const isManagement = Boolean(
             (u.role && u.role.toLowerCase() === 'manager') ||
@@ -927,6 +931,8 @@ function renderManagementList(users) {
     }).join('');
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    console.log(total);
 }
 
 window.filterUsers = function(query) {
