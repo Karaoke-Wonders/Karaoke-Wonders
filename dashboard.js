@@ -895,8 +895,6 @@ function renderManagementList(users) {
     userContainer.innerHTML = filtered.map(u => {
         const userTags = (u.tags || []).map(tag => String(tag));
         const threadId = escapeAttr(u.threadId || '');
-
-        total++;
         
         const isManagement = Boolean(
             (u.role && u.role.toLowerCase() === 'manager') ||
@@ -932,7 +930,7 @@ function renderManagementList(users) {
                             Remove Staff
                         </button>
                     ` : `
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', true)" class="py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
+                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', true)" class="flex-1 py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
                             Give Staff
                         </button>
                     `}
