@@ -739,6 +739,7 @@ async function loadUserList() {
         if (statUsers) statUsers.textContent = allUsers.length;
 
         renderUserList(allUsers);
+        renderManagementList(allUsers);
     } catch (err) {
         console.error(err);
         userContainer.innerHTML = `<p class="col-span-full text-center text-red-400 text-xs py-8">User management service unavailable.</p>`;
@@ -819,23 +820,105 @@ function renderUserList(users) {
                 </div>
 
                 <div class="flex items-center gap-2 pt-3 border-t border-white/5 flex-wrap">
-                    <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.manager}', ${!isManagement})" class="py-1.5 px-2 bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 border border-blue-500/20 rounded-lg text-xs font-bold transition-all">
-                        ${isManagement ? 'Demote Mgr' : 'Promote Mgr'}
-                    </button>
                     ${isStaff ? `
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', false)" class="flex-1 py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
-                            Demote Staff
-                        </button>
                     ` : `
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', true)" class="py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
-                            Promote Staff
-                        </button>
                         <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.restricted}', ${!isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
                             ${isRestricted ? 'Unrestrict' : 'Restrict'}
                         </button>
                         <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.blacklisted}', ${!isBlacklisted})" class="flex-1 py-1.5 px-2 ${isBlacklisted ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20'} border rounded-lg text-xs font-bold transition-all">
                             ${isBlacklisted ? 'Unban' : 'Blacklist'}
                         </button>
+                    `}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function renderManagementList(users) {
+    const userContainer = document.getElementById('management-user-list');
+    if (!userContainer) return;
+
+    // Filter Users by Search Query & Role Filter
+    const filtered = users.filter(u => {
+        const userTags = (u.tags || []).map(tag => String(tag));
+        const q = userSearchQuery.toLowerCase();
+        
+        const matchesQuery = (
+            (u.username || '').toLowerCase().includes(q) ||
+            (u.threadId || '').toLowerCase().includes(q)
+        );
+
+        const isManagement = Boolean(
+            (u.role && u.role.toLowerCase() === 'manager') ||
+            (TAG_IDS.manager && userTags.includes(TAG_IDS.manager))
+        );
+        const isStaff = Boolean(
+            u.isAdmin ||
+            (u.role && u.role.toLowerCase() === 'administrator') ||
+            userTags.includes(String(TAG_IDS.staff))
+        );
+        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
+        const isRestricted = userTags.includes(String(TAG_IDS.restricted));
+
+        if (!matchesQuery) return false;
+
+        if (userRoleFilter === 'manager') return isManagement;
+        if (userRoleFilter === 'staff') return isStaff;
+        if (userRoleFilter === 'banned') return isBlacklisted;
+        if (userRoleFilter === 'restricted') return isRestricted;
+
+        return true;
+    });
+
+    if (filtered.length === 0) {
+        userContainer.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No user accounts found matching constraints.</p>`;
+        return;
+    }
+
+    userContainer.innerHTML = filtered.map(u => {
+        const userTags = (u.tags || []).map(tag => String(tag));
+        const threadId = escapeAttr(u.threadId || '');
+        
+        const isManagement = Boolean(
+            (u.role && u.role.toLowerCase() === 'manager') ||
+            (TAG_IDS.manager && userTags.includes(String(TAG_IDS.manager)))
+        );
+        const isStaff = Boolean(
+            u.isAdmin ||
+            (u.role && u.role.toLowerCase() === 'administrator') ||
+            userTags.includes(String(TAG_IDS.staff))
+        );
+
+        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
+        const isRestricted = userTags.includes(String(TAG_IDS.restricted));
+
+        return `
+            <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-white/20 transition-all">
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            ${isManagement ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Management</span>' : ''}
+                            ${isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
+                            ${isBlacklisted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
+                            ${isRestricted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">Restricted</span>' : ''}
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-500">Thread ID: ${escapeHtml(u.threadId || 'N/A')}</p>
+                </div>
+
+                <div class="flex items-center gap-2 pt-3 border-t border-white/5 flex-wrap">
+                    ${isStaff ? `
+                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', false)" class="flex-1 py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
+                            Demote Staff
+                        </button>
+                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', true)" class="py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
+                            Promote Staff
+                        </button>
+                    ` : `
                     `}
                 </div>
             </div>
