@@ -154,8 +154,19 @@ async function refreshUserSession() {
         user.role = isStaff ? 'administrator' : 'member';
         user.isManager = isManager;
 
+        if (isAdmin) {
+            const roleBadge = document.getElementById('user-role-badge') || document.getElementById('role-badge');
+            if (roleBadge) {
+                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Moderator'
+            }
+        }
+
         if (isManager) {
             user.role = 'manager';
+            const roleBadge = document.getElementById('user-role-badge') || document.getElementById('role-badge');
+            if (roleBadge) {
+                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Manager'
+            }
             if (managerPage) {
                 managerPage.classList.remove('hidden');
             }
@@ -820,7 +831,7 @@ function renderUserList(users) {
 
         if (!matchesQuery) return false;
 
-        if (userRoleFilter === 'management') return isManagement;
+        if (userRoleFilter === 'manager') return isManagement;
         if (userRoleFilter === 'staff') return isStaff;
         if (userRoleFilter === 'banned') return isBlacklisted;
         if (userRoleFilter === 'restricted') return isRestricted;
