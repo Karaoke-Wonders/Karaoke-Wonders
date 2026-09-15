@@ -11,7 +11,8 @@ let pendingQueue = [];
 const TAG_IDS = {
     staff: '1548667928881139712',
     restricted: '1548667951069007964',
-    blacklisted: '1548667978181247027'
+    blacklisted: '1548667978181247027',
+    manager: '1549308000664031323'
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -123,15 +124,22 @@ async function refreshUserSession() {
 
         // Recalculate staff status dynamically
         const isStaff = Boolean(
-            data.isAdmin || 
-            userTags.includes(TAG_IDS.staff) || 
-            user.username.toLowerCase().includes('admin')
+            data.isAdmin || userTags.includes(TAG_IDS.staff)
+        );
+
+        const isManager = Boolean(
+            data.isManager || userTags.includes(TAG_IDS.manager)
         );
 
         // Update local session data with fresh tags and roles while maintaining password
         user.tags = userTags;
         user.isAdmin = isStaff;
+        user.isManager = isManager;
         user.role = isStaff ? 'administrator' : 'member';
+
+        if (isManager) {
+            user.role = 'manager';
+        };
         
         localStorage.setItem('kw_session', JSON.stringify(user));
 

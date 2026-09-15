@@ -6,7 +6,8 @@ const WORKER_BASE_URL = 'https://karaokewonders.fetched.workers.dev';
 const TAG_IDS = {
     staff: '1548667928881139712',
     restricted: '1548667951069007964',
-    blacklisted: '1548667978181247027'
+    blacklisted: '1548667978181247027',
+    manager: '1549308000664031323'
 };
 
 let currentUser = null;
@@ -36,8 +37,11 @@ function normalizeUserData(raw) {
         raw.admin || 
         base.role === 'admin' || 
         base.role === 'administrator' || 
-        tags.includes(TAG_IDS.staff) || 
-        (username && username.toLowerCase().includes('admin'))
+        tags.includes(TAG_IDS.staff)
+    );
+
+    const isManager = Boolean(
+        base.isManager || raw.isManager || base.role == 'manager' || tags.includes(TAG_IDS.manager)
     );
 
     return {
@@ -49,7 +53,8 @@ function normalizeUserData(raw) {
         tags,
         threadId,
         isAdmin,
-        role: isAdmin ? 'administrator' : 'member'
+        role: isAdmin ? 'administrator' : 'member',
+        isManager
     };
 }
 
@@ -141,7 +146,7 @@ function setupMemberProfile() {
     // If user is admin/staff, reveal the Admin Hub link in sidebar
     if (currentUser.isAdmin) {
         if (roleBadge) {
-            roleBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Staff Moderator`;
+            roleBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Moderator`;
         }
         if (adminLinks) {
             adminLinks.classList.remove('hidden');
@@ -149,6 +154,15 @@ function setupMemberProfile() {
     } else {
         if (roleBadge) {
             roleBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> Member`;
+        }
+    }
+
+    if (currentUser.isManager) {
+        if (roleBadge) {
+            roleBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Manager`;
+        }
+        if (adminLinks) {
+            adminLinks.classList.remove('hidden');
         }
     }
 }
@@ -226,9 +240,12 @@ async function refreshUserSession() {
         // Recalculate staff status dynamically
         const isStaff = Boolean(
             data.isAdmin || 
-            userTags.includes(TAG_IDS.staff) || 
-            (user.username && user.username.toLowerCase().includes('admin'))
+            userTags.includes(TAG_IDS.staff)
         );
+
+        const isManager = Boolean(
+            data.isManager || userTags.includes(TAG_IDS.manager)
+        )
 
         // Update local session object while retaining existing properties
         const updatedUser = {
@@ -236,6 +253,7 @@ async function refreshUserSession() {
             ...data,
             tags: userTags,
             isAdmin: isStaff,
+            isManager: isManager,
             role: isStaff ? 'administrator' : 'member',
             threadId: data.threadId || user.threadId,
             avatarUrl: data.avatarUrl || user.avatarUrl
