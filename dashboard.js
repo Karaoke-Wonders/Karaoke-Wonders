@@ -162,10 +162,14 @@ async function refreshUserSession() {
         }
 
         if (isManager) {
+            console.log("isManager is True!")
             user.role = 'manager';
             const roleBadge = document.getElementById('user-role-badge') || document.getElementById('role-badge');
             if (roleBadge) {
+                console.log("roleBadge Found!")
                 roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Manager'
+            } else {
+                console.log("no roleBadge Found!")
             }
             if (managerPage) {
                 managerPage.classList.remove('hidden');
