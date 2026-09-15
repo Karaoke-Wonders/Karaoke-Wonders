@@ -30,6 +30,7 @@ const TAG_IDS = {
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Refresh and validate session data against backend in real-time
+    console.log("REFRESH EVENT FIRED!")
     await refreshUserSession();
 
     const sessionData = localStorage.getItem('kw_session');
@@ -108,81 +109,6 @@ function setupUserProfile() {
     }
 }
 
-async function refreshUserSession() {
-    const sessionData = localStorage.getItem('kw_session');
-    const managerPage = document.getElementById('tab-management');
-    if (!sessionData) return;
-
-    try {
-        const user = JSON.parse(sessionData);
-        
-        const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: user.username, password: user.password })
-        });
-
-        if (!response.ok) {
-            localStorage.removeItem('kw_session');
-            window.location.href = 'index.html';
-            return;
-        }
-
-        const data = await response.json();
-        const userTags = (data.tags || []).map(tag => String(tag));
-
-        // Real-time access check
-        if (userTags.includes(TAG_IDS.blacklisted) || data.isLocked) {
-            localStorage.removeItem('kw_session');
-            alert('Your account access has been revoked.');
-            window.location.href = 'index.html';
-            return;
-        }
-
-        // Dynamic privilege recalculation
-        const isStaff = Boolean(
-            data.isAdmin || 
-            userTags.includes(TAG_IDS.staff)
-        );
-
-        const isManager = Boolean(
-            data.isManager || userTags.includes(TAG_IDS.manager)
-        )
-
-        user.tags = userTags;
-        user.isAdmin = isStaff;
-        user.role = isStaff ? 'administrator' : 'member';
-        user.isManager = isManager;
-
-        if (isAdmin) {
-            const roleBadge = document.getElementById('user-role-badge') || document.getElementById('role-badge');
-            if (roleBadge) {
-                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Moderator'
-            }
-        }
-
-        if (isManager) {
-            console.log("isManager is True!")
-            user.role = 'manager';
-            const roleBadge = document.getElementById('user-role-badge') || document.getElementById('role-badge');
-            if (roleBadge) {
-                console.log("roleBadge Found!")
-                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Manager'
-            } else {
-                console.log("no roleBadge Found!")
-            }
-            if (managerPage) {
-                managerPage.classList.remove('hidden');
-            }
-        };
-        
-        localStorage.setItem('kw_session', JSON.stringify(user));
-
-    } catch (err) {
-        console.error('Failed to sync session state:', err);
-    }
-}
-
 // Navigation Tab Switcher
 window.switchTab = function(tabName) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -206,6 +132,7 @@ window.logout = function() {
 };
 
 async function refreshUserSession() {
+    console.log()
     const sessionData = localStorage.getItem('kw_session');
     const managerPage = document.getElementById('tab-management');
     if (!sessionData) return;
@@ -253,7 +180,7 @@ async function refreshUserSession() {
         user.isManager = isManager;
         user.role = isStaff ? 'administrator' : 'member';
 
-        if (isAdmin) {
+        if (isStaff) {
             const roleBadge = document.getElementById('user-role-badge') || document.getElementById('role-badge');
             if (roleBadge) {
                 roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Moderator'
