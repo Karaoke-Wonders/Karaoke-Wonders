@@ -249,8 +249,19 @@ async function refreshUserSession() {
         user.isManager = isManager;
         user.role = isStaff ? 'administrator' : 'member';
 
+        if (isAdmin) {
+            const roleBadge = document.getElementById('user-role-badge') || document.getElementById('role-badge');
+            if (roleBadge) {
+                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Moderator'
+            }
+        }
+
         if (isManager) {
             user.role = 'manager';
+            const roleBadge = document.getElementById('user-role-badge') || document.getElementById('role-badge');
+            if (roleBadge) {
+                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Manager'
+            }
             if (managerPage) {
                 managerPage.classList.remove('hidden');
             }
