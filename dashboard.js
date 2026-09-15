@@ -132,7 +132,7 @@ window.logout = function() {
 };
 
 async function refreshUserSession() {
-    console.log()
+    console.log("refreshUserSession Fired")
     const sessionData = localStorage.getItem('kw_session');
     const managerPage = document.getElementById('tab-management');
     if (!sessionData) return;
@@ -181,7 +181,7 @@ async function refreshUserSession() {
         user.role = isStaff ? 'administrator' : 'member';
 
         if (isStaff) {
-            const roleBadge = document.getElementById('user-role-badge') || document.getElementById('role-badge');
+            const roleBadge = document.getElementById('user-role-label');
             if (roleBadge) {
                 roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Moderator'
             }
@@ -189,7 +189,7 @@ async function refreshUserSession() {
 
         if (isManager) {
             user.role = 'manager';
-            const roleBadge = document.getElementById('user-role-badge') || document.getElementById('role-badge');
+            const roleBadge = document.getElementById('user-role-label');
             if (roleBadge) {
                 roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Manager'
             }
