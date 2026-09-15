@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="min-h-screen relative flex overflow-x-hidden bg-slate-950 text-slate-100">
+<body class="min-h-screen relative flex overflow-x-hidden bg-slate-950 text-slate-100 font-sans">
 
     <!-- Background Glow Effects -->
     <div class="fixed top-1/4 left-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
@@ -59,7 +59,6 @@
                 </button>
 
                 <!-- RED MANAGEMENT TAB (Manager Tag Only) -->
-                <!-- Remove 'hidden' class or handle visibility via dashboard.js for users with the 'Manager' tag -->
                 <button onclick="switchTab('management')" id="tab-management" class="sidebar-link hidden w-full flex items-center justify-between px-4 py-3 rounded-xl text-red-300 hover:text-white hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all text-sm font-medium">
                     <div class="flex items-center gap-3">
                         <i data-lucide="shield-alert" class="w-4 h-4 text-red-500"></i>
@@ -189,7 +188,7 @@
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 class="text-3xl font-extrabold tracking-tight">User Access & Permissions</h2>
-                    <p class="text-slate-400 text-sm mt-1">Restrict song submissions or blacklist malicious accounts via Discord forum tags.</p>
+                    <p class="text-slate-400 text-sm mt-1">Manage community member permissions and track restrictions.</p>
                 </div>
                 <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
                     <div class="relative w-full sm:w-64">
@@ -203,7 +202,52 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="user-list">
-                <p class="col-span-full text-center text-slate-500 text-xs py-10">Loading user directory...</p>
+                <!-- Standard Member Card Example -->
+                <div class="glass p-5 rounded-2xl border border-white/10 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold text-sm">
+                                JD
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-white">JaneDoe</h4>
+                                <span class="text-[10px] text-slate-400">ID: 987654321</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">
+                            Member
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2 pt-2 border-t border-white/10">
+                        <button onclick="toggleUserBan('987654321')" class="w-full py-2 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
+                            <i data-lucide="user-x" class="w-3.5 h-3.5"></i> Ban Member
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Staff Member Card Example (Actions Blocked) -->
+                <div class="glass p-5 rounded-2xl border border-purple-500/20 bg-purple-950/10 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold text-sm">
+                                AS
+                            </div>
+                            <div>
+                                <h4 class="text-sm font-bold text-white">AlexStaff</h4>
+                                <span class="text-[10px] text-slate-400">ID: 456789123</span>
+                            </div>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                            Staff
+                        </span>
+                    </div>
+                    <!-- Staff Action Blocked Badge (No Add/Remove Staff Buttons Here) -->
+                    <div class="pt-2 border-t border-white/10">
+                        <button disabled class="w-full py-2 px-3 rounded-xl bg-slate-800/60 text-slate-500 border border-slate-700/50 font-bold text-xs flex items-center justify-center gap-1.5 cursor-not-allowed opacity-75">
+                            <i data-lucide="shield-off" class="w-3.5 h-3.5"></i> Staff - Action Blocked
+                        </button>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -251,9 +295,8 @@
                 </div>
             </div>
 
-            <!-- Management User List -->
+            <!-- Management User List (Only Managers can access Add/Remove Staff actions) -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="management-user-list">
-                <!-- Demo/Template Card Structure rendered dynamically via JS -->
                 <div class="glass p-5 rounded-2xl border border-red-500/20 bg-red-950/10 space-y-4">
                     <div class="flex items-center justify-between">
                         <div class="flex items-center gap-3">
