@@ -15,6 +15,12 @@ let songSearchQuery = '';
 let songSortBy = 'title';
 let pendingSearchQuery = '';
 
+// Pagination States (10 items per page)
+const PAGE_SIZE = 10;
+let songCurrentPage = 1;
+let userCurrentPage = 1;
+let managementUserCurrentPage = 1;
+
 // Discord Forum Tag IDs for Moderation & RBAC
 const TAG_IDS = {
     management: '1549308000664031323',
@@ -482,10 +488,21 @@ function renderSongs(songs) {
 
     if (filtered.length === 0) {
         container.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No matching tracks found in catalog.</p>`;
+        // Clean up or ensure pagination wrapper is removed if present
+        let existingPagination = document.getElementById('song-pagination-container');
+        if (existingPagination) existingPagination.remove();
         return;
     }
 
-    container.innerHTML = filtered.map(song => {
+    // Pagination Calculations
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+    if (songCurrentPage > totalPages) songCurrentPage = totalPages;
+    if (songCurrentPage < 1) songCurrentPage = 1;
+
+    const startIndex = (songCurrentPage - 1) * PAGE_SIZE;
+    const paginatedItems = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+
+    container.innerHTML = paginatedItems.map(song => {
         const songId = escapeAttr(song.id || song._id || '');
         const title = song.songName || song.title || 'Untitled';
         const artist = song.artist || 'Unknown Artist';
@@ -522,16 +539,44 @@ function renderSongs(songs) {
         `;
     }).join('');
 
+    // Append / Update Pagination Controls Bar
+    let paginationContainer = document.getElementById('song-pagination-container');
+    if (!paginationContainer) {
+        paginationContainer = document.createElement('div');
+        paginationContainer.id = 'song-pagination-container';
+        paginationContainer.className = 'col-span-full flex items-center justify-between pt-4 mt-2 border-t border-white/5 text-xs text-slate-400';
+        container.parentNode.appendChild(paginationContainer);
+    }
+
+    paginationContainer.innerHTML = `
+        <span>Page ${songCurrentPage} of ${totalPages}</span>
+        <div class="flex items-center gap-2">
+            <button onclick="changeSongPage(${songCurrentPage - 1})" ${songCurrentPage <= 1 ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
+                Previous
+            </button>
+            <button onclick="changeSongPage(${songCurrentPage + 1})" ${songCurrentPage >= totalPages ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
+                Next
+            </button>
+        </div>
+    `;
+
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
+window.changeSongPage = function(targetPage) {
+    songCurrentPage = targetPage;
+    renderSongs(allSongs);
+};
+
 window.filterSongs = function(query) {
     songSearchQuery = query || '';
+    songCurrentPage = 1;
     renderSongs(allSongs);
 };
 
 window.sortSongs = function(sortBy) {
     songSortBy = sortBy || 'title';
+    songCurrentPage = 1;
     renderSongs(allSongs);
 };
 
@@ -608,8 +653,6 @@ window.addTrackDirectly = async function(event) {
         }
     }
 };
-
-// - HALF 
 
 // --- Track Editing Modal ---
 window.openEditTrackModal = function(songId) {
@@ -784,10 +827,20 @@ function renderUserList(users) {
 
     if (filtered.length === 0) {
         userContainer.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No user accounts found matching constraints.</p>`;
+        let existingPagination = document.getElementById('user-pagination-container');
+        if (existingPagination) existingPagination.remove();
         return;
     }
 
-    userContainer.innerHTML = filtered.map(u => {
+    // Pagination Calculations
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+    if (userCurrentPage > totalPages) userCurrentPage = totalPages;
+    if (userCurrentPage < 1) userCurrentPage = 1;
+
+    const startIndex = (userCurrentPage - 1) * PAGE_SIZE;
+    const paginatedItems = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+
+    userContainer.innerHTML = paginatedItems.map(u => {
         const userTags = (u.tags || []).map(tag => String(tag));
         const threadId = escapeAttr(u.threadId || '');
         
@@ -835,8 +888,34 @@ function renderUserList(users) {
         `;
     }).join('');
 
+    // Append / Update Pagination Controls Bar
+    let paginationContainer = document.getElementById('user-pagination-container');
+    if (!paginationContainer) {
+        paginationContainer = document.createElement('div');
+        paginationContainer.id = 'user-pagination-container';
+        paginationContainer.className = 'col-span-full flex items-center justify-between pt-4 mt-2 border-t border-white/5 text-xs text-slate-400';
+        userContainer.parentNode.appendChild(paginationContainer);
+    }
+
+    paginationContainer.innerHTML = `
+        <span>Page ${userCurrentPage} of ${totalPages}</span>
+        <div class="flex items-center gap-2">
+            <button onclick="changeUserPage(${userCurrentPage - 1})" ${userCurrentPage <= 1 ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
+                Previous
+            </button>
+            <button onclick="changeUserPage(${userCurrentPage + 1})" ${userCurrentPage >= totalPages ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
+                Next
+            </button>
+        </div>
+    `;
+
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
+
+window.changeUserPage = function(targetPage) {
+    userCurrentPage = targetPage;
+    renderUserList(allUsers);
+};
 
 function renderManagementList(users) {
     const userContainer = document.getElementById('management-user-list');
@@ -889,10 +968,20 @@ function renderManagementList(users) {
 
     if (filtered.length === 0) {
         userContainer.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No user accounts found matching constraints.</p>`;
+        let existingPagination = document.getElementById('management-pagination-container');
+        if (existingPagination) existingPagination.remove();
         return;
     }
 
-    userContainer.innerHTML = filtered.map(u => {
+    // Pagination Calculations
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+    if (managementUserCurrentPage > totalPages) managementUserCurrentPage = totalPages;
+    if (managementUserCurrentPage < 1) managementUserCurrentPage = 1;
+
+    const startIndex = (managementUserCurrentPage - 1) * PAGE_SIZE;
+    const paginatedItems = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+
+    userContainer.innerHTML = paginatedItems.map(u => {
         const userTags = (u.tags || []).map(tag => String(tag));
         const threadId = escapeAttr(u.threadId || '');
         
@@ -939,6 +1028,27 @@ function renderManagementList(users) {
         `;
     }).join('');
 
+    // Append / Update Pagination Controls Bar
+    let paginationContainer = document.getElementById('management-pagination-container');
+    if (!paginationContainer) {
+        paginationContainer = document.createElement('div');
+        paginationContainer.id = 'management-pagination-container';
+        paginationContainer.className = 'col-span-full flex items-center justify-between pt-4 mt-2 border-t border-white/5 text-xs text-slate-400';
+        userContainer.parentNode.appendChild(paginationContainer);
+    }
+
+    paginationContainer.innerHTML = `
+        <span>Page ${managementUserCurrentPage} of ${totalPages}</span>
+        <div class="flex items-center gap-2">
+            <button onclick="changeManagementUserPage(${managementUserCurrentPage - 1})" ${managementUserCurrentPage <= 1 ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
+                Previous
+            </button>
+            <button onclick="changeManagementUserPage(${managementUserCurrentPage + 1})" ${managementUserCurrentPage >= totalPages ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
+                Next
+            </button>
+        </div>
+    `;
+
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
     const mainTotalUsers = document.getElementById('stat-staff-count')
@@ -948,14 +1058,25 @@ function renderManagementList(users) {
     };
 }
 
+window.changeManagementUserPage = function(targetPage) {
+    managementUserCurrentPage = targetPage;
+    renderManagementList(allUsers);
+};
+
 window.filterUsers = function(query) {
     userSearchQuery = query || '';
+    userCurrentPage = 1;
+    managementUserCurrentPage = 1;
     renderUserList(allUsers);
+    renderManagementList(allUsers);
 };
 
 window.filterUsersByRole = function(role) {
     userRoleFilter = role || 'all';
+    userCurrentPage = 1;
+    managementUserCurrentPage = 1;
     renderUserList(allUsers);
+    renderManagementList(allUsers);
 };
 
 window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
