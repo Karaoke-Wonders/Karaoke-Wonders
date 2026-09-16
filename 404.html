@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Off Key | Karaoke Wonders</title>
+    
+    <!-- External Assets -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Absolute Paths -->
+    <link rel="stylesheet" href="/style.css">
+    <link rel="icon" type="image/png" href="/image/kw.png" />
+    <meta name="theme-color" content="#90ee90" />
+</head>
+<body class="min-h-screen relative flex items-center justify-center bg-slate-950 text-slate-100 overflow-hidden font-['Inter',sans-serif]">
+
+    <!-- Background Glow Effects -->
+    <div class="fixed top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div class="fixed bottom-1/4 right-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-lg p-6">
+        <div class="glass p-8 sm:p-12 rounded-3xl border border-white/10 text-center space-y-6 shadow-2xl relative overflow-hidden">
+            
+            <!-- Stage Accent Graphic -->
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-tr from-green-400/20 to-blue-500/20 border border-white/10 shadow-inner">
+                <i data-lucide="mic-off" class="w-10 h-10 text-green-400"></i>
+            </div>
+
+            <!-- Big Error Number -->
+            <div>
+                <h1 class="text-7xl font-extrabold tracking-extratight bg-gradient-to-r from-green-400 via-emerald-300 to-sky-400 bg-clip-text text-transparent">
+                    404
+                </h1>
+                <h2 class="text-xl font-bold mt-2 text-slate-200">Whoops! Hit an Off-Key Note</h2>
+            </div>
+
+            <!-- Dynamic Diagnostic Box -->
+            <div class="bg-slate-900/80 border border-white/10 rounded-2xl p-4 text-left space-y-2">
+                <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                    <span>Diagnostic Info</span>
+                </div>
+                
+                <!-- Attempted Path -->
+                <p class="text-xs text-slate-400 font-mono break-all bg-black/40 p-2 rounded-lg border border-white/5">
+                    Path: <span id="attempted-path" class="text-slate-200">/</span>
+                </p>
+
+                <!-- Explanation Message -->
+                <p id="error-explanation" class="text-xs text-slate-300 leading-relaxed pt-1">
+                    Analyzing page route...
+                </p>
+            </div>
+
+            <!-- Common Causes Checklist -->
+            <div class="text-left space-y-2">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 px-1">Possible Reasons</p>
+                <ul class="text-xs space-y-2 text-slate-400">
+                    <li class="flex items-start gap-2.5">
+                        <i data-lucide="help-circle" class="w-4 h-4 text-sky-400 shrink-0 mt-0.5"></i>
+                        <span><strong>Typo in URL:</strong> Check for spelling errors or extra slashes in your browser address bar.</span>
+                    </li>
+                    <li class="flex items-start gap-2.5">
+                        <i data-lucide="link-2-off" class="w-4 h-4 text-purple-400 shrink-0 mt-0.5"></i>
+                        <span><strong>Broken Link / Script:</strong> A portal button or script tried to navigate to an inactive route.</span>
+                    </li>
+                    <li class="flex items-start gap-2.5">
+                        <i data-lucide="lock" class="w-4 h-4 text-red-400 shrink-0 mt-0.5"></i>
+                        <span><strong>Restricted Access:</strong> You requested a page or API endpoint that requires higher permissions.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pt-2 space-y-3">
+                <a href="/main" class="inline-flex items-center justify-center gap-2 w-full py-3.5 px-6 rounded-xl font-bold text-black text-sm bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-300 hover:to-emerald-300 transition-all shadow-lg shadow-green-500/10">
+                    <i data-lucide="home" class="w-4 h-4"></i>
+                    <span>Return to Stage Portal</span>
+                </a>
+                
+                <button onclick="history.back()" class="inline-flex items-center justify-center gap-2 w-full py-2.5 px-6 rounded-xl font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all text-xs">
+                    <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                    <span>Go Back to Previous Page</span>
+                </button>
+            </div>
+
+            <!-- Footer Subtext -->
+            <div class="pt-2 border-t border-white/5">
+                <p class="text-[11px] text-slate-500 font-semibold tracking-wider uppercase">
+                    Karaoke Wonders • Stage Portal
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Dynamic Error Diagnostic Script -->
+    <script>
+        // 1. Display requested path
+        const currentPath = window.location.pathname;
+        document.getElementById('attempted-path').textContent = currentPath;
+
+        // 2. Parse URL parameters for explicit error reasons (e.g. 404.html?reason=script_error)
+        const urlParams = new URLSearchParams(window.location.search);
+        const reason = urlParams.get('reason');
+
+        const explanationEl = document.getElementById('error-explanation');
+
+        // 3. Determine explanation based on path or parameters
+        if (reason === 'script_error') {
+            explanationEl.textContent = "A client-side script or event handler failed to resolve the requested action correctly.";
+        } else if (reason === 'unauthorized') {
+            explanationEl.textContent = "Access to this route was declined or requires administrative authorization.";
+        } else if (currentPath.includes('admin')) {
+            explanationEl.textContent = "The administrative route you requested doesn't exist directly or requires elevated access.";
+        } else {
+            explanationEl.textContent = "The requested URL route does not exist on our server. Double-check your link or address bar.";
+        }
+
+        // Initialize icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
