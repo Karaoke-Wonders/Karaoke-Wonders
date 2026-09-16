@@ -30,7 +30,7 @@
                 <p class="text-xs text-slate-400 mt-1">Review and manage incoming submissions from the Google Sheet.</p>
             </div>
             <div class="flex items-center gap-3">
-                <button onclick="loadApplications()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 transition-all flex items-center gap-2">
+                <button onclick="loadApplications()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 transition-all flex items-center gap-2 cursor-pointer">
                     <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Data
                 </button>
                 <a href="/careers" target="_blank" class="px-4 py-2 rounded-xl text-xs font-bold text-black bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-300 transition-all">
@@ -51,7 +51,7 @@
                             <th class="p-4">VRChat</th>
                             <th class="p-4">Availability</th>
                             <th class="p-4">Portfolio</th>
-                            <th class="p-4">Status</th>
+                            <th class="p-4">Status / Actions</th>
                         </tr>
                     </thead>
                     <tbody id="admin-table-body" class="divide-y divide-white/5">

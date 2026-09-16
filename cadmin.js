@@ -76,6 +76,9 @@ async function loadApplications() {
                             <button onclick="updateStatus('${app.discord}', '${app.vrchat}', 'Rejected')" title="Reject" class="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 transition-colors cursor-pointer">
                                 <i data-lucide="x" class="w-3.5 h-3.5"></i>
                             </button>
+                            <button onclick="deleteApplication('${app.discord}', '${app.vrchat}')" title="Delete" class="p-1.5 rounded-lg bg-slate-500/20 hover:bg-slate-500/30 text-slate-300 transition-colors cursor-pointer">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
                         </div>
                     </div>
                 </td>
@@ -114,10 +117,31 @@ async function updateStatus(discord, vrchat, newStatus) {
         const result = await response.json();
         if (!result.success) throw new Error(result.error || "Failed to update status");
 
-        // Reload data to reflect changes immediately
         loadApplications();
     } catch (err) {
         alert("Error updating status: " + err.message);
+    }
+}
+
+async function deleteApplication(discord, vrchat) {
+    if (!confirm(`Are you sure you want to permanently delete the application for ${discord}?`)) return;
+
+    try {
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: "deleteApplication",
+                discord: discord,
+                vrchat: vrchat
+            })
+        });
+
+        const result = await response.json();
+        if (!result.success) throw new Error(result.error || "Failed to delete application");
+
+        loadApplications();
+    } catch (err) {
+        alert("Error deleting application: " + err.message);
     }
 }
 
