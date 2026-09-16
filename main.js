@@ -12,6 +12,9 @@ const TAG_IDS = {
 
 let currentUser = null;
 let allSongs = [];
+let filteredSongsList = [];
+let currentPage = 1;
+const itemsPerPage = 10;
 
 /**
  * Normalizes user session data regardless of whether properties are 
@@ -245,7 +248,7 @@ async function refreshUserSession() {
 
         const isManager = Boolean(
             data.isManager || userTags.includes(TAG_IDS.manager)
-        )
+        );
 
         // Update local session object while retaining existing properties
         const updatedUser = {
@@ -312,14 +315,16 @@ async function loadSongLibrary() {
         if (!response.ok) throw new Error(`HTTP error ${response.status}`);
 
         allSongs = await response.json();
-        renderSongs(allSongs);
+        filteredSongsList = [...allSongs];
+        currentPage = 1;
+        renderSongs(filteredSongsList);
     } catch (err) {
         console.error('Error loading songs:', err);
         songListContainer.innerHTML = `<p class="text-slate-500 text-xs col-span-full text-center py-10">Unable to load songs at this time.</p>`;
     }
 }
 
-// Render song cards into the grid
+// Render song cards into the grid with 10-song per page limit
 function renderSongs(songs) {
     const songListContainer = document.getElementById('song-list');
     if (!songListContainer) return;
@@ -331,11 +336,17 @@ function renderSongs(songs) {
                 <p class="text-slate-400 text-sm">No approved songs available yet.</p>
             </div>
         `;
+        renderPaginationControls();
         if (typeof lucide !== 'undefined') lucide.createIcons();
         return;
     }
 
-    songListContainer.innerHTML = songs.map(song => {
+    // 10 Songs Per Page Slicing Logic
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedSongs = songs.slice(startIndex, endIndex);
+
+    songListContainer.innerHTML = paginatedSongs.map(song => {
         const title = song.songName || song.title || 'Untitled';
         const artist = song.artist || 'Unknown Artist';
         const uploader = song.submittedBy || song.uploader || 'Member';
@@ -375,25 +386,93 @@ function renderSongs(songs) {
         `;
     }).join('');
 
+    renderPaginationControls();
+
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
 }
 
-// Search and filter songs
-function filterSongs(query) {
-    const q = (query || '').toLowerCase().trim();
-    if (!q) {
-        renderSongs(allSongs);
+// Render dynamic pagination arrows
+function renderPaginationControls() {
+    const totalPages = Math.ceil(filteredSongsList.length / itemsPerPage);
+    let controlsContainer = document.getElementById('pagination-controls');
+
+    if (!controlsContainer) {
+        controlsContainer = document.createElement('div');
+        controlsContainer.id = 'pagination-controls';
+        controlsContainer.className = 'col-span-full flex items-center justify-between pt-6 mt-4 border-t border-white/10';
+        
+        const librarySection = document.getElementById('content-library');
+        if (librarySection) {
+            librarySection.appendChild(controlsContainer);
+        }
+    }
+
+    if (totalPages <= 1) {
+        controlsContainer.innerHTML = '';
         return;
     }
 
-    const filtered = allSongs.filter(song => 
-        (song.songName || song.title || '').toLowerCase().includes(q) ||
-        (song.artist || '').toLowerCase().includes(q) ||
-        (song.submittedBy || '').toLowerCase().includes(q)
-    );
-    renderSongs(filtered);
+    controlsContainer.innerHTML = `
+        <div class="text-xs text-slate-400 font-medium">
+            Page <span class="text-white font-bold">${currentPage}</span> of <span class="text-white font-bold">${totalPages}</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button 
+                onclick="changePage(-1)" 
+                ${currentPage === 1 ? 'disabled' : ''} 
+                class="px-3.5 py-2 glass rounded-xl border border-white/10 text-xs font-bold transition-all flex items-center gap-1.5 ${currentPage === 1 ? 'opacity-40 cursor-not-allowed text-slate-600' : 'hover:bg-white/10 text-slate-200'}">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i> Previous
+            </button>
+
+            <button 
+                onclick="changePage(1)" 
+                ${currentPage === totalPages ? 'disabled' : ''} 
+                class="px-3.5 py-2 glass rounded-xl border border-white/10 text-xs font-bold transition-all flex items-center gap-1.5 ${currentPage === totalPages ? 'opacity-40 cursor-not-allowed text-slate-600' : 'hover:bg-white/10 text-slate-200'}">
+                Next <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+        </div>
+    `;
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+// Handle pagination page switches
+window.changePage = function(direction) {
+    const totalPages = Math.ceil(filteredSongsList.length / itemsPerPage);
+    
+    currentPage += direction;
+
+    if (currentPage < 1) currentPage = 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    renderSongs(filteredSongsList);
+    
+    const libraryHeader = document.getElementById('content-library');
+    if (libraryHeader) {
+        libraryHeader.scrollIntoView({ behavior: 'smooth' });
+    }
+};
+
+// Search and filter songs
+function filterSongs(query) {
+    const q = (query || '').toLowerCase().trim();
+    currentPage = 1; // Reset to page 1 on search change
+
+    if (!q) {
+        filteredSongsList = [...allSongs];
+    } else {
+        filteredSongsList = allSongs.filter(song => 
+            (song.songName || song.title || '').toLowerCase().includes(q) ||
+            (song.artist || '').toLowerCase().includes(q) ||
+            (song.submittedBy || '').toLowerCase().includes(q)
+        );
+    }
+    
+    renderSongs(filteredSongsList);
 }
 
 // Extract YouTube Video ID from any URL format or raw ID
