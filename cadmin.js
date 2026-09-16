@@ -62,6 +62,7 @@ async function loadApplications() {
                 <td class="p-4 text-sm font-semibold text-white capitalize">${app.position || 'N/A'}</td>
                 <td class="p-4 text-sm text-slate-300">${app.discord || 'N/A'}</td>
                 <td class="p-4 text-sm text-slate-300">${app.vrchat || 'N/A'}</td>
+                <td class="p-4 text-sm text-slate-300">${app.why_apply || 'N/A'}</td>
                 <td class="p-4 text-sm text-slate-400">${app.availability || 'N/A'}</td>
                 <td class="p-4 text-sm">${portfolioLink}</td>
                 <td class="p-4 text-sm">
