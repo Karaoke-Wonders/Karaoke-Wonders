@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Careers Application - Karaoke Wonders</title>
+    
+    <!-- External Assets -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Absolute Paths -->
+    <link rel="stylesheet" href="/style.css">
+    <link rel="icon" type="image/png" href="/image/kw.png" />
+    <meta property="og:title" content="Karaoke Wonders Careers Page" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://karaokewonders.com/careers" />
+    <meta property="og:description" content="Join our Development Team through this!" />
+    <meta property="og:site_name" content="Karaoke Wonders" />
+    <meta property="og:image" content="https://karaokewonders.com/image/kw.png" />
+    <meta name="theme-color" content="#90ee90" />
+    <script src="schema.js"></script>
+</head>
+<body class="min-h-screen relative flex items-center justify-center bg-slate-950 text-slate-100 overflow-x-hidden font-['Inter',sans-serif] py-12">
+
+    <!-- Background Glow Effects -->
+    <div class="fixed top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div class="fixed bottom-1/4 right-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-xl p-6">
+        <div class="glass p-8 sm:p-10 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden bg-slate-900/90 text-left">
+            
+            <!-- Progress Indicator Header -->
+            <div id="form-header" class="flex items-center justify-between mb-8 pb-4 border-b border-white/10">
+                <div>
+                    <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest">Careers Portal</span>
+                    <h2 id="form-title" class="text-2xl font-extrabold text-white mt-1">About Yourself</h2>
+                    <p id="form-desc" class="text-xs text-slate-400 mt-0.5">This is where we know a bit about you before we move on.</p>
+                </div>
+                <div class="text-xs font-mono bg-white/5 px-3 py-1.5 rounded-full border border-white/10 text-slate-300">
+                    Step <span id="current-step-num">1</span> of 3
+                </div>
+            </div>
+
+            <form id="careers-form" class="space-y-6">
+                
+                <!-- SECTION 1: About Yourself -->
+                <div class="form-section space-y-4" data-step="1">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Select Position</label>
+                        <select id="position" name="position" required class="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                            <option value="" disabled selected>Choose a role...</option>
+                            <option value="developer">Developer / Programmer</option>
+                            <option value="moderator">Community Moderator</option>
+                            <option value="host">Karaoke Host</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Discord Username</label>
+                            <input type="text" id="discord" name="discord" placeholder="username#0000" required class="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">VRChat Username</label>
+                            <input type="text" id="vrchat" name="vrchat" placeholder="VRChat Name" required class="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECTION 2: Experience & Details -->
+                <div class="form-section space-y-4 hidden" data-step="2">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Why do you want to apply for this position?</label>
+                        <textarea id="why_apply" name="why_apply" rows="3" placeholder="Tell us your motivation..." class="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500"></textarea>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Experience Length</label>
+                            <input type="text" id="experience_length" name="experience_length" placeholder="e.g., 2 years" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Availability</label>
+                            <input type="text" id="availability" name="availability" placeholder="e.g., Evenings EST" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Portfolio / Proof of Experience</label>
+                        <input type="text" id="portfolio" name="portfolio" placeholder="https://github.com/... or link to work" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Do you know someone already on the team?</label>
+                        <input type="text" id="reference" name="reference" placeholder="Name(s) or 'None'" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <!-- SECTION 3: Final Stretch -->
+                <div class="form-section space-y-4 hidden" data-step="3">
+                    <div class="bg-black/40 border border-white/5 rounded-2xl p-5 space-y-3">
+                        <h3 class="text-sm font-bold text-slate-200">Final Stretch Agreements</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            By applying, you agree that we can decline your application for any reason. 
+                        </p>
+                        <p class="text-xs text-slate-400 leading-relaxed">
+                            By applying, you agree that everything you put in this application is true.
+                        </p>
+                    </div>
+                    <label class="flex items-center gap-3 cursor-pointer pt-2">
+                        <input type="checkbox" id="agreement-check" class="w-4 h-4 rounded bg-black/40 border-white/20 text-emerald-500 focus:ring-0">
+                        <span class="text-xs text-slate-300 font-medium">I understand and agree to the terms above.</span>
+                    </label>
+                </div>
+
+                <!-- Navigation Buttons -->
+                <div class="flex items-center justify-between pt-4 border-t border-white/10">
+                    <button type="button" id="prev-btn" onclick="changeStep(-1)" class="px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all hidden">
+                        Back
+                    </button>
+                    <div class="ml-auto">
+                        <button type="button" id="next-btn" onclick="changeStep(1)" class="px-6 py-2.5 rounded-xl text-xs font-bold text-black bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-300 hover:to-emerald-300 transition-all shadow-lg shadow-green-500/10">
+                            Next Step
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- Success Message State (Hidden initially) -->
+            <div id="success-state" class="hidden text-center space-y-4 py-8">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 mb-2">
+                    <i data-lucide="check-circle" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white">Application Submitted!</h3>
+                <p class="text-xs text-slate-300 max-w-sm mx-auto leading-relaxed">
+                    Thank you for applying to join the Karaoke Wonders dev team! Our administrators will look over the application and will notify you!
+                </p>
+                <a href="/main" class="inline-block mt-4 px-6 py-2.5 rounded-xl text-xs font-bold text-black bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-300 transition-all">
+                    Return to Stage Portal
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- External Script Link -->
+    <script src="careers.js"></script>
+</body>
+</html>
