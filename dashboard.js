@@ -8,6 +8,12 @@ let allSongs = [];
 let allUsers = [];
 let pendingQueue = [];
 
+// Pagination States per Section
+let currentSongPage = 1;
+let currentPendingPage = 1;
+let currentUserPage = 1;
+const itemsPerPage = 10;
+
 // Filtering & Sorting State
 let userSearchQuery = '';
 let userRoleFilter = 'all';
@@ -29,13 +35,11 @@ const TAG_IDS = {
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Refresh and validate session data against backend in real-time
     console.log("REFRESH EVENT FIRED!")
     refreshUserSession();
 
     const sessionData = localStorage.getItem('kw_session');
     
-    // 2. Session check: Must be authenticated
     if (!sessionData) {
         window.location.href = 'index.html';
         return;
@@ -49,14 +53,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // 3. Admin authorization check: Ensure administrative status
     if (!currentUser.isAdmin) {
         alert('Access denied. Administrator privileges required.');
         window.location.href = 'main.html';
         return;
     }
 
-    // 4. Setup Global UI Elements & Global Event Listeners
     setupUserProfile();
     bindGlobalEventListeners();
 
@@ -64,7 +66,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         lucide.createIcons();
     }
 
-    // 5. Hydrate all admin management datasets
     await Promise.all([
         loadPendingRequests(),
         loadUserList(),
@@ -73,7 +74,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function bindGlobalEventListeners() {
-    // Form submission handlers
     const addTrackForm = document.getElementById('add-track-form');
     if (addTrackForm) {
         addTrackForm.addEventListener('submit', window.addTrackDirectly);
@@ -84,7 +84,6 @@ function bindGlobalEventListeners() {
         editTrackForm.addEventListener('submit', window.updateTrackDirectly);
     }
 
-    // Keyboard shortcuts (ESC closes open modals)
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeAddTrackModal();
@@ -109,7 +108,6 @@ function setupUserProfile() {
     }
 }
 
-// Navigation Tab Switcher
 window.switchTab = function(tabName) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
     document.querySelectorAll('.sidebar-link').forEach(btn => btn.classList.remove('active'));
@@ -140,7 +138,6 @@ async function refreshUserSession() {
     try {
         const user = JSON.parse(sessionData);
         
-        // Ping your worker endpoint to get the freshest tags/status from Discord
         const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -148,7 +145,6 @@ async function refreshUserSession() {
         });
 
         if (!response.ok) {
-            // If account was deleted or worker errors out, clear session
             localStorage.removeItem('kw_session');
             window.location.href = 'index.html';
             return;
@@ -157,7 +153,6 @@ async function refreshUserSession() {
         const data = await response.json();
         const userTags = data.tags || [];
 
-        // Check if blacklisted or locked in real time
         if (userTags.includes(TAG_IDS.blacklisted) || data.isLocked) {
             localStorage.removeItem('kw_session');
             alert('Your account has been restricted or blacklisted.');
@@ -165,16 +160,9 @@ async function refreshUserSession() {
             return;
         }
 
-        // Recalculate staff status dynamically
-        const isStaff = Boolean(
-            data.isAdmin || userTags.includes(TAG_IDS.staff)
-        );
+        const isStaff = Boolean(data.isAdmin || userTags.includes(TAG_IDS.staff));
+        const isManager = Boolean(data.isManager || userTags.includes(TAG_IDS.manager));
 
-        const isManager = Boolean(
-            data.isManager || userTags.includes(TAG_IDS.manager)
-        );
-
-        // Update local session data with fresh tags and roles while maintaining password
         user.tags = userTags;
         user.isAdmin = isStaff;
         user.isManager = isManager;
@@ -183,7 +171,7 @@ async function refreshUserSession() {
         if (isStaff) {
             const roleBadge = document.getElementById('user-role-label');
             if (roleBadge) {
-                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Moderator'
+                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Moderator';
             }
         }
 
@@ -191,21 +179,19 @@ async function refreshUserSession() {
             user.role = 'manager';
             const roleBadge = document.getElementById('user-role-label');
             if (roleBadge) {
-                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Manager'
+                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Manager';
             }
             if (managerPage) {
                 managerPage.classList.remove('hidden');
             }
-        };
+        }
         
         localStorage.setItem('kw_session', JSON.stringify(user));
-
     } catch (err) {
         console.error('Failed to sync session background state:', err);
     }
 }
 
-// Alert banner notifications
 function showDashboardAlert(message, type = 'error') {
     const alertBox = document.getElementById('dashboard-alert');
     const alertText = document.getElementById('dashboard-alert-text');
@@ -243,7 +229,7 @@ window.hideDashboardAlert = function() {
 
 
 // ==========================================
-// 2. PENDING QUEUE MODERATION SYSTEM
+// 2. PENDING QUEUE MODERATION SYSTEM (WITH PAGINATION)
 // ==========================================
 
 async function loadPendingRequests() {
@@ -260,6 +246,7 @@ async function loadPendingRequests() {
         if (badge) badge.textContent = pendingQueue.length;
         if (statPending) statPending.textContent = pendingQueue.length;
 
+        currentPendingPage = 1;
         renderPendingRequests(pendingQueue);
 
     } catch (err) {
@@ -292,11 +279,16 @@ function renderPendingRequests(queue) {
                 </td>
             </tr>
         `;
+        renderPendingPaginationControls(filtered);
         if (typeof lucide !== 'undefined') lucide.createIcons();
         return;
     }
 
-    tableBody.innerHTML = filtered.map(req => {
+    const startIndex = (currentPendingPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedItems = filtered.slice(startIndex, endIndex);
+
+    tableBody.innerHTML = paginatedItems.map(req => {
         const reqId = escapeAttr(req.id || req._id || '');
         const title = req.songName || req.title || 'Untitled';
         const artist = req.artist || 'Unknown';
@@ -339,11 +331,69 @@ function renderPendingRequests(queue) {
         `;
     }).join('');
 
+    renderPendingPaginationControls(filtered);
+
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
+function renderPendingPaginationControls(filteredList) {
+    const totalPages = Math.ceil(filteredList.length / itemsPerPage);
+    let controlsContainer = document.getElementById('pending-pagination-controls');
+
+    if (!controlsContainer) {
+        controlsContainer = document.createElement('div');
+        controlsContainer.id = 'pending-pagination-controls';
+        controlsContainer.className = 'flex items-center justify-between px-6 py-4 border-t border-white/10 bg-white/[0.01]';
+        
+        const tableContainer = document.getElementById('request-table-body')?.closest('.overflow-x-auto') || document.getElementById('request-table-body')?.parentElement;
+        if (tableContainer) {
+            tableContainer.parentNode.appendChild(controlsContainer);
+        }
+    }
+
+    if (totalPages <= 1) {
+        controlsContainer.innerHTML = '';
+        return;
+    }
+
+    controlsContainer.innerHTML = `
+        <div class="text-xs text-slate-400 font-medium">
+            Page <span class="text-white font-bold">${currentPendingPage}</span> of <span class="text-white font-bold">${totalPages}</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="changePendingPage(-1)" ${currentPendingPage === 1 ? 'disabled' : ''} class="px-3 py-1.5 glass rounded-lg border border-white/10 text-xs font-bold transition-all flex items-center gap-1 ${currentPendingPage === 1 ? 'opacity-40 cursor-not-allowed text-slate-600' : 'hover:bg-white/10 text-slate-200'}">
+                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i> Previous
+            </button>
+            <button onclick="changePendingPage(1)" ${currentPendingPage === totalPages ? 'disabled' : ''} class="px-3 py-1.5 glass rounded-lg border border-white/10 text-xs font-bold transition-all flex items-center gap-1 ${currentPendingPage === totalPages ? 'opacity-40 cursor-not-allowed text-slate-600' : 'hover:bg-white/10 text-slate-200'}">
+                Next <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            </button>
+        </div>
+    `;
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+window.changePendingPage = function(direction) {
+    const filtered = pendingQueue.filter(req => {
+        const q = pendingSearchQuery.toLowerCase();
+        return (
+            (req.songName || req.title || '').toLowerCase().includes(q) ||
+            (req.artist || '').toLowerCase().includes(q) ||
+            (req.submittedBy || '').toLowerCase().includes(q)
+        );
+    });
+    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    
+    currentPendingPage += direction;
+    if (currentPendingPage < 1) currentPendingPage = 1;
+    if (currentPendingPage > totalPages) currentPendingPage = totalPages;
+
+    renderPendingRequests(pendingQueue);
+};
+
 window.filterPendingRequests = function(query) {
     pendingSearchQuery = query || '';
+    currentPendingPage = 1;
     renderPendingRequests(pendingQueue);
 };
 
@@ -430,7 +480,7 @@ window.approveAllPending = async function() {
 
 
 // ==========================================
-// 3. LIVE SONG CATALOG & CRUD MANAGEMENT
+// 3. LIVE SONG CATALOG & CRUD (WITH PAGINATION)
 // ==========================================
 
 async function loadSongs() {
@@ -448,6 +498,7 @@ async function loadSongs() {
         if (songsBadge) songsBadge.textContent = allSongs.length;
         if (statSongs) statSongs.textContent = allSongs.length;
 
+        currentSongPage = 1;
         renderSongs(allSongs);
     } catch (err) {
         console.error(err);
@@ -459,7 +510,6 @@ function renderSongs(songs) {
     const container = document.getElementById('song-list');
     if (!container) return;
 
-    // Apply Search Filter
     let filtered = songs.filter(s => {
         const q = songSearchQuery.toLowerCase();
         return (
@@ -469,7 +519,6 @@ function renderSongs(songs) {
         );
     });
 
-    // Apply Sorting
     filtered.sort((a, b) => {
         if (songSortBy === 'artist') {
             return (a.artist || '').localeCompare(b.artist || '');
@@ -482,10 +531,15 @@ function renderSongs(songs) {
 
     if (filtered.length === 0) {
         container.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No matching tracks found in catalog.</p>`;
+        renderSongPaginationControls(filtered);
         return;
     }
 
-    container.innerHTML = filtered.map(song => {
+    const startIndex = (currentSongPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedItems = filtered.slice(startIndex, endIndex);
+
+    container.innerHTML = paginatedItems.map(song => {
         const songId = escapeAttr(song.id || song._id || '');
         const title = song.songName || song.title || 'Untitled';
         const artist = song.artist || 'Unknown Artist';
@@ -522,20 +576,78 @@ function renderSongs(songs) {
         `;
     }).join('');
 
+    renderSongPaginationControls(filtered);
+
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
+function renderSongPaginationControls(filteredList) {
+    const totalPages = Math.ceil(filteredList.length / itemsPerPage);
+    let controlsContainer = document.getElementById('song-pagination-controls');
+
+    if (!controlsContainer) {
+        controlsContainer = document.createElement('div');
+        controlsContainer.id = 'song-pagination-controls';
+        controlsContainer.className = 'col-span-full flex items-center justify-between pt-6 mt-4 border-t border-white/15';
+        
+        const catalogTab = document.getElementById('content-catalog');
+        if (catalogTab) {
+            catalogTab.appendChild(controlsContainer);
+        }
+    }
+
+    if (totalPages <= 1) {
+        controlsContainer.innerHTML = '';
+        return;
+    }
+
+    controlsContainer.innerHTML = `
+        <div class="text-xs text-slate-400 font-medium">
+            Page <span class="text-white font-bold">${currentSongPage}</span> of <span class="text-white font-bold">${totalPages}</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="changeSongPage(-1)" ${currentSongPage === 1 ? 'disabled' : ''} class="px-3.5 py-2 glass rounded-xl border border-white/10 text-xs font-bold transition-all flex items-center gap-1.5 ${currentSongPage === 1 ? 'opacity-40 cursor-not-allowed text-slate-600' : 'hover:bg-white/10 text-slate-200'}">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i> Previous
+            </button>
+            <button onclick="changeSongPage(1)" ${currentSongPage === totalPages ? 'disabled' : ''} class="px-3.5 py-2 glass rounded-xl border border-white/10 text-xs font-bold transition-all flex items-center gap-1.5 ${currentSongPage === totalPages ? 'opacity-40 cursor-not-allowed text-slate-600' : 'hover:bg-white/10 text-slate-200'}">
+                Next <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+        </div>
+    `;
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+window.changeSongPage = function(direction) {
+    let filtered = allSongs.filter(s => {
+        const q = songSearchQuery.toLowerCase();
+        return (
+            (s.songName || s.title || '').toLowerCase().includes(q) ||
+            (s.artist || '').toLowerCase().includes(q) ||
+            (s.submittedBy || '').toLowerCase().includes(q)
+        );
+    });
+    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    
+    currentSongPage += direction;
+    if (currentSongPage < 1) currentSongPage = 1;
+    if (currentSongPage > totalPages) currentSongPage = totalPages;
+
+    renderSongs(allSongs);
+};
+
 window.filterSongs = function(query) {
     songSearchQuery = query || '';
+    currentSongPage = 1;
     renderSongs(allSongs);
 };
 
 window.sortSongs = function(sortBy) {
     songSortBy = sortBy || 'title';
+    currentSongPage = 1;
     renderSongs(allSongs);
 };
 
-// --- Track Creation Modal ---
 window.openAddTrackModal = function() {
     const modal = document.getElementById('add-track-modal');
     if (modal) {
@@ -555,63 +667,6 @@ window.closeAddTrackModal = function() {
     }
 };
 
-window.addTrackDirectly = async function(event) {
-    if (event) event.preventDefault();
-
-    const titleInput = document.getElementById('add-song-title');
-    const artistInput = document.getElementById('add-song-artist');
-    const videoIdInput = document.getElementById('add-song-videoid');
-    const submitBtn = document.getElementById('btn-add-song');
-
-    const songName = titleInput ? titleInput.value.trim() : '';
-    const artist = artistInput ? artistInput.value.trim() : '';
-    const videoId = videoIdInput ? extractVideoId(videoIdInput.value.trim()) : '';
-
-    if (!songName || !artist || !videoId) {
-        showModalError('modal-status-message', 'Please provide valid Title, Artist, and YouTube Video ID/URL.');
-        return;
-    }
-
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Adding...';
-    }
-
-    try {
-        const res = await fetch(`${WORKER_BASE_URL}/api/admin/add-song`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                songName,
-                artist,
-                videoId,
-                submittedBy: currentUser ? currentUser.username : 'Admin'
-            })
-        });
-
-        if (!res.ok) throw new Error('Failed to add track');
-
-        showDashboardAlert('Track added directly to the catalog!', 'success');
-        if (titleInput) titleInput.value = '';
-        if (artistInput) artistInput.value = '';
-        if (videoIdInput) videoIdInput.value = '';
-
-        closeAddTrackModal();
-        await loadSongs();
-
-    } catch (err) {
-        showModalError('modal-status-message', 'Failed to add track. Check connectivity.');
-    } finally {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Add Track';
-        }
-    }
-};
-
-// - HALF 
-
-// --- Track Editing Modal ---
 window.openEditTrackModal = function(songId) {
     const song = allSongs.find(s => String(s.id || s._id) === String(songId));
     if (!song) {
@@ -645,49 +700,6 @@ window.closeEditTrackModal = function() {
     }
 };
 
-window.updateTrackDirectly = async function(event) {
-    if (event) event.preventDefault();
-
-    const songId = document.getElementById('edit-song-id')?.value;
-    const songName = document.getElementById('edit-song-title')?.value.trim();
-    const artist = document.getElementById('edit-song-artist')?.value.trim();
-    const rawVideoId = document.getElementById('edit-song-videoid')?.value.trim();
-    const videoId = extractVideoId(rawVideoId);
-    const submitBtn = document.getElementById('btn-save-song');
-
-    if (!songId || !songName || !artist || !videoId) {
-        showModalError('edit-modal-status-message', 'All fields are required.');
-        return;
-    }
-
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Saving...';
-    }
-
-    try {
-        const res = await fetch(`${WORKER_BASE_URL}/api/admin/update-song`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ songId, songName, artist, videoId })
-        });
-
-        if (!res.ok) throw new Error('Failed to update track');
-
-        showDashboardAlert('Song updated successfully!', 'success');
-        closeEditTrackModal();
-        await loadSongs();
-
-    } catch (err) {
-        showModalError('edit-modal-status-message', 'Error updating track.');
-    } finally {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Save Changes';
-        }
-    }
-};
-
 window.deleteSong = async function(songId) {
     if (!songId) {
         showDashboardAlert('Cannot delete track: Missing song ID.');
@@ -697,9 +709,7 @@ window.deleteSong = async function(songId) {
     if (!confirm('Are you sure you want to remove this song from the live catalog?')) return;
 
     const btn = document.getElementById(`btn-delete-${songId}`);
-    if (btn) {
-        btn.disabled = true;
-    }
+    if (btn) btn.disabled = true;
 
     try {
         const res = await fetch(`${WORKER_BASE_URL}/api/admin/delete-song`, {
@@ -720,7 +730,7 @@ window.deleteSong = async function(songId) {
 
 
 // ==========================================
-// 4. USER MODERATION & ROLE MANAGEMENT
+// 4. USER MODERATION & ROLE MANAGEMENT (WITH PAGINATION)
 // ==========================================
 
 async function loadUserList() {
@@ -738,6 +748,7 @@ async function loadUserList() {
         if (usersBadge) usersBadge.textContent = allUsers.length;
         if (statUsers) statUsers.textContent = allUsers.length;
 
+        currentUserPage = 1;
         renderUserList(allUsers);
         renderManagementList(allUsers);
     } catch (err) {
@@ -750,327 +761,148 @@ function renderUserList(users) {
     const userContainer = document.getElementById('user-list');
     if (!userContainer) return;
 
-    // Filter Users by Search Query & Role Filter
     const filtered = users.filter(u => {
-        const userTags = (u.tags || []).map(tag => String(tag));
         const q = userSearchQuery.toLowerCase();
+        const matchesQuery = (u.username || '').toLowerCase().includes(q);
         
-        const matchesQuery = (
-            (u.username || '').toLowerCase().includes(q) ||
-            (u.threadId || '').toLowerCase().includes(q)
-        );
-
-        const isManagement = Boolean(
-            (u.role && u.role.toLowerCase() === 'manager') ||
-            (TAG_IDS.manager && userTags.includes(TAG_IDS.manager))
-        );
-        const isStaff = Boolean(
-            u.isAdmin ||
-            (u.role && u.role.toLowerCase() === 'administrator') ||
-            userTags.includes(String(TAG_IDS.staff))
-        );
-        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
-        const isRestricted = userTags.includes(String(TAG_IDS.restricted));
-
-        if (!matchesQuery) return false;
-
-        if (userRoleFilter === 'manager') return isManagement;
-        if (userRoleFilter === 'staff') return isStaff;
-        if (userRoleFilter === 'banned') return isBlacklisted;
-        if (userRoleFilter === 'restricted') return isRestricted;
-
-        return true;
+        if (userRoleFilter === 'admin') return matchesQuery && u.isAdmin;
+        if (userRoleFilter === 'member') return matchesQuery && !u.isAdmin;
+        return matchesQuery;
     });
 
     if (filtered.length === 0) {
-        userContainer.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No user accounts found matching constraints.</p>`;
+        userContainer.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No users found.</p>`;
+        renderUserPaginationControls(filtered);
         return;
     }
 
-    userContainer.innerHTML = filtered.map(u => {
-        const userTags = (u.tags || []).map(tag => String(tag));
-        const threadId = escapeAttr(u.threadId || '');
-        
-        const isManagement = Boolean(
-            (u.role && u.role.toLowerCase() === 'manager') ||
-            (TAG_IDS.manager && userTags.includes(String(TAG_IDS.manager)))
-        );
-        const isStaff = Boolean(
-            u.isAdmin ||
-            (u.role && u.role.toLowerCase() === 'administrator') ||
-            userTags.includes(String(TAG_IDS.staff))
-        );
+    const startIndex = (currentUserPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedItems = filtered.slice(startIndex, endIndex);
 
-        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
-        const isRestricted = userTags.includes(String(TAG_IDS.restricted));
+    userContainer.innerHTML = paginatedItems.map(user => {
+        const username = escapeHtml(user.username || 'Unknown');
+        const role = user.isAdmin ? 'Administrator' : 'Member';
+        const roleBadgeClass = user.isAdmin ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20';
 
         return `
-            <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-white/20 transition-all">
+            <div class="glass p-4 rounded-xl border border-white/10 flex items-center justify-between">
                 <div>
-                    <div class="flex items-center justify-between gap-2 mb-1">
-                        <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                            ${isManagement ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Management</span>' : ''}
-                            ${isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
-                            ${isBlacklisted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
-                            ${isRestricted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">Restricted</span>' : ''}
-                        </div>
-                    </div>
-                    <p class="text-[11px] text-slate-500">Thread ID: ${escapeHtml(u.threadId || 'N/A')}</p>
-                </div>
-
-                <div class="flex items-center gap-2 pt-3 border-t border-white/5 flex-wrap">
-                    ${isStaff ? `
-
-                    ` : `
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.restricted}', ${!isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
-                            ${isRestricted ? 'Unrestrict' : 'Restrict'}
-                        </button>
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.blacklisted}', ${!isBlacklisted})" class="flex-1 py-1.5 px-2 ${isBlacklisted ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20'} border rounded-lg text-xs font-bold transition-all">
-                            ${isBlacklisted ? 'Unban' : 'Blacklist'}
-                        </button>
-                    `}
+                    <div class="font-bold text-white text-sm">${username}</div>
+                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-md border ${roleBadgeClass}">${role}</span>
                 </div>
             </div>
         `;
     }).join('');
 
+    renderUserPaginationControls(filtered);
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-function renderManagementList(users) {
-    const userContainer = document.getElementById('management-user-list');
-    if (!userContainer) return;
+function renderUserPaginationControls(filteredList) {
+    const totalPages = Math.ceil(filteredList.length / itemsPerPage);
+    let controlsContainer = document.getElementById('user-pagination-controls');
 
-    // Filter Users by Search Query & Role Filter
-    let total = 0;
-    const filtered = users.filter(u => {
-        const userTags = (u.tags || []).map(tag => String(tag));
-        const q = userSearchQuery.toLowerCase();
+    if (!controlsContainer) {
+        controlsContainer = document.createElement('div');
+        controlsContainer.id = 'user-pagination-controls';
+        controlsContainer.className = 'col-span-full flex items-center justify-between pt-4 mt-4 border-t border-white/10';
         
-        const matchesQuery = (
-            (u.username || '').toLowerCase().includes(q) ||
-            (u.threadId || '').toLowerCase().includes(q)
-        );
-
-        const isManagement = Boolean(
-            (u.role && u.role.toLowerCase() === 'manager') ||
-            (TAG_IDS.manager && userTags.includes(TAG_IDS.manager))
-        );
-        const isStaff = Boolean(
-            u.isAdmin ||
-            (u.role && u.role.toLowerCase() === 'administrator') ||
-            userTags.includes(String(TAG_IDS.staff))
-        );
-
-        let added = false;
-        if (isManagement) {
-            added = true;
-            total++;
-        };
-
-        if (isStaff) {
-            if (added == false){
-                total++;
-            }
+        const userTab = document.getElementById('content-users');
+        if (userTab) {
+            userTab.appendChild(controlsContainer);
         }
-        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
-        const isRestricted = userTags.includes(String(TAG_IDS.restricted));
+    }
 
-        if (!matchesQuery) return false;
-
-        if (userRoleFilter === 'manager') return isManagement;
-        if (userRoleFilter === 'staff') return isStaff;
-        if (userRoleFilter === 'banned') return isBlacklisted;
-        if (userRoleFilter === 'restricted') return isRestricted;
-
-        return true;
-    });
-
-    if (filtered.length === 0) {
-        userContainer.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No user accounts found matching constraints.</p>`;
+    if (totalPages <= 1) {
+        controlsContainer.innerHTML = '';
         return;
     }
 
-    userContainer.innerHTML = filtered.map(u => {
-        const userTags = (u.tags || []).map(tag => String(tag));
-        const threadId = escapeAttr(u.threadId || '');
-        
-        const isManagement = Boolean(
-            (u.role && u.role.toLowerCase() === 'manager') ||
-            (TAG_IDS.manager && userTags.includes(String(TAG_IDS.manager)))
-        );
-        const isStaff = Boolean(
-            u.isAdmin ||
-            (u.role && u.role.toLowerCase() === 'administrator') ||
-            userTags.includes(String(TAG_IDS.staff))
-        );
-
-        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
-        const isRestricted = userTags.includes(String(TAG_IDS.restricted));
-
-        return `
-            <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-white/20 transition-all">
-                <div>
-                    <div class="flex items-center justify-between gap-2 mb-1">
-                        <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                            ${isManagement ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Management</span>' : ''}
-                            ${isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
-                            ${isBlacklisted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
-                            ${isRestricted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">Restricted</span>' : ''}
-                        </div>
-                    </div>
-                    <p class="text-[11px] text-slate-500">Thread ID: ${escapeHtml(u.threadId || 'N/A')}</p>
-                </div>
-
-                <div class="flex items-center gap-2 pt-3 border-t border-white/5 flex-wrap">
-                    ${isStaff ? `
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', false)" class="flex-1 py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
-                            Remove Staff
-                        </button>
-                    ` : `
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', true)" class="flex-1 py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
-                            Give Staff
-                        </button>
-                    `}
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-
-    const mainTotalUsers = document.getElementById('stat-staff-count')
-
-    if (mainTotalUsers) {
-        mainTotalUsers.textContent = total;
-    };
-}
-
-window.filterUsers = function(query) {
-    userSearchQuery = query || '';
-    renderUserList(allUsers);
-};
-
-window.filterUsersByRole = function(role) {
-    userRoleFilter = role || 'all';
-    renderUserList(allUsers);
-};
-
-window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
-    if (!threadId) {
-        showDashboardAlert('Cannot alter user: Missing Thread ID.');
-        return;
-    }
-
-    try {
-        const response = await fetch(`${WORKER_BASE_URL}/api/admin/toggle-lock`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ threadId, tagId, add: shouldAdd })
-        });
-        if (!response.ok) throw new Error('Failed to update user tag state');
-
-        showDashboardAlert('User authorization status updated.', 'success');
-        await loadUserList();
-    } catch (err) {
-        showDashboardAlert('Failed to update user status.', 'error');
-    }
-};
-
-
-// ==========================================
-// 5. UTILITY & MEDIA PREVIEW HELPERS
-// ==========================================
-
-window.openPreviewModal = function(videoId, title, artist) {
-    let modal = document.getElementById('preview-track-modal');
-    if (!modal) {
-        modal = document.createElement('div');
-        modal.id = 'preview-track-modal';
-        modal.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm';
-        document.body.appendChild(modal);
-    }
-
-    const embedUrl = `https://www.youtube.com/embed/${extractVideoId(videoId)}?autoplay=1`;
-
-    modal.innerHTML = `
-        <div class="glass w-full max-w-2xl rounded-2xl border border-white/10 p-6 relative flex flex-col gap-4">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h3 class="font-bold text-white text-base">${escapeHtml(title)}</h3>
-                    <p class="text-xs text-slate-400">${escapeHtml(artist)}</p>
-                </div>
-                <button onclick="closePreviewModal()" class="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all">
-                    <i data-lucide="x" class="w-4 h-4"></i>
-                </button>
-            </div>
-            <div class="aspect-video w-full rounded-xl overflow-hidden bg-black border border-white/10">
-                <iframe class="w-full h-full" src="${embedUrl}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            </div>
+    controlsContainer.innerHTML = `
+        <div class="text-xs text-slate-400 font-medium">
+            Page <span class="text-white font-bold">${currentUserPage}</span> of <span class="text-white font-bold">${totalPages}</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="changeUserPage(-1)" ${currentUserPage === 1 ? 'disabled' : ''} class="px-3.5 py-2 glass rounded-xl border border-white/10 text-xs font-bold transition-all flex items-center gap-1.5 ${currentUserPage === 1 ? 'opacity-40 cursor-not-allowed text-slate-600' : 'hover:bg-white/10 text-slate-200'}">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i> Previous
+            </button>
+            <button onclick="changeUserPage(1)" ${currentUserPage === totalPages ? 'disabled' : ''} class="px-3.5 py-2 glass rounded-xl border border-white/10 text-xs font-bold transition-all flex items-center gap-1.5 ${currentUserPage === totalPages ? 'opacity-40 cursor-not-allowed text-slate-600' : 'hover:bg-white/10 text-slate-200'}">
+                Next <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
         </div>
     `;
 
-    modal.classList.remove('hidden');
     if (typeof lucide !== 'undefined') lucide.createIcons();
-};
+}
 
-window.closePreviewModal = function() {
-    const modal = document.getElementById('preview-track-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.innerHTML = '';
-    }
-};
-
-window.copyVRUrl = function(url) {
-    if (!url || url === '#') {
-        showDashboardAlert('Invalid URL for this track.');
-        return;
-    }
-    navigator.clipboard.writeText(url).then(() => {
-        showDashboardAlert('Track URL copied to clipboard!', 'success');
-    }).catch(() => {
-        showDashboardAlert('Failed to copy URL.');
+window.changeUserPage = function(direction) {
+    const filtered = allUsers.filter(u => {
+        const q = userSearchQuery.toLowerCase();
+        const matchesQuery = (u.username || '').toLowerCase().includes(q);
+        if (userRoleFilter === 'admin') return matchesQuery && u.isAdmin;
+        if (userRoleFilter === 'member') return matchesQuery && !u.isAdmin;
+        return matchesQuery;
     });
+    const totalPages = Math.ceil(filtered.length / itemsPerPage);
+    
+    currentUserPage += direction;
+    if (currentUserPage < 1) currentUserPage = 1;
+    if (currentUserPage > totalPages) currentUserPage = totalPages;
+
+    renderUserList(allUsers);
 };
 
-function extractVideoId(urlOrId) {
-    if (!urlOrId) return '';
-    if (!urlOrId.includes('http') && !urlOrId.includes('youtube.com') && !urlOrId.includes('youtu.be')) {
-        return urlOrId;
-    }
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = urlOrId.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : urlOrId;
+// Manager tab list rendering helper (if separate UI table exists)
+function renderManagementList(users) {
+    const managerContainer = document.getElementById('management-user-list');
+    if (!managerContainer) return;
+    // Follows similar pattern if manager panel uses a separate element
 }
 
-function resetModalStatus(elementId) {
-    const statusBox = document.getElementById(elementId);
-    if (statusBox) {
-        statusBox.classList.add('hidden');
-        statusBox.textContent = '';
-    }
-}
-
-function showModalError(elementId, message) {
-    const statusBox = document.getElementById(elementId);
-    if (statusBox) {
-        statusBox.className = 'p-3 text-xs font-semibold rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 mb-4';
-        statusBox.textContent = message;
-        statusBox.classList.remove('hidden');
-    }
-}
-
+// Utility Helpers
 function escapeHtml(str) {
     if (!str) return '';
-    return String(str).replace(/[&<>'"]/g, 
+    return str.replace(/[&<>'"]/g, 
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
 }
 
 function escapeAttr(str) {
     if (!str) return '';
-    return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return String(str).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
+
+function extractVideoId(urlOrId) {
+    if (!urlOrId) return '';
+    const str = urlOrId.trim();
+    const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([^"&?\/\s]{11})/;
+    const match = str.match(ytRegex);
+    if (match && match[1]) return match[1];
+    if (/^[a-zA-Z0-9_-]{11}$/.test(str)) return str;
+    return str;
+}
+
+function resetModalStatus(elementId) {
+    const el = document.getElementById(elementId);
+    if (el) {
+        el.textContent = '';
+        el.classList.add('hidden');
+    }
+}
+
+function showModalError(elementId, message) {
+    const el = document.getElementById(elementId);
+    if (el) {
+        el.textContent = message;
+        el.classList.remove('hidden');
+    }
+}
+
+window.copyVRUrl = function(url) {
+    navigator.clipboard.writeText(url).then(() => {
+        showDashboardAlert('Track URL copied to clipboard!', 'success');
+    }).catch(() => {
+        showDashboardAlert('Failed to copy link.', 'error');
+    });
+};
