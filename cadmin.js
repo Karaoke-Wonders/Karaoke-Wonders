@@ -38,13 +38,24 @@ async function loadApplications() {
             // Format date nicely if available
             let formattedDate = "N/A";
             if (app.timestamp) {
-                formattedDate = new Date(app.timestamp).toLocaleDateString();
+                const parsedDate = new Date(app.timestamp);
+                if (!isNaN(parsedDate)) formattedDate = parsedDate.toLocaleDateString();
+                else formattedDate = app.timestamp;
             }
 
             // Portfolio link helper
-            let portfolioLink = app.portfolio ? 
+            let portfolioLink = app.portfolio && app.portfolio !== 'none' ? 
                 `<a href="${app.portfolio}" target="_blank" class="text-emerald-400 hover:underline inline-flex items-center gap-1">Link <i data-lucide="external-link" class="w-3 h-3"></i></a>` : 
                 '<span class="text-slate-500">None</span>';
+
+            // Status badge color styling
+            const status = app.status || 'Pending';
+            let statusBadgeClass = "bg-yellow-500/10 border-yellow-500/20 text-yellow-300";
+            if (status.toLowerCase() === 'approved') {
+                statusBadgeClass = "bg-emerald-500/10 border-emerald-500/20 text-emerald-300";
+            } else if (status.toLowerCase() === 'rejected') {
+                statusBadgeClass = "bg-red-500/10 border-red-500/20 text-red-300";
+            }
 
             row.innerHTML = `
                 <td class="p-4 text-xs text-slate-400 whitespace-nowrap">${formattedDate}</td>
@@ -54,9 +65,19 @@ async function loadApplications() {
                 <td class="p-4 text-sm text-slate-400">${app.availability || 'N/A'}</td>
                 <td class="p-4 text-sm">${portfolioLink}</td>
                 <td class="p-4 text-sm">
-                    <span class="px-2.5 py-1 bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 rounded-full text-xs font-medium">
-                        ${app.status || 'Pending'}
-                    </span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="px-2.5 py-1 border rounded-full text-xs font-medium ${statusBadgeClass}">
+                            ${status}
+                        </span>
+                        <div class="flex items-center gap-1">
+                            <button onclick="updateStatus('${app.discord}', '${app.vrchat}', 'Approved')" title="Approve" class="p-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 transition-colors cursor-pointer">
+                                <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <button onclick="updateStatus('${app.discord}', '${app.vrchat}', 'Rejected')" title="Reject" class="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 transition-colors cursor-pointer">
+                                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
                 </td>
             `;
             tableBody.appendChild(row);
@@ -73,6 +94,30 @@ async function loadApplications() {
                 </td>
             </tr>
         `;
+    }
+}
+
+async function updateStatus(discord, vrchat, newStatus) {
+    if (!confirm(`Are you sure you want to mark ${discord} as ${newStatus}?`)) return;
+
+    try {
+        const response = await fetch(WEB_APP_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: "updateStatus",
+                discord: discord,
+                vrchat: vrchat,
+                newStatus: newStatus
+            })
+        });
+
+        const result = await response.json();
+        if (!result.success) throw new Error(result.error || "Failed to update status");
+
+        // Reload data to reflect changes immediately
+        loadApplications();
+    } catch (err) {
+        alert("Error updating status: " + err.message);
     }
 }
 
