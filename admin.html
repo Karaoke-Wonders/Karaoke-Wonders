@@ -68,7 +68,6 @@
                 </button>
 
                 <!-- MANAGER TAB -->
-
                 <button onclick="switchTab('management')" id="tab-management" class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-red-300 hover:text-white hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all text-sm font-medium/10 hidden">
                     <div class="flex items-center gap-3">
                         <i data-lucide="shield-alert" class="w-4 h-4 text-red-500"></i>
@@ -211,61 +210,7 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="user-list">
-                
-                <!-- EXAMPLE 1: Untagged User Card (Holds Restrict & Blacklist buttons) -->
-                <div class="glass p-5 rounded-2xl border border-white/10 space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold text-sm">
-                                JD
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-bold text-white">JaneDoe</h4>
-                                <span class="text-[10px] text-slate-400">ID: 987654321</span>
-                            </div>
-                        </div>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">
-                            Member
-                        </span>
-                    </div>
-                    
-                    <!-- Untagged User Action Controls -->
-                    <div class="flex items-center gap-2 pt-2 border-t border-white/10">
-                        <button onclick="restrictUser('987654321')" class="flex-1 py-2 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
-                            <i data-lucide="shield-off" class="w-3.5 h-3.5"></i> Restrict
-                        </button>
-                        <button onclick="blacklistUser('987654321')" class="flex-1 py-2 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
-                            <i data-lucide="user-x" class="w-3.5 h-3.5"></i> Blacklist
-                        </button>
-                    </div>
-                </div>
-
-                <!-- EXAMPLE 2: Tagged User Card (Actions removed, replaced with lock + staff action blocked) -->
-                <div class="glass p-5 rounded-2xl border border-purple-500/20 bg-purple-950/10 space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold text-sm">
-                                AS
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-bold text-white">AlexStaff</h4>
-                                <span class="text-[10px] text-slate-400">ID: 456789123</span>
-                            </div>
-                        </div>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-400 border border-purple-500/30">
-                            Staff
-                        </span>
-                    </div>
-                    
-                    <!-- Tagged User Locked Notice -->
-                    <div class="pt-2 border-t border-white/10">
-                        <div class="w-full py-2.5 px-3 rounded-xl bg-slate-900/80 text-slate-400 border border-slate-800 font-semibold text-xs flex items-center justify-center gap-2 cursor-not-allowed">
-                            <i data-lucide="lock" class="w-4 h-4 text-amber-400"></i>
-                            <span>Staff action blocked</span>
-                        </div>
-                    </div>
-                </div>
-
+                <!-- Populated dynamically via JS -->
             </div>
         </section>
 
@@ -292,7 +237,7 @@
             </div>
         </section>
 
-        <!-- TAB 4: MANAGER TAB (MOVED PROMOTE & DEMOTE HERE) -->
+        <!-- TAB 4: MANAGER TAB -->
         <section id="content-management" class="tab-content hidden space-y-6">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-red-500/20 pb-6">
                 <div>
@@ -315,30 +260,7 @@
 
             <!-- Manager User List (Promote & Demote controls) -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="management-user-list">
-                <div class="glass p-5 rounded-2xl border border-red-500/20 bg-red-950/10 space-y-4">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-300 font-bold text-sm">
-                                JS
-                            </div>
-                            <div>
-                                <h4 class="text-sm font-bold text-white">JohnSmith</h4>
-                                <span class="text-[10px] text-slate-400">ID: 123456789</span>
-                            </div>
-                        </div>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                            Staff
-                        </span>
-                    </div>
-                    <div class="flex items-center gap-2 pt-2 border-t border-white/10">
-                        <button onclick="promoteUser('123456789')" class="flex-1 py-2 px-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
-                            <i data-lucide="arrow-up-circle" class="w-3.5 h-3.5"></i> Promote
-                        </button>
-                        <button onclick="demoteUser('123456789')" class="flex-1 py-2 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold text-xs flex items-center justify-center gap-1.5 transition-all">
-                            <i data-lucide="arrow-down-circle" class="w-3.5 h-3.5"></i> Demote
-                        </button>
-                    </div>
-                </div>
+                <!-- Populated dynamically via JS -->
             </div>
         </section>
 
@@ -356,6 +278,9 @@
                         <i data-lucide="x" class="w-5 h-5"></i>
                     </button>
                 </div>
+
+                <!-- Add Track Status Message Box -->
+                <div id="modal-status-message" class="hidden p-3 rounded-xl text-xs font-semibold border"></div>
 
                 <form id="add-track-form" onsubmit="addTrackDirectly(event)" class="space-y-4">
                     <div>
@@ -377,6 +302,58 @@
                         </button>
                         <button type="submit" id="btn-add-song" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2">
                             <i data-lucide="plus" class="w-4 h-4"></i> Add Track
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- EDIT TRACK MODAL -->
+        <div id="edit-track-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+            <div class="glass border border-white/10 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl relative">
+                <div class="flex items-center justify-between border-b border-white/10 pb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 bg-sky-500/20 text-sky-400 rounded-xl border border-sky-500/30">
+                            <i data-lucide="edit-3" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-extrabold text-white">Edit Song Details</h3>
+                            <p class="text-xs text-slate-400">Update track title, artist, or video link</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="closeEditTrackModal()" class="text-slate-400 hover:text-white p-1">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+
+                <!-- Status / Error Banner -->
+                <div id="edit-modal-status-message" class="hidden p-3 rounded-xl text-xs font-semibold border"></div>
+
+                <form id="edit-track-form" onsubmit="updateTrackDirectly(event)" class="space-y-4">
+                    <!-- Hidden field for song ID -->
+                    <input type="hidden" id="edit-song-id">
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Song Title</label>
+                        <input type="text" id="edit-song-title" required placeholder="e.g. Bohemian Rhapsody" class="input-field w-full rounded-xl px-4 py-2.5 text-xs">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Artist</label>
+                        <input type="text" id="edit-song-artist" required placeholder="e.g. Queen" class="input-field w-full rounded-xl px-4 py-2.5 text-xs">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">YouTube Video ID or URL</label>
+                        <input type="text" id="edit-song-videoid" required placeholder="e.g. dQw4w9WgXcQ or https://youtu.be/..." class="input-field w-full rounded-xl px-4 py-2.5 text-xs">
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
+                        <button type="button" onclick="closeEditTrackModal()" class="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-bold transition-all border border-white/10">
+                            Cancel
+                        </button>
+                        <button type="submit" id="btn-save-song" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2">
+                            <i data-lucide="check" class="w-4 h-4"></i> Save Changes
                         </button>
                     </div>
                 </form>
