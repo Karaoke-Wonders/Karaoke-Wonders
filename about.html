@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Karaoke Wonders</title>
+    
+    <!-- External Assets -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Custom Glassmorphism Styles -->
+    <style>
+        .glass {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+    </style>
+</head>
+<body class="min-h-screen relative flex items-center justify-center bg-slate-950 text-slate-100 overflow-x-hidden font-['Inter',sans-serif] py-12 px-4">
+
+    <!-- Background Glow Effects -->
+    <div class="fixed top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div class="fixed bottom-1/4 right-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+    <!-- Main Container -->
+    <main class="w-full max-w-2xl">
+        <div class="glass p-8 sm:p-12 rounded-3xl border border-white/10 text-center space-y-8 shadow-2xl relative overflow-hidden">
+            
+            <!-- Stage Accent Graphic -->
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-tr from-green-400/20 to-blue-500/20 border border-white/10 shadow-inner">
+                <i data-lucide="sparkles" class="w-10 h-10 text-green-400"></i>
+            </div>
+
+            <!-- Page Title Header -->
+            <div>
+                <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-green-400 via-emerald-300 to-sky-400 bg-clip-text text-transparent">
+                    About Karaoke Wonders
+                </h1>
+                <h2 class="text-base sm:text-lg font-bold mt-2 text-slate-300">
+                    The Premier Virtual Stage & Social Lounge in VRChat
+                </h2>
+            </div>
+
+            <!-- Main Bio / Story Box -->
+            <div class="bg-slate-900/80 border border-white/10 rounded-2xl p-6 text-left space-y-3">
+                <div class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-green-400">
+                    <i data-lucide="globe" class="w-4 h-4"></i>
+                    <span>Our Mission</span>
+                </div>
+                
+                <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                    Karaoke Wonders was created to bring performers, music lovers, and socializers together inside immersive virtual environments. Whether you want to sing live on a high-tech stage, hang out in private karaoke booths with friends, or host community events, we provide the ultimate venue experience across PC and Quest.
+                </p>
+            </div>
+
+            <!-- Feature Highlights Grid -->
+            <div class="text-left space-y-3">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 px-1">What We Offer</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    
+                    <!-- Feature 1 -->
+                    <div class="bg-slate-900/40 border border-white/5 rounded-xl p-3.5 flex items-start gap-3">
+                        <div class="p-2 rounded-lg bg-sky-500/10 text-sky-400 shrink-0">
+                            <i data-lucide="mic" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-200">Live Stage & Booths</h3>
+                            <p class="text-[11px] text-slate-400 mt-0.5">High-quality audio systems and private room options.</p>
+                        </div>
+                    </div>
+
+                    <!-- Feature 2 -->
+                    <div class="bg-slate-900/40 border border-white/5 rounded-xl p-3.5 flex items-start gap-3">
+                        <div class="p-2 rounded-lg bg-purple-500/10 text-purple-400 shrink-0">
+                            <i data-lucide="monitor" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-200">Cross-Platform</h3>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Fully optimized for both VRChat PC and Quest users.</p>
+                        </div>
+                    </div>
+
+                    <!-- Feature 3 -->
+                    <div class="bg-slate-900/40 border border-white/5 rounded-xl p-3.5 flex items-start gap-3">
+                        <div class="p-2 rounded-lg bg-amber-500/10 text-amber-400 shrink-0">
+                            <i data-lucide="users" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-200">Active Community</h3>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Weekly community nights, competitions, and open mics.</p>
+                        </div>
+                    </div>
+
+                    <!-- Feature 4 -->
+                    <div class="bg-slate-900/40 border border-white/5 rounded-xl p-3.5 flex items-start gap-3">
+                        <div class="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 shrink-0">
+                            <i data-lucide="shield-check" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-200">Staff & Safety</h3>
+                            <p class="text-[11px] text-slate-400 mt-0.5">Moderated instances ensuring a welcoming environment.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="pt-2 space-y-3">
+                <a href="/main" class="inline-flex items-center justify-center gap-2 w-full py-3.5 px-6 rounded-xl font-bold text-black text-sm bg-gradient-to-r from-green-400 to-emerald-400 hover:from-green-300 hover:to-emerald-300 transition-all shadow-lg shadow-green-500/10">
+                    <i data-lucide="home" class="w-4 h-4"></i>
+                    <span>Return to Main Portal</span>
+                </a>
+                
+                <a href="#" class="inline-flex items-center justify-center gap-2 w-full py-2.5 px-6 rounded-xl font-semibold text-slate-300 hover:text-white hover:bg-white/5 border border-white/10 transition-all text-xs">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5 text-sky-400"></i>
+                    <span>Launch VRChat World</span>
+                </a>
+            </div>
+
+            <!-- Footer Subtext -->
+            <div class="pt-2 border-t border-white/5">
+                <p class="text-[11px] text-slate-500 font-semibold tracking-wider uppercase">
+                    Karaoke Wonders • Main Portal
+                </p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Lucide Icons Script -->
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
