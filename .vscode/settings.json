@@ -2,7 +2,10 @@
   "files.exclude": {
     "**/songs": true
   },
-  "search.exclude": {
-    "**/songs": true
-  }
+  "search.exclude":{
+    "**/pending": true
+  },
+    "search.exclude":{
+    "**/inbox": true
+  },
 }
