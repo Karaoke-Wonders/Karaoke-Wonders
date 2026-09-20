@@ -182,6 +182,12 @@ window.switchTab = function(tabName) {
     if (activeBtn) activeBtn.classList.add('active');
 
     hideAlert();
+
+    // Trigger submissions load when switching to My Submissions tab
+    if (tabName === 'my-submissions' || tabName === 'submissions') {
+        loadMySubmissions();
+    }
+
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
@@ -387,6 +393,101 @@ function renderSongs(songs) {
     }).join('');
 
     renderPaginationControls();
+
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+}
+
+// Fetch user-specific submissions for the "My Submissions" tab
+async function loadMySubmissions() {
+    const submissionsContainer = document.getElementById('my-submissions-list') || document.getElementById('submissions-list');
+    if (!submissionsContainer) return;
+
+    if (!currentUser || !currentUser.username) {
+        submissionsContainer.innerHTML = `<p class="text-slate-500 text-xs text-center py-10 col-span-full">Please log in to view your submissions.</p>`;
+        return;
+    }
+
+    submissionsContainer.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 text-sm">Loading your submissions...</div>`;
+
+    try {
+        const usernameQuery = encodeURIComponent(currentUser.username);
+        const threadQuery = encodeURIComponent(currentUser.threadId || '');
+        const response = await fetch(`${WORKER_BASE_URL}/api/my-submissions?username=${usernameQuery}&threadId=${threadQuery}`);
+        
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+
+        const mySubmissions = await response.json();
+        renderMySubmissions(mySubmissions);
+    } catch (err) {
+        console.error('Error loading my submissions:', err);
+        submissionsContainer.innerHTML = `<p class="text-slate-500 text-xs col-span-full text-center py-10">Unable to load your submissions at this time.</p>`;
+    }
+}
+
+// Render user's submission cards into the "My Submissions" grid
+function renderMySubmissions(submissions) {
+    const submissionsContainer = document.getElementById('my-submissions-list') || document.getElementById('submissions-list');
+    if (!submissionsContainer) return;
+
+    if (!submissions || submissions.length === 0) {
+        submissionsContainer.innerHTML = `
+            <div class="col-span-full text-center py-12 glass rounded-3xl border border-white/10">
+                <i data-lucide="file-music" class="w-8 h-8 mx-auto text-slate-500 mb-2"></i>
+                <p class="text-slate-400 text-sm">You haven't submitted any track requests yet.</p>
+            </div>
+        `;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        return;
+    }
+
+    submissionsContainer.innerHTML = submissions.map(sub => {
+        const title = sub.songName || sub.title || 'Untitled';
+        const artist = sub.artist || 'Unknown Artist';
+        const status = (sub.status || 'pending').toLowerCase();
+        
+        let statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">Pending Review</span>`;
+        if (status === 'approved') {
+            statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">Approved</span>`;
+        } else if (status === 'rejected') {
+            statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">Rejected</span>`;
+        }
+
+        const rawVideoId = sub.videoId || '';
+        let playUrl = '#';
+        if (rawVideoId.startsWith('http://') || rawVideoId.startsWith('https://')) {
+            playUrl = rawVideoId;
+        } else if (rawVideoId.trim().length > 0) {
+            playUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(rawVideoId.trim())}`;
+        }
+
+        const playButtonHtml = playUrl !== '#' 
+            ? `<a href="${escapeUrl(playUrl)}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-lg transition-all flex items-center gap-1.5 border border-white/10 text-xs">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-400"></i> View Link
+               </a>`
+            : `<span class="px-3 py-1.5 bg-white/5 text-slate-500 font-medium rounded-lg text-xs cursor-not-allowed border border-white/5">
+                    No Link
+               </span>`;
+
+        return `
+        <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-slate-500/30 transition-all">
+            <div>
+                <div class="flex items-start justify-between gap-2 mb-2">
+                    <h3 class="font-bold text-base text-white tracking-tight">${escapeHtml(title)}</h3>
+                    ${statusBadge}
+                </div>
+                <p class="text-xs text-slate-400 flex items-center gap-1.5">
+                    <i data-lucide="mic-2" class="w-3.5 h-3.5 text-slate-500"></i> ${escapeHtml(artist)}
+                </p>
+            </div>
+            <div class="pt-4 border-t border-white/5 flex items-center justify-between text-xs">
+                <span class="text-slate-500 text-[11px]">${sub.createdAt ? new Date(sub.createdAt).toLocaleDateString() : 'Submitted'}</span>
+                ${playButtonHtml}
+            </div>
+        </div>
+        `;
+    }).join('');
 
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
