@@ -44,12 +44,19 @@
                     <i data-lucide="music" class="w-4 h-4 text-green-400"></i>
                     <span>Song Library</span>
                 </button>
+
                 <button onclick="switchTab('upload')" id="tab-upload" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
                     <i data-lucide="upload-cloud" class="w-4 h-4 text-sky-400"></i>
                     <span>Submit Track</span>
                 </button>
 
-                <!-- Admin Link (Only visible if currentUser.isAdmin is true) -->
+                <!-- NEW 3RD TAB: MY SUBMISSIONS -->
+                <button onclick="switchTab('my-submissions')" id="tab-my-submissions" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
+                    <i data-lucide="list-music" class="w-4 h-4 text-purple-400"></i>
+                    <span>My Submissions</span>
+                </button>
+
+                <!-- Admin Link -->
                 <div id="admin-links" class="pt-6 mt-6 border-t border-white/10 hidden">
                     <p class="px-4 text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-3">Moderation Hub</p>
                     <a href="admin.html" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-purple-300 hover:text-white hover:bg-purple-500/10 border border-purple-500/20 transition-all text-sm font-medium">
@@ -60,11 +67,12 @@
                         <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
                     </a>
                 </div>
+
                 <div id="careers" class="pt-6 mt-6 border-t border-white/10">
                     <p class="px-4 text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-3">Extras</p>
                     <a href="careers.html" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-yellow-300 hover:text-white hover:bg-yellow-500/10 border border-yellow-500/20 transition-all text-sm font-medium">
                         <div class="flex items-center gap-3">
-                            <i data-lucide="shield-check" class="w-4 h-4 text-purple-400"></i>
+                            <i data-lucide="briefcase" class="w-4 h-4 text-yellow-400"></i>
                             <span>Open Careers Page</span>
                         </div>
                         <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
@@ -122,7 +130,6 @@
                 </div>
             </div>
 
-            <!-- Dynamic song cards load here -->
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="song-list">
                 <p class="col-span-full text-center text-slate-500 text-xs py-10">Loading approved songs...</p>
             </div>
@@ -174,9 +181,26 @@
             </form>
         </section>
 
+        <!-- TAB 3: MY SUBMISSIONS (NEW) -->
+        <section id="content-my-submissions" class="tab-content hidden space-y-8">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-3xl font-extrabold tracking-tight">My Submissions</h2>
+                    <p class="text-slate-400 text-sm mt-1">Track the review status of songs you have submitted to the moderation queue.</p>
+                </div>
+                <button onclick="fetchMySubmissions()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 font-bold text-xs rounded-xl transition-all flex items-center gap-2 shrink-0 self-start md:self-auto">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh List
+                </button>
+            </div>
+
+            <!-- List / Grid for User's Submissions -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="my-submissions-list">
+                <p class="col-span-full text-center text-slate-500 text-xs py-10">Loading your submissions...</p>
+            </div>
+        </section>
+
     </main>
 
-    <!-- Correct script: Only loads member stage logic -->
     <script src="main.js"></script>
 </body>
 </html>
