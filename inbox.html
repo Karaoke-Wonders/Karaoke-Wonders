@@ -53,167 +53,189 @@
         </div>
     </main>
 
-    <script>
-        const INBOX_WORKER_URL = 'https://karaokewondersinbox.fetched.workers.dev'; // Replace with your deployed worker URL
-        let currentUser = null;
+<script>
+    const INBOX_WORKER_URL = 'https://karaokewondersinbox.fetched.workers.dev';
+    let currentUser = null;
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const sessionData = localStorage.getItem('kw_session');
-            if (!sessionData) {
-                window.location.href = 'index.html';
-                return;
-            }
-
-            try {
-                currentUser = JSON.parse(sessionData);
-            } catch (e) {
-                window.location.href = 'index.html';
-                return;
-            }
-
-            fetchInboxNotifications();
-        });
-
-        async function fetchInboxNotifications() {
-            const container = document.getElementById('inbox-container');
-            const badge = document.getElementById('inbox-count-badge');
-
-            // Use user's threadId or username as the folder key
-            const userKey = currentUser.threadId || currentUser.username;
-
-            try {
-                const response = await fetch(`${INBOX_WORKER_URL}/api/inbox?user=${encodeURIComponent(userKey)}`);
-                if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
-
-                const notifications = await response.json();
-                renderNotifications(notifications);
-            } catch (err) {
-                console.error('Error loading inbox:', err);
-                container.innerHTML = `
-                    <div class="text-center py-12 glass rounded-3xl border border-red-500/20 text-red-400">
-                        <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
-                        <p class="text-sm">Unable to load notifications right now.</p>
-                    </div>
-                `;
-                if (typeof lucide !== 'undefined') lucide.createIcons();
-            }
+    document.addEventListener('DOMContentLoaded', () => {
+        const sessionData = localStorage.getItem('kw_session');
+        if (!sessionData) {
+            window.location.href = 'index.html';
+            return;
         }
 
-        function renderNotifications(notifs) {
-            const container = document.getElementById('inbox-container');
-            const badge = document.getElementById('inbox-count-badge');
+        try {
+            currentUser = JSON.parse(sessionData);
+            console.log('[Inbox] Logged in session user:', currentUser);
+        } catch (e) {
+            console.error('[Inbox] Session parse error:', e);
+            window.location.href = 'index.html';
+            return;
+        }
 
-            if (badge) {
-                badge.textContent = `${notifs.length} Unread`;
-            }
+        fetchInboxNotifications();
+    });
 
-            if (!notifs || notifs.length === 0) {
-                container.innerHTML = `
-                    <div class="text-center py-16 glass rounded-3xl border border-white/10">
-                        <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-500 mb-3"></i>
-                        <h3 class="font-bold text-white text-base">Your inbox is clear</h3>
-                        <p class="text-slate-400 text-xs mt-1">You have no pending, approved, or rejected track notifications.</p>
-                    </div>
-                `;
-                if (typeof lucide !== 'undefined') lucide.createIcons();
-                return;
-            }
+    async function fetchInboxNotifications() {
+        const container = document.getElementById('inbox-container');
+        const badge = document.getElementById('inbox-count-badge');
 
-            container.innerHTML = notifs.map(n => {
-                const type = (n.type || 'pending').toLowerCase();
-                let statusBadge = '';
-                let icon = 'bell';
+        // Check all common session key variations
+        const userKey = currentUser.threadId || currentUser.username || currentUser.userId || currentUser.id;
 
-                if (type === 'approved') {
-                    statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">Approved</span>`;
-                    icon = 'check-circle';
-                } else if (type === 'rejected') {
-                    statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">Rejected</span>`;
-                    icon = 'x-circle';
-                } else {
-                    statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">Pending Review</span>`;
-                    icon = 'clock';
-                }
-
-                const dateStr = n.timestamp ? new Date(n.timestamp).toLocaleString() : '';
-
-                return `
-                <div id="card-${n.fileName.replace('.', '-')}" class="glass p-5 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all">
-                    <div class="flex items-start gap-3.5">
-                        <div class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 mt-0.5">
-                            <i data-lucide="${icon}" class="w-5 h-5"></i>
-                        </div>
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <h4 class="font-bold text-white text-sm">${escapeHtml(n.songName || 'Track Notification')}</h4>
-                                ${statusBadge}
-                            </div>
-                            <p class="text-xs text-slate-300 mb-1">${escapeHtml(n.message)}</p>
-                            <span class="text-[10px] text-slate-500">${dateStr}</span>
-                        </div>
-                    </div>
-
-                    <button onclick="dismissNotification('${escapeHtml(n.fileName)}', '${escapeHtml(n.sha)}', 'card-${n.fileName.replace('.', '-')}')" 
-                            class="px-3 py-1.5 bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 font-bold text-xs rounded-xl transition border border-white/10 hover:border-red-500/30 flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
-                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Dismiss
-                    </button>
+        if (!userKey) {
+            console.error('[Inbox] No valid user key found in kw_session');
+            container.innerHTML = `
+                <div class="text-center py-12 glass rounded-3xl border border-amber-500/20 text-amber-400">
+                    <i data-lucide="alert-triangle" class="w-8 h-8 mx-auto mb-2"></i>
+                    <p class="text-sm">User ID missing from session. Please log in again.</p>
                 </div>
-                `;
-            }).join('');
+            `;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            return;
+        }
 
+        try {
+            console.log(`[Inbox] Fetching notifications for user key: "${userKey}"`);
+            const response = await fetch(`${INBOX_WORKER_URL}/api/inbox?user=${encodeURIComponent(userKey)}`);
+            
+            if (!response.ok) {
+                throw new Error(`Worker returned HTTP ${response.status}`);
+            }
+
+            const notifications = await response.json();
+            console.log('[Inbox] Notifications received:', notifications);
+            renderNotifications(notifications);
+        } catch (err) {
+            console.error('[Inbox] Error loading inbox:', err);
+            container.innerHTML = `
+                <div class="text-center py-12 glass rounded-3xl border border-red-500/20 text-red-400">
+                    <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
+                    <p class="text-sm">Unable to load notifications right now.</p>
+                    <p class="text-xs text-slate-500 mt-1">${escapeHtml(err.message)}</p>
+                </div>
+            `;
             if (typeof lucide !== 'undefined') lucide.createIcons();
         }
+    }
 
-        async function dismissNotification(fileName, sha, elementId) {
-            const userKey = currentUser.threadId || currentUser.username;
-            const cardElement = document.getElementById(elementId);
+    function renderNotifications(notifs) {
+        const container = document.getElementById('inbox-container');
+        const badge = document.getElementById('inbox-count-badge');
+
+        if (badge) {
+            badge.textContent = `${notifs ? notifs.length : 0} Unread`;
+        }
+
+        if (!notifs || !Array.isArray(notifs) || notifs.length === 0) {
+            container.innerHTML = `
+                <div class="text-center py-16 glass rounded-3xl border border-white/10">
+                    <i data-lucide="inbox" class="w-10 h-10 mx-auto text-slate-500 mb-3"></i>
+                    <h3 class="font-bold text-white text-base">Your inbox is clear</h3>
+                    <p class="text-slate-400 text-xs mt-1">You have no pending, approved, or rejected track notifications.</p>
+                </div>
+            `;
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+            return;
+        }
+
+        container.innerHTML = notifs.map((n, idx) => {
+            const type = (n.type || 'pending').toLowerCase();
+            const fileName = n.fileName || n.id || `notif-${idx}`;
+            const sha = n.sha || '';
+            const cardId = `card-${String(fileName).replace(/[^a-zA-Z0-9-_]/g, '-')}`;
+
+            let statusBadge = '';
+            let icon = 'bell';
+
+            if (type === 'approved') {
+                statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">Approved</span>`;
+                icon = 'check-circle';
+            } else if (type === 'rejected') {
+                statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">Rejected</span>`;
+                icon = 'x-circle';
+            } else {
+                statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">Pending Review</span>`;
+                icon = 'clock';
+            }
+
+            const dateStr = n.timestamp ? new Date(n.timestamp).toLocaleString() : '';
+
+            return `
+            <div id="${cardId}" class="glass p-5 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all">
+                <div class="flex items-start gap-3.5">
+                    <div class="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 mt-0.5">
+                        <i data-lucide="${icon}" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <h4 class="font-bold text-white text-sm">${escapeHtml(n.songName || 'Track Notification')}</h4>
+                            ${statusBadge}
+                        </div>
+                        <p class="text-xs text-slate-300 mb-1">${escapeHtml(n.message || '')}</p>
+                        <span class="text-[10px] text-slate-500">${dateStr}</span>
+                    </div>
+                </div>
+
+                <button onclick="dismissNotification('${escapeHtml(fileName)}', '${escapeHtml(sha)}', '${cardId}')" 
+                        class="px-3 py-1.5 bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 font-bold text-xs rounded-xl transition border border-white/10 hover:border-red-500/30 flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Dismiss
+                </button>
+            </div>
+            `;
+        }).join('');
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    async function dismissNotification(fileName, sha, elementId) {
+        const userKey = currentUser.threadId || currentUser.username || currentUser.userId || currentUser.id;
+        const cardElement = document.getElementById(elementId);
+
+        if (cardElement) {
+            cardElement.style.opacity = '0.4';
+            cardElement.style.pointerEvents = 'none';
+        }
+
+        try {
+            const response = await fetch(`${INBOX_WORKER_URL}/api/inbox/dismiss`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: userKey,
+                    fileName: fileName,
+                    sha: sha
+                })
+            });
+
+            if (!response.ok) throw new Error('Failed to delete notification file');
 
             if (cardElement) {
-                cardElement.style.opacity = '0.4';
-                cardElement.style.pointerEvents = 'none';
+                cardElement.remove();
             }
 
-            try {
-                const response = await fetch(`${INBOX_WORKER_URL}/api/inbox/dismiss`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        userId: userKey,
-                        fileName: fileName,
-                        sha: sha
-                    })
-                });
+            const remaining = document.querySelectorAll('#inbox-container > div[id^="card-"]').length;
+            const badge = document.getElementById('inbox-count-badge');
+            if (badge) badge.textContent = `${remaining} Unread`;
 
-                if (!response.ok) throw new Error('Failed to delete notification file from GitHub');
+            if (remaining === 0) {
+                fetchInboxNotifications();
+            }
 
-                // Remove card smoothly from DOM
-                if (cardElement) {
-                    cardElement.remove();
-                }
-
-                // Refresh count badge
-                const remaining = document.querySelectorAll('#inbox-container > div').length;
-                const badge = document.getElementById('inbox-count-badge');
-                if (badge) badge.textContent = `${remaining} Unread`;
-
-                if (remaining === 0) {
-                    fetchInboxNotifications();
-                }
-
-            } catch (err) {
-                console.error('Dismiss Error:', err);
-                alert('Could not dismiss notification: ' + err.message);
-                if (cardElement) {
-                    cardElement.style.opacity = '1';
-                    cardElement.style.pointerEvents = 'auto';
-                }
+        } catch (err) {
+            console.error('Dismiss Error:', err);
+            alert('Could not dismiss notification: ' + err.message);
+            if (cardElement) {
+                cardElement.style.opacity = '1';
+                cardElement.style.pointerEvents = 'auto';
             }
         }
+    }
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
-        }
-    </script>
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str).replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+    }
+</script>
 </body>
 </html>
