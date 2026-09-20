@@ -399,8 +399,8 @@ function renderSongs(songs) {
     }
 }
 
-// Fetch user-specific submissions for the "My Submissions" tab
-async function loadMySubmissions() {
+// Filter user submissions directly from the local allSongs array
+function loadMySubmissions() {
     const submissionsContainer = document.getElementById('my-submissions-list') || document.getElementById('submissions-list');
     if (!submissionsContainer) return;
 
@@ -409,24 +409,15 @@ async function loadMySubmissions() {
         return;
     }
 
-    submissionsContainer.innerHTML = `<div class="col-span-full text-center py-10 text-slate-400 text-sm">Loading your submissions...</div>`;
+    // Match currentUser.username against song.submittedBy (case-insensitive)
+    const mySubmissions = allSongs.filter(song => 
+        song.submittedBy && song.submittedBy.toLowerCase() === currentUser.username.toLowerCase()
+    );
 
-    try {
-        const usernameQuery = encodeURIComponent(currentUser.username);
-        const threadQuery = encodeURIComponent(currentUser.threadId || '');
-        const response = await fetch(`${WORKER_BASE_URL}/api/my-submissions?username=${usernameQuery}&threadId=${threadQuery}`);
-        
-        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
-
-        const mySubmissions = await response.json();
-        renderMySubmissions(mySubmissions);
-    } catch (err) {
-        console.error('Error loading my submissions:', err);
-        submissionsContainer.innerHTML = `<p class="text-slate-500 text-xs col-span-full text-center py-10">Unable to load your submissions at this time.</p>`;
-    }
+    renderMySubmissions(mySubmissions);
 }
 
-// Render user's submission cards into the "My Submissions" grid
+// Render user's submission cards
 function renderMySubmissions(submissions) {
     const submissionsContainer = document.getElementById('my-submissions-list') || document.getElementById('submissions-list');
     if (!submissionsContainer) return;
@@ -443,16 +434,13 @@ function renderMySubmissions(submissions) {
     }
 
     submissionsContainer.innerHTML = submissions.map(sub => {
-        const title = sub.songName || sub.title || 'Untitled';
+        const title = sub.songName || 'Untitled';
         const artist = sub.artist || 'Unknown Artist';
-        const status = (sub.status || 'pending').toLowerCase();
         
-        let statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">Pending Review</span>`;
-        if (status === 'approved') {
-            statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">Approved</span>`;
-        } else if (status === 'rejected') {
-            statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">Rejected</span>`;
-        }
+        // Determine badge: tracks with approvedAt are Approved
+        const statusBadge = sub.approvedAt 
+            ? `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">Approved</span>`
+            : `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">Pending</span>`;
 
         const rawVideoId = sub.videoId || '';
         let playUrl = '#';
@@ -464,11 +452,13 @@ function renderMySubmissions(submissions) {
 
         const playButtonHtml = playUrl !== '#' 
             ? `<a href="${escapeUrl(playUrl)}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-lg transition-all flex items-center gap-1.5 border border-white/10 text-xs">
-                    <i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-400"></i> View Link
+                    <i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-400"></i> View Track
                </a>`
             : `<span class="px-3 py-1.5 bg-white/5 text-slate-500 font-medium rounded-lg text-xs cursor-not-allowed border border-white/5">
                     No Link
                </span>`;
+
+        const dateString = sub.createdAt ? new Date(sub.createdAt).toLocaleDateString() : 'Submitted';
 
         return `
         <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-slate-500/30 transition-all">
@@ -482,7 +472,7 @@ function renderMySubmissions(submissions) {
                 </p>
             </div>
             <div class="pt-4 border-t border-white/5 flex items-center justify-between text-xs">
-                <span class="text-slate-500 text-[11px]">${sub.createdAt ? new Date(sub.createdAt).toLocaleDateString() : 'Submitted'}</span>
+                <span class="text-slate-500 text-[11px]">${dateString}</span>
                 ${playButtonHtml}
             </div>
         </div>
