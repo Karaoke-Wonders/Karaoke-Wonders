@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en" class="dark h-full">
 <head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://karaokewonders.fetched.workers.dev; img-src 'self' data: https:; object-src 'none';">
+    <link rel="preconnect" href="https://fonts.googleapis.com">`n    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inbox - Karaoke Wonders</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest" defer></script>
     <style>
         .glass {
             background: rgba(15, 23, 42, 0.75);
@@ -149,7 +151,7 @@
             let icon = 'bell';
 
             if (type === 'approved') {
-                statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">Approved</span>`;
+                statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-green-500/10 text-fuchsia-400 border border-green-500/20">Approved</span>`;
                 icon = 'check-circle';
             } else if (type === 'rejected') {
                 statusBadge = `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-red-500/10 text-red-400 border border-red-500/20">Rejected</span>`;

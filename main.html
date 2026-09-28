@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://karaokewonders.fetched.workers.dev; img-src 'self' data: https:; object-src 'none';">
+    <link rel="preconnect" href="https://fonts.googleapis.com">`n    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Karaoke - Karaoke Wonders</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest" defer></script>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="/image/kwicon.svg" />
     <meta property="og:title" content="Karaoke Wonders - Karaoke" />
@@ -16,21 +18,21 @@
     <meta property="og:site_name" content="Karaoke Wonders" />
     <meta property="og:image" content="https://karaokewonders.com/image/kw.png" />
     <meta name="theme-color" content="#90ee90" />
-    <script src="schema.js"></script>
+    <script src="schema.js" defer></script>
 </head>
 <body class="min-h-screen relative flex overflow-x-hidden bg-slate-950 text-slate-100">
 
     <!-- Background Glow Effects -->
-    <div class="fixed top-1/4 left-10 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
-    <div class="fixed bottom-10 right-10 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div class="fixed top-1/4 left-10 w-96 h-96 bg-fuchsia-500/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div class="fixed bottom-10 right-10 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
     <!-- Sidebar Navigation -->
     <aside class="w-72 glass border-r border-white/10 flex flex-col justify-between h-screen sticky top-0 z-20 shrink-0">
         <div>
             <!-- Brand Logo -->
             <div class="p-6 pb-4 border-b border-white/10 flex items-center gap-3">
-                <div class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-green-400/20 to-blue-500/20 border border-white/10 shrink-0">
-                    <i data-lucide="mic" class="w-5 h-5 text-green-400"></i>
+                <div class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-fuchsia-500/30 to-cyan-500/30 border border-white/10 shrink-0">
+                    <i data-lucide="mic" class="w-5 h-5 text-fuchsia-400"></i>
                 </div>
                 <div>
                     <h1 class="text-xl font-extrabold gradient-text leading-tight">KaraokeWonders</h1>
@@ -41,12 +43,12 @@
             <!-- Member Navigation Tabs -->
             <nav class="p-4 space-y-1.5">
                 <button onclick="switchTab('library')" id="tab-library" class="sidebar-link active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
-                    <i data-lucide="music" class="w-4 h-4 text-green-400"></i>
+                    <i data-lucide="music" class="w-4 h-4 text-fuchsia-400"></i>
                     <span>Song Library</span>
                 </button>
 
                 <button onclick="switchTab('upload')" id="tab-upload" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
-                    <i data-lucide="upload-cloud" class="w-4 h-4 text-sky-400"></i>
+                    <i data-lucide="upload-cloud" class="w-4 h-4 text-cyan-400"></i>
                     <span>Submit Track</span>
                 </button>
 
@@ -143,14 +145,14 @@
             </div>
 
             <div class="glass p-6 rounded-2xl border border-sky-500/20 bg-sky-500/5">
-                <div class="flex items-center gap-3 text-sky-400 mb-3 font-bold text-sm">
+                <div class="flex items-center gap-3 text-cyan-400 mb-3 font-bold text-sm">
                     <i data-lucide="info" class="w-5 h-5"></i>
                     <span>Track Submission Requirements</span>
                 </div>
                 <ul class="space-y-2 text-xs text-slate-300">
-                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-green-400 shrink-0"></i> Must be instrumental/karaoke version (no lead vocal tracks)</li>
-                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-green-400 shrink-0"></i> On-screen synchronized lyrics are strongly preferred</li>
-                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-green-400 shrink-0"></i> Provide valid YouTube or Vimeo URLs</li>
+                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-fuchsia-400 shrink-0"></i> Must be instrumental/karaoke version (no lead vocal tracks)</li>
+                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-fuchsia-400 shrink-0"></i> On-screen synchronized lyrics are strongly preferred</li>
+                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-fuchsia-400 shrink-0"></i> Provide valid YouTube or Vimeo URLs</li>
                 </ul>
             </div>
 

@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://karaokewonders.fetched.workers.dev; img-src 'self' data: https:; object-src 'none';">
+    <link rel="preconnect" href="https://fonts.googleapis.com">`n    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 - Off Key | Karaoke Wonders</title>
@@ -8,7 +10,7 @@
     <!-- External Assets -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest" defer></script>
     
     <!-- Absolute Paths -->
     <link rel="stylesheet" href="/style.css">
@@ -18,16 +20,16 @@
 <body class="min-h-screen relative flex items-center justify-center bg-slate-950 text-slate-100 overflow-hidden font-['Inter',sans-serif]">
 
     <!-- Background Glow Effects -->
-    <div class="fixed top-1/4 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
-    <div class="fixed bottom-1/4 right-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div class="fixed top-1/4 left-1/4 w-96 h-96 bg-fuchsia-500/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <div class="fixed bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
     <!-- Main Container -->
     <main class="w-full max-w-lg p-6">
         <div class="glass p-8 sm:p-12 rounded-3xl border border-white/10 text-center space-y-6 shadow-2xl relative overflow-hidden">
             
             <!-- Stage Accent Graphic -->
-            <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-tr from-green-400/20 to-blue-500/20 border border-white/10 shadow-inner">
-                <i data-lucide="mic-off" class="w-10 h-10 text-green-400"></i>
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-tr from-fuchsia-500/30 to-cyan-500/30 border border-white/10 shadow-inner">
+                <i data-lucide="mic-off" class="w-10 h-10 text-fuchsia-400"></i>
             </div>
 
             <!-- Big Error Number -->
@@ -61,7 +63,7 @@
                 <p class="text-[11px] font-bold uppercase tracking-wider text-slate-500 px-1">Possible Reasons</p>
                 <ul class="text-xs space-y-2 text-slate-400">
                     <li class="flex items-start gap-2.5">
-                        <i data-lucide="help-circle" class="w-4 h-4 text-sky-400 shrink-0 mt-0.5"></i>
+                        <i data-lucide="help-circle" class="w-4 h-4 text-cyan-400 shrink-0 mt-0.5"></i>
                         <span><strong>Typo in URL:</strong> Check for spelling errors or extra slashes in your browser address bar.</span>
                     </li>
                     <li class="flex items-start gap-2.5">
@@ -125,3 +127,4 @@
     </script>
 </body>
 </html>
+
