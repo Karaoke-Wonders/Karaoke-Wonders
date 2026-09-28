@@ -69,14 +69,14 @@
                     <p class="text-[11px] text-slate-500 mt-1">Username is synchronized across the portal and Discord bot and cannot be changed.</p>
                 </div>
 
-                <!-- Email Section -->
-                <div>
-                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Email Address</label>
-                    <div class="relative">
-                        <input type="email" id="email" name="email" placeholder="user@example.com" required class="w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-10 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
-                        <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
-                    </div>
-                </div>
+<!-- Email Section -->
+<div>
+    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Email Address (Optional)</label>
+    <div class="relative">
+        <input type="email" id="email" name="email" placeholder="user@example.com" class="w-full bg-black/40 border border-white/10 rounded-xl p-3 pl-10 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+        <i data-lucide="mail" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+    </div>
+</div>
 
                 <!-- Status/Feedback Message -->
                 <div id="status-message" class="hidden p-3 rounded-xl text-xs font-medium border"></div>
@@ -121,31 +121,37 @@
 
             // Form Submit Handler
             settingsForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
+    e.preventDefault();
 
-                const updatedData = {
-                    pfp: pfpInput.value.trim(),
-                    email: document.getElementById('email').value.trim()
-                };
+    const usernameVal = document.getElementById('username').value.trim();
+    const pfpVal = pfpInput.value.trim();
+    const emailVal = document.getElementById('email').value.trim();
 
-                try {
-                    // Send update request to worker endpoint
-                    const response = await fetch('https://karaokewonders.fetched.workers.dev/api/user/settings', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(updatedData)
-                    });
+    // Construct payload with username and only non-empty fields
+    const updatedData = {
+        username: usernameVal
+    };
 
-                    if (response.ok) {
-                        showStatus('Settings updated successfully!', 'success');
-                    } else {
-                        showStatus('Failed to update settings. Please try again.', 'error');
-                    }
-                } catch (err) {
-                    // Fallback visual feedback if offline/testing locally
-                    showStatus('Settings saved locally.', 'success');
-                }
-            });
+    if (pfpVal) updatedData.pfp = pfpVal;
+    if (emailVal) updatedData.email = emailVal;
+
+    try {
+        const response = await fetch('https://karaokewonders.fetched.workers.dev/api/user/settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedData)
+        });
+
+        if (response.ok) {
+            showStatus('Settings updated successfully!', 'success');
+        } else {
+            const errData = await response.json();
+            showStatus(errData.error || 'Failed to update settings. Please try again.', 'error');
+        }
+    } catch (err) {
+        showStatus('Network error while saving settings.', 'error');
+    }
+});
 
             function showStatus(msg, type) {
                 statusMsg.textContent = msg;
