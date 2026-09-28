@@ -757,7 +757,10 @@ window.deleteSong = async function(songId) {
         const res = await fetch(`${WORKER_BASE_URL}/api/admin/delete-song`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ songId })
+            body: JSON.stringify({ 
+                songId,
+                staffName: currentUser ? currentUser.username : 'Unknown Staff'
+            })
         });
 
         if (!res.ok) throw new Error('Failed to delete song');
@@ -1098,7 +1101,12 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
         const response = await fetch(`${WORKER_BASE_URL}/api/admin/toggle-lock`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ threadId, tagId, add: shouldAdd })
+            body: JSON.stringify({ 
+                threadId, 
+                tagId, 
+                add: shouldAdd,
+                staffName: currentUser ? currentUser.username : 'Unknown Staff'
+            })
         });
         if (!response.ok) throw new Error('Failed to update user tag state');
 
