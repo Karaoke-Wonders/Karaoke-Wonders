@@ -860,6 +860,7 @@ function renderUserList(users) {
     userContainer.innerHTML = paginatedItems.map(u => {
         const userTags = (u.tags || []).map(tag => String(tag));
         const threadId = escapeAttr(u.threadId || '');
+        const avatarUrl = u.avatarUrl || u.pfp || '/image/kwicon.svg';
         
         const isManagement = Boolean(
             (u.role && u.role.toLowerCase() === 'manager') ||
@@ -877,9 +878,18 @@ function renderUserList(users) {
         return `
             <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-white/20 transition-all">
                 <div>
-                    <div class="flex items-center justify-between gap-2 mb-1">
-                        <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
-                        <div class="flex items-center gap-1.5 flex-wrap">
+                    <div class="flex items-center justify-between gap-2 mb-2">
+                        <!-- Avatar & Username Container -->
+                        <div class="flex items-center gap-3 shrink-0">
+                            <img src="${escapeAttr(avatarUrl)}" 
+                                 alt="${escapeAttr(u.username)}'s avatar" 
+                                 onerror="this.onerror=null; this.src='/image/kwicon.svg';" 
+                                 class="w-9 h-9 rounded-full object-cover border border-white/10 shrink-0" />
+                            <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
+                        </div>
+
+                        <!-- Role Badges -->
+                        <div class="flex items-center gap-1.5 flex-wrap justify-end">
                             ${isManagement ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Management</span>' : ''}
                             ${isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
                             ${isBlacklisted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
@@ -893,7 +903,7 @@ function renderUserList(users) {
                     ${isStaff ? `
 
                     ` : `
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.restricted}', ${!isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
+                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.restricted}',${!isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
                             ${isRestricted ? 'Unrestrict' : 'Restrict'}
                         </button>
                         <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.blacklisted}', ${!isBlacklisted})" class="flex-1 py-1.5 px-2 ${isBlacklisted ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20'} border rounded-lg text-xs font-bold transition-all">
