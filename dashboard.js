@@ -354,6 +354,8 @@ window.filterPendingRequests = function(query) {
 };
 
 window.approveTrack = async function(trackId) {
+    const activeStaffName = currentUser?.username || JSON.parse(localStorage.getItem('kw_session') || '{}')?.username || 'Unknown Staff';
+
     const btn = document.getElementById(`btn-approve-${trackId}`);
     if (btn) {
         btn.disabled = true;
@@ -366,7 +368,7 @@ window.approveTrack = async function(trackId) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 trackId,
-                staffName: currentUser ? currentUser.username : 'Unknown Staff'
+                staffName: activeStaffName
             })
         });
 
@@ -387,6 +389,9 @@ window.approveTrack = async function(trackId) {
 window.rejectTrack = async function(trackId) {
     if (!confirm('Are you sure you want to reject this track request?')) return;
 
+    // Retrieve active staff username dynamically from memory or local storage
+    const activeStaffName = currentUser?.username || JSON.parse(localStorage.getItem('kw_session') || '{}')?.username || 'Unknown Staff';
+
     const btn = document.getElementById(`btn-reject-${trackId}`);
     if (btn) {
         btn.disabled = true;
@@ -399,7 +404,7 @@ window.rejectTrack = async function(trackId) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 trackId,
-                staffName: currentUser ? currentUser.username : 'Unknown Staff'
+                staffName: activeStaffName // <-- Explicit username parameter
             })
         });
 
@@ -1097,6 +1102,8 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
         return;
     }
 
+    const activeStaffName = currentUser?.username || JSON.parse(localStorage.getItem('kw_session') || '{}')?.username || 'Unknown Staff';
+
     try {
         const response = await fetch(`${WORKER_BASE_URL}/api/admin/toggle-lock`, {
             method: 'POST',
@@ -1105,7 +1112,7 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
                 threadId, 
                 tagId, 
                 add: shouldAdd,
-                staffName: currentUser ? currentUser.username : 'Unknown Staff'
+                staffName: activeStaffName
             })
         });
         if (!response.ok) throw new Error('Failed to update user tag state');
