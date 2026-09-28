@@ -97,73 +97,107 @@
     </main>
 
     <!-- Client-Side Script -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.lucide) lucide.createIcons();
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (window.lucide) lucide.createIcons();
 
-            const pfpInput = document.getElementById('pfp-url');
-            const pfpPreview = document.getElementById('avatar-preview');
-            const settingsForm = document.getElementById('settings-form');
-            const statusMsg = document.getElementById('status-message');
+        const pfpInput = document.getElementById('pfp-url');
+        const pfpPreview = document.getElementById('avatar-preview');
+        const usernameInput = document.getElementById('username');
+        const emailInput = document.getElementById('email');
+        const settingsForm = document.getElementById('settings-form');
+        const statusMsg = document.getElementById('status-message');
 
-            // Live image preview update
-            pfpInput.addEventListener('input', (e) => {
-                const url = e.target.value.trim();
-                if (url) {
-                    pfpPreview.src = url;
-                }
-            });
+        // 1. Read kw_session from localStorage
+        const rawSession = localStorage.getItem('kw_session');
+        let sessionData = null;
 
-            // Fallback for broken image URLs
-            pfpPreview.addEventListener('error', () => {
-                pfpPreview.src = '/image/kwicon.svg';
-            });
+        if (rawSession) {
+            try {
+                sessionData = JSON.parse(rawSession);
+            } catch (e) {
+                console.error('Failed to parse kw_session:', e);
+            }
+        }
 
-            // Form Submit Handler
-            settingsForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+        // Redirect if user is not logged in or session is invalid
+        if (!sessionData || !sessionData.username) {
+            window.location.href = '/login';
+            return;
+        }
 
-    const usernameVal = document.getElementById('username').value.trim();
-    const pfpVal = pfpInput.value.trim();
-    const emailVal = document.getElementById('email').value.trim();
+        // 2. Pre-populate inputs with active session details
+        usernameInput.value = sessionData.username || '';
+        
+        if (sessionData.avatarUrl) {
+            pfpInput.value = sessionData.avatarUrl;
+            pfpPreview.src = sessionData.avatarUrl;
+        }
 
-    // Construct payload with username and only non-empty fields
-    const updatedData = {
-        username: usernameVal
-    };
+        if (sessionData.email) {
+            emailInput.value = sessionData.email;
+        }
 
-    if (pfpVal) updatedData.pfp = pfpVal;
-    if (emailVal) updatedData.email = emailVal;
-
-    try {
-        const response = await fetch('https://karaokewonders.fetched.workers.dev/api/user/settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(updatedData)
+        // Live image preview update
+        pfpInput.addEventListener('input', (e) => {
+            const url = e.target.value.trim();
+            pfpPreview.src = url || '/image/kwicon.svg';
         });
 
-        if (response.ok) {
-            showStatus('Settings updated successfully!', 'success');
-        } else {
-            const errData = await response.json();
-            showStatus(errData.error || 'Failed to update settings. Please try again.', 'error');
-        }
-    } catch (err) {
-        showStatus('Network error while saving settings.', 'error');
-    }
-});
+        // Fallback for broken image URLs
+        pfpPreview.addEventListener('error', () => {
+            pfpPreview.src = '/image/kwicon.svg';
+        });
 
-            function showStatus(msg, type) {
-                statusMsg.textContent = msg;
-                statusMsg.classList.remove('hidden', 'bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-400', 'bg-red-500/10', 'border-red-500/30', 'text-red-400');
+        // 3. Form Submit Handler
+        settingsForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-                if (type === 'success') {
-                    statusMsg.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-400');
+            const usernameVal = usernameInput.value.trim();
+            const pfpVal = pfpInput.value.trim();
+            const emailVal = emailInput.value.trim();
+
+            const updatedData = {
+                username: usernameVal
+            };
+
+            if (pfpVal) updatedData.pfp = pfpVal;
+            if (emailVal) updatedData.email = emailVal;
+
+            try {
+                const response = await fetch('https://karaokewonders.fetched.workers.dev/api/user/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
+                });
+
+                if (response.ok) {
+                    // 4. Update local session storage upon successful backend response
+                    if (pfpVal) sessionData.avatarUrl = pfpVal;
+                    if (emailVal) sessionData.email = emailVal;
+                    localStorage.setItem('kw_session', JSON.stringify(sessionData));
+
+                    showStatus('Settings updated successfully!', 'success');
                 } else {
-                    statusMsg.classList.add('bg-red-500/10', 'border-red-500/30', 'text-red-400');
+                    const errData = await response.json();
+                    showStatus(errData.error || 'Failed to update settings. Please try again.', 'error');
                 }
+            } catch (err) {
+                showStatus('Network error while saving settings.', 'error');
             }
         });
-    </script>
+
+        function showStatus(msg, type) {
+            statusMsg.textContent = msg;
+            statusMsg.classList.remove('hidden', 'bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-400', 'bg-red-500/10', 'border-red-500/30', 'text-red-400');
+
+            if (type === 'success') {
+                statusMsg.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-400');
+            } else {
+                statusMsg.classList.add('bg-red-500/10', 'border-red-500/30', 'text-red-400');
+            }
+        }
+    });
+</script>
 </body>
 </html>
