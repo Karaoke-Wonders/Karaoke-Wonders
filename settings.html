@@ -57,6 +57,23 @@
                     </div>
                 </div>
 
+                <!-- Thread ID Section (ReadOnly) -->
+<div>
+    <div class="flex items-center justify-between mb-1">
+        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300">Thread ID</label>
+        <span class="text-[10px] text-emerald-400 flex items-center gap-1 font-medium">
+            <i data-lucide="shield" class="w-3 h-3"></i> Support Ref
+        </span>
+    </div>
+    <div class="relative">
+        <input type="text" id="thread-id" name="threadId" value="" readonly class="w-full bg-black/20 border border-white/5 rounded-xl p-3 text-sm text-slate-300 font-mono focus:outline-none cursor-text select-all">
+        <button type="button" id="copy-thread-btn" title="Copy Thread ID" class="absolute right-2.5 top-2.5 p-1.5 text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-all">
+            <i data-lucide="copy" class="w-4 h-4"></i>
+        </button>
+    </div>
+    <p class="text-[11px] text-slate-500 mt-1">Provide this ID to staff if you need support.</p>
+</div>
+
                 <!-- Username Section (Disabled/Locked) -->
                 <div>
                     <div class="flex items-center justify-between mb-1">
@@ -104,6 +121,8 @@
         const pfpInput = document.getElementById('pfp-url');
         const pfpPreview = document.getElementById('avatar-preview');
         const usernameInput = document.getElementById('username');
+        const threadIdInput = document.getElementById('thread-id'); // Added
+        const copyBtn = document.getElementById('copy-thread-btn');   // Added
         const emailInput = document.getElementById('email');
         const settingsForm = document.getElementById('settings-form');
         const statusMsg = document.getElementById('status-message');
@@ -128,6 +147,7 @@
 
         // 2. Pre-populate inputs with active session details
         usernameInput.value = sessionData.username || '';
+        if (threadIdInput) threadIdInput.value = sessionData.threadId || 'N/A'; // Added
         
         if (sessionData.avatarUrl) {
             pfpInput.value = sessionData.avatarUrl;
@@ -137,6 +157,17 @@
         if (sessionData.email) {
             emailInput.value = sessionData.email;
         }
+
+        // Copy Thread ID handler
+    if (copyBtn && threadIdInput) {
+        copyBtn.addEventListener('click', () => {
+            const threadId = threadIdInput.value;
+            if (threadId && threadId !== 'N/A') {
+                navigator.clipboard.writeText(threadId);
+                showStatus('Thread ID copied to clipboard!', 'success');
+            }
+        });
+    }
 
         // Live image preview update
         pfpInput.addEventListener('input', (e) => {
