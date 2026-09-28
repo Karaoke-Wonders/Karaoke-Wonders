@@ -364,7 +364,10 @@ window.approveTrack = async function(trackId) {
         const res = await fetch(`${WORKER_BASE_URL}/api/admin/approve-track`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ trackId })
+            body: JSON.stringify({ 
+                trackId,
+                staffName: currentUser ? currentUser.username : 'Unknown Staff'
+            })
         });
 
         if (!res.ok) throw new Error('Failed to approve track');
@@ -394,7 +397,10 @@ window.rejectTrack = async function(trackId) {
         const res = await fetch(`${WORKER_BASE_URL}/api/admin/reject-track`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ trackId })
+            body: JSON.stringify({ 
+                trackId,
+                staffName: currentUser ? currentUser.username : 'Unknown Staff'
+            })
         });
 
         if (!res.ok) throw new Error('Failed to reject track');
@@ -421,7 +427,10 @@ window.approveAllPending = async function() {
     try {
         const res = await fetch(`${WORKER_BASE_URL}/api/admin/approve-all`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                staffName: currentUser ? currentUser.username : 'Unknown Staff'
+            })
         });
 
         if (!res.ok) throw new Error('Failed bulk approval');
