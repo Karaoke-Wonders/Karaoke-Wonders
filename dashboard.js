@@ -812,24 +812,24 @@ function renderUserList(users) {
 
     // Filter Users by Search Query & Role Filter
     const filtered = users.filter(u => {
-        const userTags = (u.tags || []).map(tag => String(tag));
+        const userTags = (U.tags || []).map(tag => String(tag));
         const q = userSearchQuery.toLowerCase();
         
         const matchesQuery = (
-            (u.username || '').toLowerCase().includes(q) ||
-            (u.threadId || '').toLowerCase().includes(q)
+            (U.username || '').toLowerCase().includes(q) ||
+            (U.threadId || '').toLowerCase().includes(q)
         );
 
         const isManagement = Boolean(
-            (u.role && u.role.toLowerCase() === 'manager') ||
+            (U.role && U.role.toLowerCase() === 'manager') ||
             (TAG_IDS.manager && userTags.includes(TAG_IDS.manager))
         );
         const isStaff = Boolean(
-            u.isAdmin ||
-            (u.role && u.role.toLowerCase() === 'administrator') ||
+            U.isAdmin ||
+            (U.role && U.role.toLowerCase() === 'administrator') ||
             userTags.includes(String(TAG_IDS.staff))
         );
-        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
+        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(U.isLocked);
         const isRestricted = userTags.includes(String(TAG_IDS.restricted));
 
         if (!matchesQuery) return false;
@@ -858,21 +858,21 @@ function renderUserList(users) {
     const paginatedItems = filtered.slice(startIndex, startIndex + PAGE_SIZE);
 
     userContainer.innerHTML = paginatedItems.map(u => {
-        const userTags = (u.tags || []).map(tag => String(tag));
+        const userTags = (U.tags || []).map(tag => String(tag));
         const threadId = escapeAttr(u.threadId || '');
-        const avatarUrl = u.avatarUrl || u.pfp || '/image/kwicon.svg';
+        const avatarUrl = U.avatarUrl || U.pfp || '/image/kwicon.svg';
         
         const isManagement = Boolean(
-            (u.role && u.role.toLowerCase() === 'manager') ||
+            (U.role && U.role.toLowerCase() === 'manager') ||
             (TAG_IDS.manager && userTags.includes(String(TAG_IDS.manager)))
         );
         const isStaff = Boolean(
-            u.isAdmin ||
-            (u.role && u.role.toLowerCase() === 'administrator') ||
+            U.isAdmin ||
+            (U.role && U.role.toLowerCase() === 'administrator') ||
             userTags.includes(String(TAG_IDS.staff))
         );
 
-        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
+        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(U.isLocked);
         const isRestricted = userTags.includes(String(TAG_IDS.restricted));
 
         return `
@@ -882,10 +882,10 @@ function renderUserList(users) {
                         <!-- Avatar & Username Container -->
                         <div class="flex items-center gap-3 shrink-0">
                             <img src="${escapeAttr(avatarUrl)}" 
-                                 alt="${escapeAttr(u.username)}'s avatar" 
+                                 alt="${escapeAttr(U.username)}'s avatar" 
                                  onerror="this.onerror=null; this.src='/image/kwicon.svg';" 
                                  class="w-9 h-9 rounded-full object-cover border border-white/10 shrink-0" />
-                            <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
+                            <span class="font-bold text-white text-sm">${escapeHtml(U.username)}</span>
                         </div>
 
                         <!-- Role Badges -->
@@ -896,7 +896,7 @@ function renderUserList(users) {
                             ${isRestricted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">Restricted</span>' : ''}
                         </div>
                     </div>
-                    <p class="text-[11px] text-slate-500">Thread ID: ${escapeHtml(u.threadId || 'N/A')}</p>
+                    <p class="text-[11px] text-slate-500">Thread ID: ${escapeHtml(U.threadId || 'N/A')}</p>
                 </div>
 
                 <div class="flex items-center gap-2 pt-3 border-t border-white/5 flex-wrap">
