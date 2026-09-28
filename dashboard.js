@@ -751,7 +751,11 @@ window.deleteSong = async function(songId) {
         return;
     }
 
-    if (!confirm('Are you sure you want to delete and reject this song?')) return;
+    // Find song metadata from your global/local array to get the title
+    const song = (typeof allSongs !== 'undefined' ? allSongs : []).find(s => String(s.id || s._id) === String(songId));
+    const songName = song ? (song.songName || song.title) : '';
+
+    if (!confirm(`Are you sure you want to delete "${songName || songId}" from the live catalog?`)) return;
 
     // Get the current moderator's username
     const activeStaffName = currentUser?.username || JSON.parse(localStorage.getItem('kw_session') || '{}')?.username || 'Unknown Staff';
@@ -762,22 +766,22 @@ window.deleteSong = async function(songId) {
     }
 
     try {
-        // Send a POST request to the reject-track API endpoint
-        const res = await fetch(`${WORKER_BASE_URL}/api/admin/reject-track`, {
+        // Send POST request to the dedicated delete-song API endpoint
+        const res = await fetch(`${WORKER_BASE_URL}/api/admin/delete-song`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                trackId: songId,
+                songId,
+                songName,
                 staffName: activeStaffName
             })
         });
 
-        if (!res.ok) throw new Error('Failed to delete/reject track');
+        if (!res.ok) throw new Error('Failed to delete song');
 
-        showDashboardAlert('Song removed and request rejected successfully!', 'success');
+        showDashboardAlert('Song removed from live catalog successfully!', 'success');
         
-        // Refresh both pending requests and live songs catalog
-        await loadPendingRequests();
+        // Refresh live songs catalog
         await loadSongs();
     } catch (err) {
         showDashboardAlert('Error deleting song. Please try again.', 'error');
