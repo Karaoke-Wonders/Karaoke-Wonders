@@ -16,48 +16,75 @@ export async function onRequestPost({ request, env }) {
     const filePath = `songs/batch_${folderIndex}/${songId}.json`;
     const url = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
 
-const existingFileRes = await fetch(url, {
-        headers: { 
-            'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 
-            'User-Agent': 'Cloudflare-Worker' 
-        },
-        cache: 'no-store',
-        cf: { cacheTtl: 0 }
-    });
+    let maxRetries = 3;
+    let response;
+    let fileData, existingContent;
 
-    if (!existingFileRes.ok) {
-        console.error(`[handleUpdateSong] Song file not found: ${filePath}`);
-        return jsonResponse({ error: "Song not found in repository." }, 404);
-    }
+    // Retry loop to handle GitHub 409 SHA conflicts seamlessly
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        // Fetch fresh file data and SHA every attempt, bypassing cache
+        const existingFileRes = await fetch(url, {
+            headers: { 
+                'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 
+                'User-Agent': 'Cloudflare-Worker' 
+            },
+            cache: 'no-store',
+            cf: { cacheTtl: 0 }
+        });
 
-    const fileData = await existingFileRes.json();
-    const existingContent = JSON.parse(atob(fileData.content.replace(/\n/g, '')));
+        if (!existingFileRes.ok) {
+            console.error(`[handleUpdateSong] Song file not found: ${filePath}`);
+            return jsonResponse({ error: "Song not found in repository." }, 404);
+        }
 
-    const updatedSong = {
-        ...existingContent,
-        songName,
-        artist,
-        videoId,
-        updatedAt: new Date().toISOString()
-    };
+        fileData = await existingFileRes.json();
+        existingContent = JSON.parse(atob(fileData.content.replace(/\n/g, '')));
 
-    const encodedContent = btoa(unescape(encodeURIComponent(JSON.stringify(updatedSong, null, 2))));
+        const updatedSong = {
+            ...existingContent,
+            songName,
+            artist,
+            videoId,
+            updatedAt: new Date().toISOString()
+        };
 
-    const response = await fetch(url, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'Content-Type': 'application/json', 'User-Agent': 'Cloudflare-Worker' },
-        body: JSON.stringify({
-            message: `Update song: ${songName} (${songId})`,
-            content: encodedContent,
-            sha: fileData.sha,
-            branch
-        })
-    });
+        const encodedContent = btoa(unescape(encodeURIComponent(JSON.stringify(updatedSong, null, 2))));
 
-    if (!response.ok) {
+        // Attempt the PUT request to GitHub
+        response = await fetch(url, {
+            method: 'PUT',
+            headers: { 
+                'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 
+                'Content-Type': 'application/json', 
+                'User-Agent': 'Cloudflare-Worker' 
+            },
+            body: JSON.stringify({
+                message: `Update song: ${songName} (${songId})`,
+                content: encodedContent,
+                sha: fileData.sha,
+                branch
+            })
+        });
+
+        if (response.ok) {
+            break; // Success! Exit the loop.
+        }
+
         const errText = await response.text();
+
+        // If it's a conflict (409) and we still have attempts left, wait and retry
+        if (response.status === 409 && attempt < maxRetries) {
+            console.warn(`[handleUpdateSong] Conflict (409) on attempt ${attempt}. Retrying with fresh SHA...`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+            continue;
+        }
+
         console.error(`[handleUpdateSong] Failed to update song (${response.status}):`, errText);
         return jsonResponse({ error: `Failed to update song: ${errText}` }, 500);
+    }
+
+    if (!response || !response.ok) {
+        return jsonResponse({ error: "Failed to update song after multiple conflict retries." }, 500);
     }
 
     await sendDiscordStaffAuditNotification(
