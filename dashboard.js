@@ -695,14 +695,19 @@ window.updateTrackDirectly = async function(event) {
             body: JSON.stringify({ songId, songName, artist, videoId })
         });
 
-        if (!res.ok) throw new Error('Failed to update track');
+        if (!res.ok) {
+            // Read the JSON error message sent back by the backend worker
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || 'Failed to update track');
+        }
 
         showDashboardAlert('Song updated successfully!', 'success');
         closeEditTrackModal();
         await loadSongs(songCurrentPage);
 
     } catch (err) {
-        showModalError('edit-modal-status-message', 'Error updating track.');
+        // Display the specific error message in the modal
+        showModalError('edit-modal-status-message', err.message || 'Error updating track.');
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
