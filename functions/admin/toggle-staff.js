@@ -1,4 +1,4 @@
-import { updateThreadTag } from '../_utils.js';
+import { updateThreadTag } from 'functions/_middleware/utils.js';
 
 export async function onRequestPost({ request, env }) {
     const body = await request.json();

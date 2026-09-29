@@ -1,4 +1,4 @@
-import { findDiscordThreadByName, patchDiscordThread, getDiscordThreadData, jsonResponse } from '../_utils.js';
+import { findDiscordThreadByName, patchDiscordThread, getDiscordThreadData, jsonResponse } from 'functions/_middleware/utils.js';
 
 export async function onRequestPost({ request, env }) {
     const body = await request.json();

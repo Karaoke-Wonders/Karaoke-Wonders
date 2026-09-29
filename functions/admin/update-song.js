@@ -1,4 +1,4 @@
-import { hashCode, sendDiscordStaffAuditNotification, jsonResponse } from '../_utils.js';
+import { hashCode, sendDiscordStaffAuditNotification, jsonResponse } from 'functions/_middleware/utils.js';
 
 export async function onRequestPost({ request, env }) {
     const body = await request.json();

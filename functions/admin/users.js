@@ -1,4 +1,4 @@
-import { resolveGuildId, jsonResponse } from '../_utils.js';
+import { resolveGuildId, jsonResponse } from 'functions/_middleware/utils.js';
 
 export async function onRequestGet({ env }) {
     console.log("[handleGetUsers] Fetching active threads from Discord forum channel...");

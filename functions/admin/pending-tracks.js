@@ -1,4 +1,4 @@
-import { fetchPendingSongsFromGitHub, jsonResponse } from '../_utils.js';
+import { fetchPendingSongsFromGitHub, jsonResponse } from 'functions/_middleware/utils.js';
 
 export async function onRequestGet({ env }) {
     console.log("[handleGetPending] Fetching pending tracks from GitHub...");

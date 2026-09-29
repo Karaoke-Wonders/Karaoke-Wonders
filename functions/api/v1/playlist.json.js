@@ -1,4 +1,4 @@
-import { fetchAllSongsFromGitHub } from '../../_utils.js';
+import { fetchAllSongsFromGitHub } from 'functions/_middleware/utils.js';
 
 export async function onRequestGet({ env }) {
     console.log("[handleGetVRChatPlaylist] Fetching all songs for VRChat playlist...");
