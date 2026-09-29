@@ -197,7 +197,7 @@
             if (emailVal) updatedData.email = emailVal;
 
             try {
-                const response = await fetch('https://karaokewonders.fetched.workers.dev/api/user/settings', {
+                const response = await fetch('/api/user/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(updatedData)
