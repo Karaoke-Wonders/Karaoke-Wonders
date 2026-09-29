@@ -1,4 +1,4 @@
-import { patchDiscordThread, jsonResponse } from 'functions/_middleware/utils.js';
+import { patchDiscordThread, jsonResponse } from '../_middleware/utils.js';
 
 export async function onRequestPost({ request, env }) {
     const { threadId } = await request.json();

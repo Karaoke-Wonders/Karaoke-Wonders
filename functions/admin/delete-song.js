@@ -1,4 +1,4 @@
-import { removeSongFromGitHub, sendDiscordStaffAuditNotification, jsonResponse } from 'functions/_middleware/utils.js';
+import { removeSongFromGitHub, sendDiscordStaffAuditNotification, jsonResponse } from '../_middleware/utils.js';
 
 export async function onRequestPost({ request, env }) {
     const body = await request.json();

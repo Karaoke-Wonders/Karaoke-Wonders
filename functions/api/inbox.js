@@ -1,4 +1,4 @@
-import { jsonResponse } from 'functions/_middleware/utils.js';
+import { jsonResponse } from '../_middleware/utils.js';
 
 export async function onRequestGet({ request }) {
     const url = new URL(request.url);
