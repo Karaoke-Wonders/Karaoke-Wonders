@@ -1,4 +1,4 @@
-import { fetchAllSongsFromGitHub, jsonResponse } from '../../_middleware/utils.js';
+import { fetchAllSongsFromGitHub, jsonResponse } from '../_middleware/utils.js';
 
 export async function onRequestGet({ request, env }) {
     console.log("[handleGetSongs] Fetching songs list...");
