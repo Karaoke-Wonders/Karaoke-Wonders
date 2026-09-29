@@ -14,6 +14,7 @@ let pendingSearchQuery = '';
 // Pagination States (10 items per page)
 const PAGE_SIZE = 10;
 let songCurrentPage = 1;
+let songTotalPages = 1;
 let userCurrentPage = 1;
 let managementUserCurrentPage = 1;
 
@@ -31,13 +32,11 @@ const TAG_IDS = {
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // 1. Refresh and validate session data against backend in real-time
     console.log("REFRESH EVENT FIRED!");
     await refreshUserSession();
 
     const sessionData = localStorage.getItem('kw_session');
     
-    // 2. Session check: Must be authenticated
     if (!sessionData) {
         window.location.href = 'index.html';
         return;
@@ -51,14 +50,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // 3. Admin authorization check: Ensure administrative status
     if (!currentUser.isAdmin) {
         alert('Access denied. Administrator privileges required.');
         window.location.href = 'main.html';
         return;
     }
 
-    // 4. Setup Global UI Elements & Global Event Listeners
     setupUserProfile();
     bindGlobalEventListeners();
 
@@ -66,16 +63,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         lucide.createIcons();
     }
 
-    // 5. Hydrate all admin management datasets
     await Promise.all([
         loadPendingRequests(),
         loadUserList(),
-        loadSongs()
+        loadSongs(1)
     ]);
 });
 
 function bindGlobalEventListeners() {
-    // Form submission handlers
     const addTrackForm = document.getElementById('add-track-form');
     if (addTrackForm) {
         addTrackForm.addEventListener('submit', window.addTrackDirectly);
@@ -86,7 +81,6 @@ function bindGlobalEventListeners() {
         editTrackForm.addEventListener('submit', window.updateTrackDirectly);
     }
 
-    // Keyboard shortcuts (ESC closes open modals)
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             closeAddTrackModal();
@@ -111,7 +105,6 @@ function setupUserProfile() {
     }
 }
 
-// Navigation Tab Switcher
 window.switchTab = function(tabName) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
     document.querySelectorAll('.sidebar-link').forEach(btn => btn.classList.remove('active'));
@@ -142,7 +135,6 @@ async function refreshUserSession() {
     try {
         const user = JSON.parse(sessionData);
         
-        // Ping worker endpoint to get freshest tags/status from Discord
         const response = await fetch(`/api/get-account`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -158,7 +150,6 @@ async function refreshUserSession() {
         const data = await response.json();
         const userTags = data.tags || [];
 
-        // Check if blacklisted or locked in real time
         if (userTags.includes(TAG_IDS.blacklisted) || data.isLocked) {
             localStorage.removeItem('kw_session');
             alert('Your account has been restricted or blacklisted.');
@@ -166,13 +157,8 @@ async function refreshUserSession() {
             return;
         }
 
-        const isStaff = Boolean(
-            data.isAdmin || userTags.includes(TAG_IDS.staff)
-        );
-
-        const isManager = Boolean(
-            data.isManager || userTags.includes(TAG_IDS.manager)
-        );
+        const isStaff = Boolean(data.isAdmin || userTags.includes(TAG_IDS.staff));
+        const isManager = Boolean(data.isManager || userTags.includes(TAG_IDS.manager));
 
         user.tags = userTags;
         user.isAdmin = isStaff;
@@ -204,7 +190,6 @@ async function refreshUserSession() {
     }
 }
 
-// Alert banner notifications
 function showDashboardAlert(message, type = 'error') {
     const alertBox = document.getElementById('dashboard-alert');
     const alertText = document.getElementById('dashboard-alert-text');
@@ -347,8 +332,6 @@ window.filterPendingRequests = function(query) {
 };
 
 window.approveTrack = async function(trackId) {
-    const activeStaffName = currentUser?.username || JSON.parse(localStorage.getItem('kw_session') || '{}')?.username || 'Unknown Staff';
-
     const btn = document.getElementById(`btn-approve-${trackId}`);
     if (btn) {
         btn.disabled = true;
@@ -361,7 +344,7 @@ window.approveTrack = async function(trackId) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 trackId,
-                staffName: activeStaffName
+                staffName: currentUser?.username || 'Unknown Staff'
             })
         });
 
@@ -369,7 +352,7 @@ window.approveTrack = async function(trackId) {
 
         showDashboardAlert('Track approved and added to catalog!', 'success');
         await loadPendingRequests();
-        await loadSongs();
+        await loadSongs(songCurrentPage);
     } catch (err) {
         showDashboardAlert('Error approving track. Please try again.', 'error');
         if (btn) {
@@ -381,8 +364,6 @@ window.approveTrack = async function(trackId) {
 
 window.rejectTrack = async function(trackId) {
     if (!confirm('Are you sure you want to reject this track request?')) return;
-
-    const activeStaffName = currentUser?.username || JSON.parse(localStorage.getItem('kw_session') || '{}')?.username || 'Unknown Staff';
 
     const btn = document.getElementById(`btn-reject-${trackId}`);
     if (btn) {
@@ -396,7 +377,7 @@ window.rejectTrack = async function(trackId) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 trackId,
-                staffName: activeStaffName
+                staffName: currentUser?.username || 'Unknown Staff'
             })
         });
 
@@ -413,98 +394,58 @@ window.rejectTrack = async function(trackId) {
     }
 };
 
-window.approveAllPending = async function() {
-    if (pendingQueue.length === 0) {
-        showDashboardAlert('No pending tracks to approve.', 'info');
-        return;
-    }
-
-    if (!confirm(`Are you sure you want to approve all ${pendingQueue.length} pending tracks?`)) return;
-
-    try {
-        const res = await fetch(`/api/admin/approve-all`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                staffName: currentUser ? currentUser.username : 'Unknown Staff'
-            })
-        });
-
-        if (!res.ok) throw new Error('Failed bulk approval');
-
-        showDashboardAlert('All pending tracks approved successfully!', 'success');
-        await loadPendingRequests();
-        await loadSongs();
-    } catch (err) {
-        showDashboardAlert('Error processing bulk approval.', 'error');
-    }
-};
-
 
 // ==========================================
-// 3. LIVE SONG CATALOG & CRUD MANAGEMENT
+// 3. LIVE SONG CATALOG & SERVER PAGINATION
 // ==========================================
 
-async function loadSongs() {
+async function loadSongs(page = 1) {
     const container = document.getElementById('song-list');
     const songsBadge = document.getElementById('songs-badge');
     const statSongs = document.getElementById('stat-songs-count');
     if (!container) return;
 
+    songCurrentPage = page;
+
     try {
-        const response = await fetch(`/api/songs`);
+        const response = await fetch(`/api/songs?page=${songCurrentPage}&limit=${PAGE_SIZE}`);
         if (!response.ok) throw new Error('Failed to fetch songs');
 
-        allSongs = await response.json();
+        const data = await response.json();
 
-        if (songsBadge) songsBadge.textContent = allSongs.length;
-        if (statSongs) statSongs.textContent = allSongs.length;
-
-        renderSongs(allSongs);
+        // Support both direct array and server-side paginated object responses
+        if (Array.isArray(data)) {
+            allSongs = data;
+            songTotalPages = Math.ceil(allSongs.length / PAGE_SIZE) || 1;
+            renderSongsClientSide(allSongs);
+        } else {
+            allSongs = data.songs || [];
+            songTotalPages = data.totalPages || 1;
+            songCurrentPage = data.page || songCurrentPage;
+            
+            if (songsBadge) songsBadge.textContent = data.total || allSongs.length;
+            if (statSongs) statSongs.textContent = data.total || allSongs.length;
+            
+            renderSongsServerSide(allSongs);
+        }
     } catch (err) {
         console.error(err);
         container.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No approved songs loaded.</p>`;
     }
 }
 
-function renderSongs(songs) {
+function renderSongsServerSide(songs) {
     const container = document.getElementById('song-list');
     if (!container) return;
 
-    let filtered = songs.filter(s => {
-        const q = songSearchQuery.toLowerCase();
-        return (
-            (s.songName || s.title || '').toLowerCase().includes(q) ||
-            (s.artist || '').toLowerCase().includes(q) ||
-            (s.submittedBy || '').toLowerCase().includes(q)
-        );
-    });
-
-    filtered.sort((a, b) => {
-        if (songSortBy === 'artist') {
-            return (a.artist || '').localeCompare(b.artist || '');
-        } else if (songSortBy === 'uploader') {
-            return (a.submittedBy || '').localeCompare(b.submittedBy || '');
-        } else {
-            return (a.songName || a.title || '').localeCompare(b.songName || b.title || '');
-        }
-    });
-
-    if (filtered.length === 0) {
+    if (songs.length === 0) {
         container.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No matching tracks found in catalog.</p>`;
         let existingPagination = document.getElementById('song-pagination-container');
         if (existingPagination) existingPagination.remove();
         return;
     }
 
-    const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
-    if (songCurrentPage > totalPages) songCurrentPage = totalPages;
-    if (songCurrentPage < 1) songCurrentPage = 1;
-
-    const startIndex = (songCurrentPage - 1) * PAGE_SIZE;
-    const paginatedItems = filtered.slice(startIndex, startIndex + PAGE_SIZE);
-
-    container.innerHTML = paginatedItems.map(song => {
+    container.innerHTML = songs.map(song => {
         const songId = escapeAttr(song.id || song._id || '');
         const title = song.songName || song.title || 'Untitled';
         const artist = song.artist || 'Unknown Artist';
@@ -550,12 +491,12 @@ function renderSongs(songs) {
     }
 
     paginationContainer.innerHTML = `
-        <span>Page ${songCurrentPage} of ${totalPages}</span>
+        <span>Page ${songCurrentPage} of ${songTotalPages}</span>
         <div class="flex items-center gap-2">
             <button onclick="changeSongPage(${songCurrentPage - 1})" ${songCurrentPage <= 1 ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
                 Previous
             </button>
-            <button onclick="changeSongPage(${songCurrentPage + 1})" ${songCurrentPage >= totalPages ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
+            <button onclick="changeSongPage(${songCurrentPage + 1})" ${songCurrentPage >= songTotalPages ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
                 Next
             </button>
         </div>
@@ -564,21 +505,50 @@ function renderSongs(songs) {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-window.changeSongPage = function(targetPage) {
-    songCurrentPage = targetPage;
-    renderSongs(allSongs);
+// Fallback client-side rendering if server returns raw arrays
+function renderSongsClientSide(songs) {
+    let filtered = songs.filter(s => {
+        const q = songSearchQuery.toLowerCase();
+        return (
+            (s.songName || s.title || '').toLowerCase().includes(q) ||
+            (s.artist || '').toLowerCase().includes(q) ||
+            (s.submittedBy || '').toLowerCase().includes(q)
+        );
+    });
+
+    filtered.sort((a, b) => {
+        if (songSortBy === 'artist') {
+            return (a.artist || '').localeCompare(b.artist || '');
+        } else if (songSortBy === 'uploader') {
+            return (a.submittedBy || '').localeCompare(b.submittedBy || '');
+        } else {
+            return (a.songName || a.title || '').localeCompare(b.songName || b.title || '');
+        }
+    });
+
+    songTotalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+    if (songCurrentPage > songTotalPages) songCurrentPage = songTotalPages;
+    if (songCurrentPage < 1) songCurrentPage = 1;
+
+    const startIndex = (songCurrentPage - 1) * PAGE_SIZE;
+    const paginatedItems = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+
+    renderSongsServerSide(paginatedItems);
+}
+
+window.changeSongPage = async function(targetPage) {
+    if (targetPage < 1 || targetPage > songTotalPages) return;
+    await loadSongs(targetPage);
 };
 
 window.filterSongs = function(query) {
     songSearchQuery = query || '';
-    songCurrentPage = 1;
-    renderSongs(allSongs);
+    loadSongs(1);
 };
 
 window.sortSongs = function(sortBy) {
     songSortBy = sortBy || 'title';
-    songCurrentPage = 1;
-    renderSongs(allSongs);
+    loadSongs(1);
 };
 
 window.openAddTrackModal = function() {
@@ -642,7 +612,7 @@ window.addTrackDirectly = async function(event) {
         if (videoIdInput) videoIdInput.value = '';
 
         closeAddTrackModal();
-        await loadSongs();
+        await loadSongs(1);
 
     } catch (err) {
         showModalError('modal-status-message', 'Failed to add track. Check connectivity.');
@@ -718,7 +688,7 @@ window.updateTrackDirectly = async function(event) {
 
         showDashboardAlert('Song updated successfully!', 'success');
         closeEditTrackModal();
-        await loadSongs();
+        await loadSongs(songCurrentPage);
 
     } catch (err) {
         showModalError('edit-modal-status-message', 'Error updating track.');
@@ -736,17 +706,13 @@ window.deleteSong = async function(songId) {
         return;
     }
 
-    const song = (typeof allSongs !== 'undefined' ? allSongs : []).find(s => String(s.id || s._id) === String(songId));
+    const song = allSongs.find(s => String(s.id || s._id) === String(songId));
     const songName = song ? (song.songName || song.title) : '';
 
     if (!confirm(`Are you sure you want to delete "${songName || songId}" from the live catalog?`)) return;
 
-    const activeStaffName = currentUser?.username || JSON.parse(localStorage.getItem('kw_session') || '{}')?.username || 'Unknown Staff';
-
     const btn = document.getElementById(`btn-delete-${songId}`);
-    if (btn) {
-        btn.disabled = true;
-    }
+    if (btn) btn.disabled = true;
 
     try {
         const res = await fetch(`/api/admin/delete-song`, {
@@ -755,14 +721,14 @@ window.deleteSong = async function(songId) {
             body: JSON.stringify({ 
                 songId,
                 songName,
-                staffName: activeStaffName
+                staffName: currentUser?.username || 'Unknown Staff'
             })
         });
 
         if (!res.ok) throw new Error('Failed to delete song');
 
         showDashboardAlert('Song removed from live catalog successfully!', 'success');
-        await loadSongs();
+        await loadSongs(songCurrentPage);
     } catch (err) {
         showDashboardAlert('Error deleting song. Please try again.', 'error');
         if (btn) btn.disabled = false;
@@ -1089,8 +1055,6 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
         return;
     }
 
-    const activeStaffName = currentUser?.username || JSON.parse(localStorage.getItem('kw_session') || '{}')?.username || 'Unknown Staff';
-
     try {
         const response = await fetch(`/api/admin/toggle-lock`, {
             method: 'POST',
@@ -1099,7 +1063,7 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
                 threadId, 
                 tagId, 
                 add: shouldAdd,
-                staffName: activeStaffName
+                staffName: currentUser?.username || 'Unknown Staff'
             })
         });
         if (!response.ok) throw new Error('Failed to update user tag state');
