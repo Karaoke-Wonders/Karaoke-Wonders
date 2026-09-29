@@ -6,9 +6,8 @@ const TAG_IDS = {
 };
 
 let currentUser = null;
-let allSongs = [];
-let filteredSongsList = [];
 let currentPage = 1;
+let totalPages = 1;
 const itemsPerPage = 10;
 
 /**
@@ -306,26 +305,30 @@ window.hideAlert = function() {
     if (alertBox) alertBox.classList.add('hidden');
 };
 
-// Load approved songs from Worker API
-async function loadSongLibrary() {
+// Load approved songs for the current page from Worker API
+async function loadSongLibrary(page = 1) {
     const songListContainer = document.getElementById('song-list');
     if (!songListContainer) return;
 
     try {
-        const response = await fetch(`/api/songs`);
+        const response = await fetch(`/api/songs?page=${page}&limit=${itemsPerPage}`);
         if (!response.ok) throw new Error(`HTTP error ${response.status}`);
 
-        allSongs = await response.json();
-        filteredSongsList = [...allSongs];
-        currentPage = 1;
-        renderSongs(filteredSongsList);
+        const data = await response.json();
+        
+        // Extract pagination data from the new backend response object
+        const songs = data.songs || [];
+        totalPages = data.totalPages || 1;
+        currentPage = data.page || page;
+
+        renderSongs(songs);
     } catch (err) {
         console.error('Error loading songs:', err);
         songListContainer.innerHTML = `<p class="text-slate-500 text-xs col-span-full text-center py-10">Unable to load songs at this time.</p>`;
     }
 }
 
-// Render song cards into the grid with 10-song per page limit
+// Render song cards into the grid
 function renderSongs(songs) {
     const songListContainer = document.getElementById('song-list');
     if (!songListContainer) return;
@@ -342,12 +345,7 @@ function renderSongs(songs) {
         return;
     }
 
-    // 10 Songs Per Page Slicing Logic
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedSongs = songs.slice(startIndex, endIndex);
-
-    songListContainer.innerHTML = paginatedSongs.map(song => {
+    songListContainer.innerHTML = songs.map(song => {
         const title = song.songName || song.title || 'Untitled';
         const artist = song.artist || 'Unknown Artist';
         const uploader = song.submittedBy || song.uploader || 'Member';
@@ -528,14 +526,13 @@ function renderPaginationControls() {
 
 // Handle pagination page switches
 window.changePage = function(direction) {
-    const totalPages = Math.ceil(filteredSongsList.length / itemsPerPage);
-    
     currentPage += direction;
 
     if (currentPage < 1) currentPage = 1;
     if (currentPage > totalPages) currentPage = totalPages;
 
-    renderSongs(filteredSongsList);
+    // Fetch the new page from the backend server
+    loadSongLibrary(currentPage);
     
     const libraryHeader = document.getElementById('content-library');
     if (libraryHeader) {
