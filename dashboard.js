@@ -695,10 +695,11 @@ window.updateTrackDirectly = async function(event) {
             body: JSON.stringify({ songId, songName, artist, videoId })
         });
 
+        // Grab the raw text response from the server (whether JSON or HTML)
+        const responseText = await res.text();
+
         if (!res.ok) {
-            // Read the JSON error message sent back by the backend worker
-            const errData = await res.json().catch(() => ({}));
-            throw new Error(errData.error || 'Failed to update track');
+            throw new Error(`Server returned ${res.status}: ${responseText}`);
         }
 
         showDashboardAlert('Song updated successfully!', 'success');
@@ -706,8 +707,9 @@ window.updateTrackDirectly = async function(event) {
         await loadSongs(songCurrentPage);
 
     } catch (err) {
-        // Display the specific error message in the modal
-        showModalError('edit-modal-status-message', err.message || 'Error updating track.');
+        // This will print the exact raw error text right into your modal box
+        showModalError('edit-modal-status-message', err.message);
+        console.error("Update error:", err);
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
