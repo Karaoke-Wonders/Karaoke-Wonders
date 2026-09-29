@@ -524,7 +524,7 @@ function renderPaginationControls() {
     }
 }
 
-// Handle pagination page switches
+// Handle pagination page switches 
 window.changePage = function(direction) {
     currentPage += direction;
 
