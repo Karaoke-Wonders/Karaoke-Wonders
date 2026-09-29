@@ -305,10 +305,21 @@ window.hideAlert = function() {
     if (alertBox) alertBox.classList.add('hidden');
 };
 
-// Load approved songs for the current page from Worker API
+// Load approved songs for the current page from Worker API with a loading state
 async function loadSongLibrary(page = 1) {
     const songListContainer = document.getElementById('song-list');
     if (!songListContainer) return;
+
+    // Display loading indicator
+    songListContainer.innerHTML = `
+        <div class="col-span-full text-center py-12 glass rounded-3xl border border-white/10 flex flex-col items-center justify-center space-y-3">
+            <i data-lucide="loader-2" class="w-6 h-6 animate-spin text-green-400"></i>
+            <p class="text-slate-400 text-xs font-medium">Loading tracks...</p>
+        </div>
+    `;
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
 
     try {
         const response = await fetch(`/api/songs?page=${page}&limit=${itemsPerPage}`);
@@ -316,7 +327,6 @@ async function loadSongLibrary(page = 1) {
 
         const data = await response.json();
         
-        // Extract pagination data from the backend response object
         const songs = data.songs || [];
         totalPages = data.totalPages || 1;
         currentPage = data.page || page;
