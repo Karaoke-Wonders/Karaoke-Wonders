@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://karaokewonders.fetched.workers.dev https://cloudflareinsights.com https://www.google-analytics.com https://*.google-analytics.com; img-src 'self' data: https:; object-src 'none';">
-    <link rel="preconnect" href="https://fonts.googleapis.com">    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Karaoke - Karaoke Wonders</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="files/lucide.min.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="/image/kwicon.svg" />
@@ -20,213 +21,237 @@
     <meta name="theme-color" content="#90ee90" />
     <link rel="stylesheet" href="mobile.css" media="screen and (max-width: 768px)">
     <script src="schema.js" defer></script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+        }
+        .soft-card {
+            background: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.2);
+        }
+        .soft-glow {
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.08) 0%, rgba(244, 114, 182, 0.05) 50%, rgba(0,0,0,0) 80%);
+        }
+    </style>
 </head>
-<body class="min-h-screen relative flex overflow-x-hidden bg-slate-950 text-slate-100">
+<body class="min-h-screen relative flex flex-col md:flex-row overflow-x-hidden bg-slate-900 text-slate-200">
 
-    <!-- Background Glow Effects -->
-    <div class="fixed top-1/4 left-10 w-96 h-96 bg-fuchsia-500/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
-    <div class="fixed bottom-10 right-10 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
+    <!-- Soft Ambient Glow Overlay -->
+    <div class="fixed inset-0 soft-glow pointer-events-none -z-10"></div>
+    <div class="fixed top-[-10%] left-[-5%] w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+    <div class="fixed bottom-[-10%] right-[-5%] w-[500px] h-[500px] bg-rose-500/10 rounded-full blur-[120px] pointer-events-none -z-10"></div>
 
-<!-- Sidebar Navigation -->
-    <aside class="w-72 glass border-r border-white/10 flex flex-col justify-between h-screen sticky top-0 z-20 shrink-0">
+    <!-- Sidebar Navigation -->
+    <aside class="w-full md:w-80 soft-card border-r border-slate-700/40 flex flex-col justify-between md:h-screen md:sticky top-0 z-20 shrink-0">
         <div class="flex flex-col min-h-0 flex-1">
             <!-- Brand Logo -->
-            <div class="p-6 pb-4 border-b border-white/10 flex items-center gap-3 shrink-0">
-                <div class="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-fuchsia-500/30 to-cyan-500/30 border border-white/10 shrink-0">
-                    <i data-lucide="mic" class="w-5 h-5 text-fuchsia-400"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-extrabold gradient-text leading-tight">KaraokeWonders</h1>
-                    <span class="text-[10px] text-slate-400 tracking-wider uppercase font-semibold">Main Portal</span>
+            <div class="p-6 pb-5 border-b border-slate-800/80 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-3.5">
+                    <div class="inline-flex items-center justify-center w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-400/20 text-indigo-300 shadow-sm shrink-0">
+                        <i data-lucide="mic" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-bold tracking-tight text-slate-100 leading-tight">Karaoke Wonders</h1>
+                        <span class="text-[11px] text-slate-400 font-medium tracking-wide">VRChat Community Hub</span>
+                    </div>
                 </div>
             </div>
 
-<!-- Member Navigation Tabs (Scrollable Area) -->
-            <nav class="p-4 space-y-1.5 overflow-y-auto flex-1 overscroll-contain no-scrollbar">
-                <button onclick="switchTab('library')" id="tab-library" class="sidebar-link active w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
-                    <i data-lucide="music" class="w-4 h-4 text-fuchsia-400"></i>
+            <!-- Member Navigation Tabs -->
+            <nav class="p-4 space-y-2 overflow-y-auto flex-1 overscroll-contain no-scrollbar">
+                <p class="px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Main Menu</p>
+                
+                <button onclick="switchTab('library')" id="tab-library" class="sidebar-link active w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all text-sm font-medium">
+                    <i data-lucide="music" class="w-4 h-4 text-indigo-400"></i>
                     <span>Song Library</span>
                 </button>
 
-                <button onclick="switchTab('upload')" id="tab-upload" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
-                    <i data-lucide="upload-cloud" class="w-4 h-4 text-cyan-400"></i>
+                <button onclick="switchTab('upload')" id="tab-upload" class="sidebar-link w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all text-sm font-medium">
+                    <i data-lucide="upload-cloud" class="w-4 h-4 text-sky-400"></i>
                     <span>Submit Track</span>
                 </button>
 
-                <!-- NEW 3RD TAB: MY SUBMISSIONS -->
-                <button onclick="switchTab('my-submissions')" id="tab-my-submissions" class="sidebar-link w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 hover:text-white transition-all text-sm font-medium">
+                <button onclick="switchTab('my-submissions')" id="tab-my-submissions" class="sidebar-link w-full flex items-center gap-3.5 px-4 py-3 rounded-2xl text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all text-sm font-medium">
                     <i data-lucide="list-music" class="w-4 h-4 text-purple-400"></i>
                     <span>My Submissions</span>
                 </button>
 
                 <!-- Admin Link -->
-                <div id="admin-links" class="pt-6 mt-6 border-t border-white/10 hidden">
-                    <p class="px-4 text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-3">Moderation Hub</p>
-                    <a href="admin.html" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-purple-300 hover:text-white hover:bg-purple-500/10 border border-purple-500/20 transition-all text-sm font-medium">
+                <div id="admin-links" class="pt-5 mt-5 border-t border-slate-800/80 hidden">
+                    <p class="px-3 text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-2">Moderation</p>
+                    <a href="admin.html" class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-purple-300 hover:bg-purple-500/10 border border-purple-500/20 transition-all text-sm font-medium">
                         <div class="flex items-center gap-3">
                             <i data-lucide="shield-check" class="w-4 h-4 text-purple-400"></i>
                             <span>Karaoke Panel</span>
                         </div>
-                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-purple-400/60"></i>
                     </a>
                 </div>
 
-                <div id="inbox" class="pt-6 mt-6 border-t border-white/10">
-                    <p class="px-4 text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-3">Community Options</p>
-                    <a href="inbox.html" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-green-300 hover:text-white hover:bg-green-500/10 border border-green-500/20 transition-all text-sm font-medium">
-                        <div class="flex items-center gap-3">
-                            <i data-lucide="archive" class="w-4 h-4 text-green-400"></i>
-                            <span>Inbox</span>
-                        </div>
-                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-                    </a>
-                </div>
-                <div id="settings" class="pt-3 mt-3">
-                    <a href="settings.html" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-blue-300 hover:text-white hover:bg-blue-500/10 border border-blue-500/20 transition-all text-sm font-medium">
-                        <div class="flex items-center gap-3">
-                            <i data-lucide="cog" class="w-4 h-4 text-blue-400"></i>
-                            <span>Settings</span>
-                        </div>
-                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-                    </a>
-                </div>
-                <div id="careers" class="pt-3 mt-3">
-                    <a href="careers.html" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-yellow-300 hover:text-white hover:bg-yellow-500/10 border border-yellow-500/20 transition-all text-sm font-medium">
-                        <div class="flex items-center gap-3">
-                            <i data-lucide="briefcase" class="w-4 h-4 text-yellow-400"></i>
-                            <span>Careers</span>
-                        </div>
-                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-                    </a>
-                </div>
-                <div id="chat" class="pt-6 mt-6 border-t border-white/10">
-                    <p class="px-4 text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-3">Community Extras</p>
-                    <a href="https://msg.karaokewonders.com" class="w-full flex items-center justify-between px-4 py-3 rounded-xl text-pink-300 hover:text-white hover:bg-pink-500/10 border border-pink-500/20 transition-all text-sm font-medium">
-                        <div class="flex items-center gap-3">
-                            <i data-lucide="message-square" class="w-4 h-4 text-pink-400"></i>
-                            <span>Chat Website</span>
-                        </div>
-                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-                    </a>
+                <!-- Navigation Links -->
+                <div class="pt-5 mt-5 border-t border-slate-800/80 space-y-1.5">
+                    <p class="px-3 text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-2">Community</p>
+                    
+                    <div id="inbox">
+                        <a href="inbox.html" class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all text-sm font-medium">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
+                                <span>Inbox</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 opacity-40"></i>
+                        </a>
+                    </div>
+
+                    <div id="settings">
+                        <a href="settings.html" class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all text-sm font-medium">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="cog" class="w-4 h-4 text-blue-400"></i>
+                                <span>Settings</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 opacity-40"></i>
+                        </a>
+                    </div>
+
+                    <div id="careers">
+                        <a href="careers.html" class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all text-sm font-medium">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="briefcase" class="w-4 h-4 text-amber-400"></i>
+                                <span>Careers</span>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-3.5 h-3.5 opacity-40"></i>
+                        </a>
+                    </div>
+
+                    <div id="chat" class="pt-2">
+                        <a href="https://msg.karaokewonders.com" class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all text-sm font-medium">
+                            <div class="flex items-center gap-3">
+                                <i data-lucide="message-square" class="w-4 h-4 text-rose-400"></i>
+                                <span>Chat Room</span>
+                            </div>
+                            <i data-lucide="external-link" class="w-3.5 h-3.5 opacity-40"></i>
+                        </a>
+                    </div>
                 </div>
             </nav>
         </div>
 
-        <!-- User Profile & Sign Out (Pinned to Bottom) -->
-        <div class="p-4 border-t border-white/10 bg-white/5 shrink-0">
-            <div class="flex items-center gap-3 mb-4 px-2">
-                <div class="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 font-extrabold text-sm overflow-hidden" id="user-avatar">
+        <!-- User Profile & Sign Out -->
+        <div class="p-4 border-t border-slate-800/80 bg-slate-950/30 shrink-0">
+            <div class="flex items-center gap-3 mb-3 p-2 rounded-2xl bg-slate-800/40 border border-slate-700/30">
+                <div class="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-200 font-semibold text-sm overflow-hidden" id="user-avatar">
                     U
                 </div>
-                <div class="overflow-hidden">
-                    <p class="text-sm font-bold truncate text-slate-200" id="user-display-name">Guest User</p>
-                    <p class="text-[11px] text-slate-400 capitalize flex items-center gap-1" id="user-role-badge">
-                        <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> Member
+                <div class="overflow-hidden flex-1">
+                    <p class="text-xs font-semibold truncate text-slate-200" id="user-display-name">Guest User</p>
+                    <p class="text-[10px] text-slate-400 capitalize flex items-center gap-1.5 mt-0.5" id="user-role-badge">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> Member
                     </p>
                 </div>
             </div>
-            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-bold text-red-400 hover:bg-red-500/10 border border-red-500/20 rounded-xl transition-all">
-                <i data-lucide="log-out" class="w-4 h-4"></i> Sign Out
+            <button onclick="logout()" class="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-medium text-rose-300 hover:bg-rose-500/10 border border-rose-500/20 rounded-xl transition-all">
+                <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Sign Out
             </button>
         </div>
     </aside>
 
     <!-- Main Content Workspace -->
-    <main class="flex-1 p-8 sm:p-10 max-w-7xl mx-auto overflow-y-auto min-h-screen">
+    <main class="flex-1 p-6 sm:p-10 max-w-6xl mx-auto overflow-y-auto min-h-screen">
 
         <!-- Notification Banner -->
-        <div id="main-alert" class="hidden mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between">
+        <div id="main-alert" class="hidden mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between shadow-sm">
             <div class="flex items-center gap-3">
                 <i id="main-alert-icon" class="w-4 h-4 shrink-0"></i>
                 <span id="main-alert-text"></span>
             </div>
-            <button onclick="hideAlert()" class="opacity-70 hover:opacity-100"><i data-lucide="x" class="w-4 h-4"></i></button>
+            <button onclick="hideAlert()" class="opacity-60 hover:opacity-100 transition-opacity"><i data-lucide="x" class="w-4 h-4"></i></button>
         </div>
 
         <!-- TAB 1: SONG LIBRARY -->
         <section id="content-library" class="tab-content space-y-8">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl soft-card">
                 <div>
-                    <h2 class="text-3xl font-extrabold tracking-tight">Song Library</h2>
-                    <p class="text-slate-400 text-sm mt-1">Browse approved karaoke backing tracks ready for your performance.</p>
+                    <h2 class="text-2xl font-bold tracking-tight text-slate-100">Song Library</h2>
+                    <p class="text-slate-400 text-xs mt-1">Explore approved tracks available in the VRChat room.</p>
                 </div>
-                <div class="flex items-center gap-3">
-                    <div class="relative w-full md:w-72">
-                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
-                        <input type="text" id="search-input" placeholder="Search title or artist..." class="input-field w-full rounded-xl pl-11 pr-4 py-2.5 text-xs">
+                <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                    <div class="relative w-full sm:w-72">
+                        <i data-lucide="search" class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                        <input type="text" id="search-input" placeholder="Search title or artist..." class="w-full rounded-2xl pl-10 pr-4 py-2.5 text-xs bg-slate-800/80 border border-slate-700/60 text-slate-100 placeholder-slate-400 focus:outline-none focus:border-indigo-400/50 transition-all">
                     </div>
-                    <button onclick="switchTab('upload')" class="px-4 py-2.5 bg-green-500 hover:bg-green-400 text-black font-bold text-xs rounded-xl transition-all flex items-center gap-2 shrink-0">
+                    <button onclick="switchTab('upload')" class="px-4 py-2.5 bg-indigo-500/90 hover:bg-indigo-500 text-white font-medium text-xs rounded-2xl transition-all flex items-center gap-2 shrink-0 shadow-sm">
                         <i data-lucide="plus" class="w-4 h-4"></i> Request Track
                     </button>
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="song-list">
-                <p class="col-span-full text-center text-slate-500 text-xs py-10">Loading approved songs...</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="song-list">
+                <p class="col-span-full text-center text-slate-400 text-xs py-12">Loading approved songs...</p>
             </div>
         </section>
 
         <!-- TAB 2: SUBMIT TRACK -->
-        <section id="content-upload" class="tab-content hidden max-w-2xl mx-auto space-y-8">
-            <div>
-                <h2 class="text-3xl font-extrabold tracking-tight">Submit Karaoke Track</h2>
-                <p class="text-slate-400 text-sm mt-1">Submit a high-quality video or audio link to be reviewed by staff for the community library.</p>
+        <section id="content-upload" class="tab-content hidden max-w-2xl mx-auto space-y-6">
+            <div class="text-center sm:text-left">
+                <h2 class="text-2xl font-bold tracking-tight text-slate-100">Submit Karaoke Track</h2>
+                <p class="text-slate-400 text-xs mt-1">Submit an instrumental video to be reviewed by staff for the community library.</p>
             </div>
 
-            <div class="glass p-6 rounded-2xl border border-sky-500/20 bg-sky-500/5">
-                <div class="flex items-center gap-3 text-cyan-400 mb-3 font-bold text-sm">
-                    <i data-lucide="info" class="w-5 h-5"></i>
-                    <span>Track Submission Requirements</span>
+            <div class="soft-card p-6 rounded-3xl border border-sky-500/20 bg-sky-950/20">
+                <div class="flex items-center gap-2.5 text-sky-300 mb-3 font-semibold text-xs">
+                    <i data-lucide="info" class="w-4 h-4"></i>
+                    <span>Submission Guidelines</span>
                 </div>
                 <ul class="space-y-2 text-xs text-slate-300">
-                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-fuchsia-400 shrink-0"></i> Must be instrumental/karaoke version (no lead vocal tracks)</li>
-                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-fuchsia-400 shrink-0"></i> On-screen synchronized lyrics are strongly preferred</li>
-                    <li class="flex items-center gap-2"><i data-lucide="check" class="w-3.5 h-3.5 text-fuchsia-400 shrink-0"></i> Provide valid YouTube or Vimeo URLs</li>
+                    <li class="flex items-center gap-2.5"><i data-lucide="check" class="w-3.5 h-3.5 text-sky-400 shrink-0"></i> Instrumental / karaoke versions only (no main vocals)</li>
+                    <li class="flex items-center gap-2.5"><i data-lucide="check" class="w-3.5 h-3.5 text-sky-400 shrink-0"></i> On-screen synchronized lyrics preferred</li>
+                    <li class="flex items-center gap-2.5"><i data-lucide="check" class="w-3.5 h-3.5 text-sky-400 shrink-0"></i> Valid YouTube or Vimeo link required</li>
                 </ul>
             </div>
 
-            <form id="upload-form" class="glass p-8 rounded-3xl space-y-6">
-                <div class="grid sm:grid-cols-2 gap-6">
+            <form id="upload-form" class="soft-card p-8 rounded-3xl space-y-5">
+                <div class="grid sm:grid-cols-2 gap-5">
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Track Title</label>
-                        <input type="text" id="track-title" required class="input-field w-full rounded-xl px-4 py-3 text-sm" placeholder="e.g. Bohemian Rhapsody">
+                        <label class="block text-[11px] font-semibold tracking-wide uppercase text-slate-400 mb-2">Track Title</label>
+                        <input type="text" id="track-title" required class="w-full rounded-2xl px-4 py-3 text-xs bg-slate-800/80 border border-slate-700/60 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400/50 transition-all" placeholder="e.g. Bohemian Rhapsody">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Original Artist</label>
-                        <input type="text" id="track-artist" required class="input-field w-full rounded-xl px-4 py-3 text-sm" placeholder="e.g. Queen">
+                        <label class="block text-[11px] font-semibold tracking-wide uppercase text-slate-400 mb-2">Original Artist</label>
+                        <input type="text" id="track-artist" required class="w-full rounded-2xl px-4 py-3 text-xs bg-slate-800/80 border border-slate-700/60 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400/50 transition-all" placeholder="e.g. Queen">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">YouTube URL</label>
+                    <label class="block text-[11px] font-semibold tracking-wide uppercase text-slate-400 mb-2">Media URL</label>
                     <div class="relative">
                         <i data-lucide="link" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500"></i>
-                        <input type="url" id="track-url" required class="input-field w-full rounded-xl pl-11 pr-4 py-3 text-sm" placeholder="https://www.youtube.com/watch?v=...">
+                        <input type="url" id="track-url" required class="w-full rounded-2xl pl-10 pr-4 py-3 text-xs bg-slate-800/80 border border-slate-700/60 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-400/50 transition-all" placeholder="https://www.youtube.com/watch?v=...">
                     </div>
                 </div>
 
-                <button type="submit" id="submit-track-btn" class="btn-primary w-full py-3.5 rounded-xl font-bold text-black text-sm flex items-center justify-center gap-2">
+                <button type="submit" id="submit-track-btn" class="w-full py-3.5 rounded-2xl font-semibold bg-indigo-500/90 hover:bg-indigo-500 text-white text-xs flex items-center justify-center gap-2 transition-all shadow-sm">
                     <i data-lucide="send" class="w-4 h-4"></i>
                     <span>Submit to Moderation Queue</span>
                 </button>
             </form>
         </section>
 
-        <!-- TAB 3: MY SUBMISSIONS (NEW) -->
-        <section id="content-my-submissions" class="tab-content hidden space-y-8">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <!-- TAB 3: MY SUBMISSIONS -->
+        <section id="content-my-submissions" class="tab-content hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl soft-card">
                 <div>
-                    <h2 class="text-3xl font-extrabold tracking-tight">My Submissions</h2>
-                    <p class="text-slate-400 text-sm mt-1">Track the review status of songs you have submitted to the moderation queue.</p>
+                    <h2 class="text-2xl font-bold tracking-tight text-slate-100">My Submissions</h2>
+                    <p class="text-slate-400 text-xs mt-1">Track the status of songs you have submitted for review.</p>
                 </div>
-                <button onclick="fetchMySubmissions()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 font-bold text-xs rounded-xl transition-all flex items-center gap-2 shrink-0 self-start md:self-auto">
-                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh List
+                <button onclick="fetchMySubmissions()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/60 font-medium text-xs rounded-2xl transition-all flex items-center gap-2 shrink-0 self-start md:self-auto">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-indigo-400"></i> Refresh List
                 </button>
             </div>
 
             <!-- List / Grid for User's Submissions -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="my-submissions-list">
-                <p class="col-span-full text-center text-slate-500 text-xs py-10">Loading your submissions...</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5" id="my-submissions-list">
+                <p class="col-span-full text-center text-slate-400 text-xs py-12">Loading your submissions...</p>
             </div>
         </section>
 
