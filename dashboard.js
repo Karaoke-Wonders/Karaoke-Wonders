@@ -678,6 +678,9 @@ window.updateTrackDirectly = async function(event) {
     const videoId = extractVideoId(rawVideoId);
     const submitBtn = document.getElementById('btn-save-song');
 
+    // Optional: grab staff name if your app stores it in localStorage or a global variable
+    const staffName = localStorage.getItem('staffName') || window.currentStaffName || 'Staff Member';
+
     if (!songId || !songName || !artist || !videoId) {
         showModalError('edit-modal-status-message', 'All fields are required.');
         return;
@@ -692,14 +695,19 @@ window.updateTrackDirectly = async function(event) {
         const res = await fetch(`/api/admin/update-song`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ songId, songName, artist, videoId })
+            body: JSON.stringify({ songId, songName, artist, videoId, staffName })
         });
 
-        // Grab the raw text response from the server (whether JSON or HTML)
-        const responseText = await res.text();
+        // Parse response safely as JSON
+        let data;
+        try {
+            data = await res.json();
+        } catch (e) {
+            data = { error: 'Unexpected server response format.' };
+        }
 
         if (!res.ok) {
-            throw new Error(`Server returned ${res.status}: ${responseText}`);
+            throw new Error(data.error || `Server returned status ${res.status}`);
         }
 
         showDashboardAlert('Song updated successfully!', 'success');
@@ -707,8 +715,8 @@ window.updateTrackDirectly = async function(event) {
         await loadSongs(songCurrentPage);
 
     } catch (err) {
-        // This will print the exact raw error text right into your modal box
-        showModalError('edit-modal-status-message', err.message);
+        // Displays the clean error message from the worker inside your modal box
+        showModalError('edit-modal-status-message', err.message || 'Error updating track.');
         console.error("Update error:", err);
     } finally {
         if (submitBtn) {
