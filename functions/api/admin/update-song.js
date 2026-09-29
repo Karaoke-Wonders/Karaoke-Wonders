@@ -1,7 +1,13 @@
 import { hashCode, sendDiscordStaffAuditNotification, jsonResponse } from '../../_middleware/utils.js';
 
 export async function onRequestPost({ request, env }) {
-    const body = await request.json();
+    let body;
+    try {
+        body = await request.json();
+    } catch (e) {
+        return jsonResponse({ error: "Invalid JSON payload." }, 400);
+    }
+
     const { songId, songName, artist, videoId, staffName } = body;
     console.log(`[handleUpdateSong] Updating song: ${songId}`);
 
@@ -38,7 +44,13 @@ export async function onRequestPost({ request, env }) {
         }
 
         fileData = await existingFileRes.json();
-        existingContent = JSON.parse(atob(fileData.content.replace(/\n/g, '')));
+        
+        // Robust base64 decode handling all whitespace/newlines
+        try {
+            existingContent = JSON.parse(atob(fileData.content.replace(/\s/g, '')));
+        } catch (e) {
+            existingContent = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(fileData.content.replace(/\s/g, '')), c => c.charCodeAt(0))));
+        }
 
         const updatedSong = {
             ...existingContent,
@@ -87,12 +99,17 @@ export async function onRequestPost({ request, env }) {
         return jsonResponse({ error: "Failed to update song after multiple conflict retries." }, 500);
     }
 
-    await sendDiscordStaffAuditNotification(
-        "Updated Song Details",
-        staffName || "Staff Member",
-        `Song: "${songName}" by ${artist} (ID:${songId})`,
-        env
-    );
+    // Safely attempt Discord notification without failing the main request if it errors
+    try {
+        await sendDiscordStaffAuditNotification(
+            "Updated Song Details",
+            staffName || "Staff Member",
+            `Song: "${songName}" by ${artist} (ID:${songId})`,
+            env
+        );
+    } catch (discordErr) {
+        console.error(`[handleUpdateSong] Discord notification failed:`, discordErr);
+    }
 
     console.log(`[handleUpdateSong] Song ${songId} successfully updated.`);
     return jsonResponse({ success: true, message: "Song updated successfully." });
