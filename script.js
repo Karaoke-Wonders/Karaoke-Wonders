@@ -1,6 +1,3 @@
-// Using main domain path route for Worker API
-const WORKER_BASE_URL = 'https://karaokewonders.fetched.workers.dev'; 
-
 let isRegisterMode = false;
 
 // Discord Forum Tag IDs from your server settings
@@ -51,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 return;
             }
 
-            const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
+            const response = await fetch(`/api/get-account`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
@@ -186,7 +183,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             try {
                 if (isRegisterMode) {
-                    const response = await fetch(`${WORKER_BASE_URL}/api/create-account`, {
+                    const response = await fetch(`/api/create-account`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username, password })
@@ -205,7 +202,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }, 2000);
 
                 } else {
-                    const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
+                    const response = await fetch(`/api/get-account`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username, password })

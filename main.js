@@ -1,8 +1,3 @@
-// main.js - Stage Portal Logic for main.html
-
-const WORKER_BASE_URL = 'https://karaokewonders.fetched.workers.dev';
-
-// Discord Forum Tag IDs from server settings
 const TAG_IDS = {
     staff: '1548667928881139712',
     restricted: '1548667951069007964',
@@ -212,7 +207,7 @@ async function refreshUserSession() {
             return;
         }
 
-        const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
+        const response = await fetch(`/api/get-account`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -317,7 +312,7 @@ async function loadSongLibrary() {
     if (!songListContainer) return;
 
     try {
-        const response = await fetch(`${WORKER_BASE_URL}/api/songs`);
+        const response = await fetch(`/api/songs`);
         if (!response.ok) throw new Error(`HTTP error ${response.status}`);
 
         allSongs = await response.json();
@@ -609,7 +604,7 @@ async function submitSongRequest() {
     }
 
     try {
-        const response = await fetch(`${WORKER_BASE_URL}/api/submit-track`, {
+        const response = await fetch(`/api/submit-track`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
