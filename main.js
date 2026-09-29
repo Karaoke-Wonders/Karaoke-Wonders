@@ -316,7 +316,7 @@ async function loadSongLibrary(page = 1) {
 
         const data = await response.json();
         
-        // Extract pagination data from the new backend response object
+        // Extract pagination data from the backend response object
         const songs = data.songs || [];
         totalPages = data.totalPages || 1;
         currentPage = data.page || page;
@@ -403,14 +403,12 @@ async function loadMySubmissions() {
     }
 
     try {
-        // Fetch a larger batch (e.g., 500) so it can find all user submissions across pages
         const response = await fetch(`/api/songs?page=1&limit=500`);
         if (!response.ok) throw new Error('Failed to fetch submissions');
 
         const data = await response.json();
         const allTracks = data.songs || [];
 
-        // Match currentUser.username against song.submittedBy (case-insensitive)
         const mySubmissions = allTracks.filter(song => 
             song.submittedBy && song.submittedBy.toLowerCase() === currentUser.username.toLowerCase()
         );
@@ -442,7 +440,6 @@ function renderMySubmissions(submissions) {
         const title = sub.songName || 'Untitled';
         const artist = sub.artist || 'Unknown Artist';
         
-        // Determine badge: tracks with approvedAt are Approved
         const statusBadge = sub.approvedAt 
             ? `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">Approved</span>`
             : `<span class="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">Pending</span>`;
@@ -489,9 +486,8 @@ function renderMySubmissions(submissions) {
     }
 }
 
-// Render dynamic pagination arrows
+// Render dynamic pagination arrows using server-side totalPages
 function renderPaginationControls() {
-    const totalPages = Math.ceil(filteredSongsList.length / itemsPerPage);
     let controlsContainer = document.getElementById('pagination-controls');
 
     if (!controlsContainer) {
@@ -552,22 +548,11 @@ window.changePage = function(direction) {
     }
 };
 
-// Search and filter songs
+// Search and filter placeholder (can be expanded later for server-side search)
 function filterSongs(query) {
     const q = (query || '').toLowerCase().trim();
-    currentPage = 1; // Reset to page 1 on search change
-
-    if (!q) {
-        filteredSongsList = [...allSongs];
-    } else {
-        filteredSongsList = allSongs.filter(song => 
-            (song.songName || song.title || '').toLowerCase().includes(q) ||
-            (song.artist || '').toLowerCase().includes(q) ||
-            (song.submittedBy || '').toLowerCase().includes(q)
-        );
-    }
-    
-    renderSongs(filteredSongsList);
+    currentPage = 1;
+    loadSongLibrary(currentPage);
 }
 
 // Extract YouTube Video ID from any URL format or raw ID
@@ -575,14 +560,12 @@ function extractYouTubeId(urlOrId) {
     if (!urlOrId) return '';
     const str = urlOrId.trim();
     
-    // YouTube URL regex matching standard, shortlink, embed, and shorts formats
     const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/|youtube\.com\/shorts\/)([^"&?\/\s]{11})/;
     const match = str.match(ytRegex);
     if (match && match[1]) {
         return match[1];
     }
     
-    // Return direct 11-char ID if passed
     if (/^[a-zA-Z0-9_-]{11}$/.test(str)) {
         return str;
     }
@@ -632,20 +615,17 @@ async function submitSongRequest() {
             throw new Error(data.error || 'Failed to submit track request.');
         }
 
-        // Reset form inputs
         if (titleInput) titleInput.value = '';
         if (artistInput) artistInput.value = '';
         if (urlInput) urlInput.value = '';
 
         showAlert('Song successfully submitted! A staff member will review it shortly.', 'success');
 
-        // Close modal overlay if present
         const modal = document.getElementById('upload-modal') || document.getElementById('track-modal');
         if (modal) {
             modal.classList.add('hidden');
         }
 
-        // Auto-switch back to the library after 2 seconds
         setTimeout(() => {
             switchTab('library');
         }, 2000);
