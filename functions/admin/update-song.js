@@ -14,7 +14,7 @@ export async function onRequestPost({ request, env }) {
     const branch = env.GITHUB_BRANCH || 'main';
     const folderIndex = Math.floor(Math.abs(hashCode(songId)) % 1000);
     const filePath = `songs/batch_${folderIndex}/${songId}.json`;
-    const url = `[https://api.github.com/repos/$](https://api.github.com/repos/$){owner}/${repo}/contents/${filePath}`;
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
 
     const existingFileRes = await fetch(url, {
         headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' }

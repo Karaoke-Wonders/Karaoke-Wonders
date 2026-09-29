@@ -5,7 +5,7 @@ export async function onRequestGet({ env }) {
     const guildId = await resolveGuildId(env);
     if (!guildId) return jsonResponse([]);
 
-    const res = await fetch(`[https://discord.com/api/v10/guilds/$](https://discord.com/api/v10/guilds/$){guildId}/threads/active`, {
+    const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/threads/active`, {
         headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` }
     });
     if (!res.ok) {
@@ -17,10 +17,10 @@ export async function onRequestGet({ env }) {
 
     const users = await Promise.all(threads.map(async (t) => {
         const tags = t.applied_tags || [];
-        let avatarUrl = '[https://cdn.discordapp.com/embed/avatars/0.png](https://cdn.discordapp.com/embed/avatars/0.png)';
+        let avatarUrl = 'https://cdn.discordapp.com/embed/avatars/0.png';
 
         try {
-            const msgRes = await fetch(`[https://discord.com/api/v10/channels/$](https://discord.com/api/v10/channels/$){t.id}/messages?limit=10`, {
+            const msgRes = await fetch(`https://discord.com/api/v10/channels/${t.id}/messages?limit=10`, {
                 headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` }
             });
 

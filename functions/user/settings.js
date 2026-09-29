@@ -27,13 +27,13 @@ export async function onRequestPost({ request, env }) {
 
     const updatedContent = JSON.stringify(updatedProfile, null, 2);
 
-    const msgRes = await fetch(`[https://discord.com/api/v10/channels/$](https://discord.com/api/v10/channels/$){thread.id}/messages/${thread.id}`, {
+    const msgRes = await fetch(`https://discord.com/api/v10/channels/${thread.id}/messages/${thread.id}`, {
         headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` }
     });
 
     let messageId = thread.id;
     if (!msgRes.ok) {
-        const fallbackRes = await fetch(`[https://discord.com/api/v10/channels/$](https://discord.com/api/v10/channels/$){thread.id}/messages?limit=1`, {
+        const fallbackRes = await fetch(`https://discord.com/api/v10/channels/${thread.id}/messages?limit=1`, {
             headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` }
         });
         if (fallbackRes.ok) {
@@ -42,7 +42,7 @@ export async function onRequestPost({ request, env }) {
         }
     }
 
-    const patchMsgRes = await fetch(`[https://discord.com/api/v10/channels/$](https://discord.com/api/v10/channels/$){thread.id}/messages/${messageId}`, {
+    const patchMsgRes = await fetch(`https://discord.com/api/v10/channels/${thread.id}/messages/${messageId}`, {
         method: 'PATCH',
         headers: {
             'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`,

@@ -17,7 +17,7 @@ export async function onRequestPost({ request, env }) {
 
     const jsonPayloadString = JSON.stringify({
         password: password,
-        avatarUrl: '[https://cdn.discordapp.com/embed/avatars/0.png](https://cdn.discordapp.com/embed/avatars/0.png)',
+        avatarUrl: 'https://cdn.discordapp.com/embed/avatars/0.png',
         createdAt: new Date().toISOString()
     });
 
@@ -28,7 +28,7 @@ export async function onRequestPost({ request, env }) {
     };
 
     console.log(`[handleCreateAccount] Creating Discord forum thread for: ${username}`);
-    const response = await fetch(`[https://discord.com/api/v10/channels/$](https://discord.com/api/v10/channels/$){env.DISCORD_FORUM_CHANNEL_ID}/threads`, {
+    const response = await fetch(`https://discord.com/api/v10/channels/${env.DISCORD_FORUM_CHANNEL_ID}/threads`, {
         method: 'POST',
         headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(threadPayload)

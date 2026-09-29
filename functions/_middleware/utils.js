@@ -218,7 +218,7 @@ export async function getDiscordThreadData(threadId, env) {
 
 export async function patchDiscordThread(threadId, payload, env) {
     console.log(`[patchDiscordThread] Patching thread ${threadId}`);
-    return await fetch(`[https://discord.com/api/v10/channels/$](https://discord.com/api/v10/channels/$){threadId}`, {
+    return await fetch(`https://discord.com/api/v10/channels/${threadId}`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -229,7 +229,7 @@ export async function fetchAllSongsFromGitHub(env) {
     const owner = env.GITHUB_OWNER;
     const repo = env.GITHUB_REPO;
     try {
-        const rootUrl = `[https://api.github.com/repos/$](https://api.github.com/repos/$){owner}/${repo}/contents/songs`;
+        const rootUrl = `https://api.github.com/repos/${owner}/${repo}/contents/songs`;
         const rootRes = await fetch(rootUrl, {
             headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' }
         });
@@ -274,7 +274,7 @@ export async function saveSongToGitHub(songData, env) {
     const folderIndex = Math.floor(Math.abs(hashCode(songData.id)) % 1000);
     const filePath = `songs/batch_${folderIndex}/${songData.id}.json`;
     const encodedContent = btoa(unescape(encodeURIComponent(JSON.stringify(songData, null, 2))));
-    const url = `[https://api.github.com/repos/$](https://api.github.com/repos/$){owner}/${repo}/contents/${filePath}`;
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
 
     let sha = null;
     const existingFileRes = await fetch(url, { headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' } });
@@ -294,7 +294,7 @@ export async function removeSongFromGitHub(songId, env) {
     const branch = env.GITHUB_BRANCH || 'main';
     const folderIndex = Math.floor(Math.abs(hashCode(songId)) % 1000);
     const filePath = `songs/batch_${folderIndex}/${songId}.json`;
-    const url = `[https://api.github.com/repos/$](https://api.github.com/repos/$){owner}/${repo}/contents/${filePath}`;
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
 
     const existingFileRes = await fetch(url, { 
         headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' } 
@@ -325,7 +325,7 @@ export async function fetchPendingSongsFromGitHub(env) {
     const owner = env.GITHUB_OWNER;
     const repo = env.GITHUB_REPO;
     try {
-        const url = `[https://api.github.com/repos/$](https://api.github.com/repos/$){owner}/${repo}/contents/pending`;
+        const url = `https://api.github.com/repos/${owner}/${repo}/contents/pending`;
         const res = await fetch(url, { headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' } });
         if (!res.ok) return [];
         const files = await res.json();
@@ -346,7 +346,7 @@ export async function savePendingSongToGitHub(songData, env) {
     const branch = env.GITHUB_BRANCH || 'main';
     const filePath = `pending/${songData.id}.json`;
     const encodedContent = btoa(unescape(encodeURIComponent(JSON.stringify(songData, null, 2))));
-    const url = `[https://api.github.com/repos/$](https://api.github.com/repos/$){owner}/${repo}/contents/${filePath}`;
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
 
     const response = await fetch(url, {
         method: 'PUT',
@@ -360,7 +360,7 @@ export async function removePendingSongFromGitHub(trackId, env) {
     const owner = env.GITHUB_OWNER;
     const repo = env.GITHUB_REPO;
     const branch = env.GITHUB_BRANCH || 'main';
-    const url = `[https://api.github.com/repos/$](https://api.github.com/repos/$){owner}/${repo}/contents/pending/${trackId}.json`;
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/pending/${trackId}.json`;
 
     const existingFileRes = await fetch(url, { headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' } });
     if (existingFileRes.status === 200) {
@@ -376,7 +376,7 @@ export async function removePendingSongFromGitHub(trackId, env) {
 export async function updateThreadTag(threadId, tagId, add, env, staffName = "Staff Member", actionDescription = "Updated User Status") {
     if (!tagId) return jsonResponse({ error: "Target tag ID is not configured." }, 400);
 
-    const threadRes = await fetch(`[https://discord.com/api/v10/channels/$](https://discord.com/api/v10/channels/$){threadId}`, {
+    const threadRes = await fetch(`https://discord.com/api/v10/channels/${threadId}`, {
         headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` }
     });
     if (!threadRes.ok) {
