@@ -254,7 +254,7 @@ async function loadPendingRequests() {
     const statPending = document.getElementById('stat-pending-count');
 
     try {
-        const response = await fetch(`/api/admin/pending-tracks`);
+        const response = await fetch(`/admin/pending-tracks`);
         if (!response.ok) throw new Error('Failed to load pending queue.');
 
         pendingQueue = await response.json();
@@ -359,7 +359,7 @@ window.approveTrack = async function(trackId) {
     }
 
     try {
-        const res = await fetch(`/api/admin/approve-track`, {
+        const res = await fetch(`/admin/approve-track`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -395,7 +395,7 @@ window.rejectTrack = async function(trackId) {
     }
 
     try {
-        const res = await fetch(`/api/admin/reject-track`, {
+        const res = await fetch(`/admin/reject-track`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -426,7 +426,7 @@ window.approveAllPending = async function() {
     if (!confirm(`Are you sure you want to approve all ${pendingQueue.length} pending tracks?`)) return;
 
     try {
-        const res = await fetch(`/api/admin/approve-all`, {
+        const res = await fetch(`/admin/approve-all`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -633,7 +633,7 @@ window.addTrackDirectly = async function(event) {
     }
 
     try {
-        const res = await fetch(`/api/admin/add-song`, {
+        const res = await fetch(`/admin/add-song`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -719,7 +719,7 @@ window.updateTrackDirectly = async function(event) {
     }
 
     try {
-        const res = await fetch(`/api/admin/update-song`, {
+        const res = await fetch(`/admin/update-song`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ songId, songName, artist, videoId })
@@ -763,7 +763,7 @@ window.deleteSong = async function(songId) {
 
     try {
         // Send POST request to the dedicated delete-song API endpoint
-        const res = await fetch(`/api/admin/delete-song`, {
+        const res = await fetch(`/admin/delete-song`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -797,7 +797,7 @@ async function loadUserList() {
     if (!userContainer) return;
 
     try {
-        const response = await fetch(`/api/admin/users`);
+        const response = await fetch(`/admin/users`);
         if (!response.ok) throw new Error('Failed to load user list');
 
         allUsers = await response.json();
