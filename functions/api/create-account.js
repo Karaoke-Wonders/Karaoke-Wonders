@@ -1,4 +1,8 @@
 import { findDiscordThreadByName, jsonResponse } from '../_middleware/utils.js';
+// Import the text file directly (supported by Cloudflare Pages/Vite build tools)
+import blacklistText from '../../files/nameBL.txt?raw'; 
+// Note: Adjust the relative path above depending on where this function file is located 
+// relative to your root "files/nameBL.txt" folder.
 
 export async function onRequestPost({ request, env }) {
     const body = await request.json();
@@ -9,6 +13,38 @@ export async function onRequestPost({ request, env }) {
         console.warn("[handleCreateAccount] Missing username or password.");
         return jsonResponse({ error: "Username and password are required." }, 400);
     }
+
+    const lowerUsername = username.trim().toLowerCase();
+
+    // 1. Check against the imported blacklist text (supports commas, newlines, vertical/horizontal)
+    if (blacklistText) {
+        const blacklistedNames = blacklistText
+            .split(/[\r\n,]+/) // Splits by any newline or comma
+            .map(name => name.trim().toLowerCase())
+            .filter(Boolean);
+
+        // Check for exact matches or similar variations (substring matching)
+        const matchedBlacklist = blacklistedNames.find(blName => {
+            if (!blName) return false;
+            
+            // Exact match check
+            if (lowerUsername === blName) return true;
+            
+            // Similarity / Substring check (ignores very short words under 3 chars to prevent false positives)
+            if (blName.length >= 3 && (lowerUsername.includes(blName) || blName.includes(lowerUsername))) {
+                return true;
+            }
+            
+            return false;
+        });
+
+        if (matchedBlacklist) {
+            console.warn(`[handleCreateAccount] Username "${username}" matches or is too similar to a blacklisted term ("${matchedBlacklist}").`);
+            return jsonResponse({ error: "This username or a similar variation cannot be used." }, 400);
+        }
+    }
+
+    // 2. Check if an account/thread already exists on Discord
     const existingThread = await findDiscordThreadByName(username, env);
     if (existingThread) {
         console.warn(`[handleCreateAccount] Account already exists for username: ${username}`);
