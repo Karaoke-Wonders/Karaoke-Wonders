@@ -1,7 +1,3 @@
-// dashboard.js - Comprehensive Admin Management System (Moderation, Catalog, Users, Metrics)
-
-const WORKER_BASE_URL = 'https://karaokewonders.fetched.workers.dev';
-
 // Global Data States
 let currentUser = null;
 let allSongs = [];
@@ -147,7 +143,7 @@ async function refreshUserSession() {
         const user = JSON.parse(sessionData);
         
         // Ping your worker endpoint to get the freshest tags/status from Discord
-        const response = await fetch(`${WORKER_BASE_URL}/api/get-account`, {
+        const response = await fetch(`/api/get-account`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username: user.username, password: user.password })
@@ -258,7 +254,7 @@ async function loadPendingRequests() {
     const statPending = document.getElementById('stat-pending-count');
 
     try {
-        const response = await fetch(`${WORKER_BASE_URL}/api/admin/pending-tracks`);
+        const response = await fetch(`/api/admin/pending-tracks`);
         if (!response.ok) throw new Error('Failed to load pending queue.');
 
         pendingQueue = await response.json();
@@ -363,7 +359,7 @@ window.approveTrack = async function(trackId) {
     }
 
     try {
-        const res = await fetch(`${WORKER_BASE_URL}/api/admin/approve-track`, {
+        const res = await fetch(`/api/admin/approve-track`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -399,7 +395,7 @@ window.rejectTrack = async function(trackId) {
     }
 
     try {
-        const res = await fetch(`${WORKER_BASE_URL}/api/admin/reject-track`, {
+        const res = await fetch(`/api/admin/reject-track`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -430,7 +426,7 @@ window.approveAllPending = async function() {
     if (!confirm(`Are you sure you want to approve all ${pendingQueue.length} pending tracks?`)) return;
 
     try {
-        const res = await fetch(`${WORKER_BASE_URL}/api/admin/approve-all`, {
+        const res = await fetch(`/api/admin/approve-all`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -460,7 +456,7 @@ async function loadSongs() {
     if (!container) return;
 
     try {
-        const response = await fetch(`${WORKER_BASE_URL}/api/songs`);
+        const response = await fetch(`/api/songs`);
         if (!response.ok) throw new Error('Failed to fetch songs');
 
         allSongs = await response.json();
@@ -637,7 +633,7 @@ window.addTrackDirectly = async function(event) {
     }
 
     try {
-        const res = await fetch(`${WORKER_BASE_URL}/api/admin/add-song`, {
+        const res = await fetch(`/api/admin/add-song`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -723,7 +719,7 @@ window.updateTrackDirectly = async function(event) {
     }
 
     try {
-        const res = await fetch(`${WORKER_BASE_URL}/api/admin/update-song`, {
+        const res = await fetch(`/api/admin/update-song`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ songId, songName, artist, videoId })
@@ -767,7 +763,7 @@ window.deleteSong = async function(songId) {
 
     try {
         // Send POST request to the dedicated delete-song API endpoint
-        const res = await fetch(`${WORKER_BASE_URL}/api/admin/delete-song`, {
+        const res = await fetch(`/api/admin/delete-song`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -801,7 +797,7 @@ async function loadUserList() {
     if (!userContainer) return;
 
     try {
-        const response = await fetch(`${WORKER_BASE_URL}/api/admin/users`);
+        const response = await fetch(`/api/admin/users`);
         if (!response.ok) throw new Error('Failed to load user list');
 
         allUsers = await response.json();
@@ -1126,7 +1122,7 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
     const activeStaffName = currentUser?.username || JSON.parse(localStorage.getItem('kw_session') || '{}')?.username || 'Unknown Staff';
 
     try {
-        const response = await fetch(`${WORKER_BASE_URL}/api/admin/toggle-lock`, {
+        const response = await fetch(`/api/admin/toggle-lock`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
