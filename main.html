@@ -239,5 +239,13 @@
     </main>
 
     <script src="main.js"></script>
+    <script>
+        // Ensure Lucide icons render after DOM loads
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        });
+    </script>
 </body>
 </html>
