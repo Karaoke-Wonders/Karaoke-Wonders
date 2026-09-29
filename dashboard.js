@@ -407,6 +407,17 @@ async function loadSongs(page = 1) {
 
     songCurrentPage = page;
 
+    // Display loading indicator immediately upon clicking page change
+    container.innerHTML = `
+        <div class="col-span-full text-center py-12 glass rounded-2xl border border-white/10 flex flex-col items-center justify-center space-y-3">
+            <i data-lucide="loader-2" class="w-6 h-6 animate-spin text-green-400"></i>
+            <p class="text-slate-400 text-xs font-medium">Loading tracks...</p>
+        </div>
+    `;
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+
     try {
         const response = await fetch(`/api/songs?page=${songCurrentPage}&limit=${PAGE_SIZE}`);
         if (!response.ok) throw new Error('Failed to fetch songs');
@@ -430,7 +441,7 @@ async function loadSongs(page = 1) {
         }
     } catch (err) {
         console.error(err);
-        container.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No approved songs loaded.</p>`;
+        container.innerHTML = `<p class="col-span-full text-center text-red-400 text-xs py-8">Unable to load songs at this time.</p>`;
     }
 }
 
