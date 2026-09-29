@@ -232,6 +232,13 @@
 
     </main>
 
-    <script src="main.js"></script>
+    <script src="main.js">
+    </script>
+    document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
 </body>
 </html>
