@@ -32,8 +32,8 @@ const TAG_IDS = {
 
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Refresh and validate session data against backend in real-time
-    console.log("REFRESH EVENT FIRED!")
-    refreshUserSession();
+    console.log("REFRESH EVENT FIRED!");
+    await refreshUserSession();
 
     const sessionData = localStorage.getItem('kw_session');
     
@@ -134,7 +134,7 @@ window.logout = function() {
 };
 
 async function refreshUserSession() {
-    console.log("refreshUserSession Fired")
+    console.log("refreshUserSession Fired");
     const sessionData = localStorage.getItem('kw_session');
     const managerPage = document.getElementById('tab-management');
     if (!sessionData) return;
@@ -142,7 +142,7 @@ async function refreshUserSession() {
     try {
         const user = JSON.parse(sessionData);
         
-        // Ping your worker endpoint to get the freshest tags/status from Discord
+        // Ping worker endpoint to get freshest tags/status from Discord
         const response = await fetch(`/api/get-account`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -150,7 +150,6 @@ async function refreshUserSession() {
         });
 
         if (!response.ok) {
-            // If account was deleted or worker errors out, clear session
             localStorage.removeItem('kw_session');
             window.location.href = 'index.html';
             return;
@@ -167,7 +166,6 @@ async function refreshUserSession() {
             return;
         }
 
-        // Recalculate staff status dynamically
         const isStaff = Boolean(
             data.isAdmin || userTags.includes(TAG_IDS.staff)
         );
@@ -176,7 +174,6 @@ async function refreshUserSession() {
             data.isManager || userTags.includes(TAG_IDS.manager)
         );
 
-        // Update local session data with fresh tags and roles while maintaining password
         user.tags = userTags;
         user.isAdmin = isStaff;
         user.isManager = isManager;
@@ -185,7 +182,7 @@ async function refreshUserSession() {
         if (isStaff) {
             const roleBadge = document.getElementById('user-role-label');
             if (roleBadge) {
-                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Moderator'
+                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Moderator';
             }
         }
 
@@ -193,12 +190,12 @@ async function refreshUserSession() {
             user.role = 'manager';
             const roleBadge = document.getElementById('user-role-label');
             if (roleBadge) {
-                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Manager'
+                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Manager';
             }
             if (managerPage) {
                 managerPage.classList.remove('hidden');
             }
-        };
+        }
         
         localStorage.setItem('kw_session', JSON.stringify(user));
 
@@ -385,7 +382,6 @@ window.approveTrack = async function(trackId) {
 window.rejectTrack = async function(trackId) {
     if (!confirm('Are you sure you want to reject this track request?')) return;
 
-    // Retrieve active staff username dynamically from memory or local storage
     const activeStaffName = currentUser?.username || JSON.parse(localStorage.getItem('kw_session') || '{}')?.username || 'Unknown Staff';
 
     const btn = document.getElementById(`btn-reject-${trackId}`);
@@ -400,7 +396,7 @@ window.rejectTrack = async function(trackId) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 trackId,
-                staffName: activeStaffName // <-- Explicit username parameter
+                staffName: activeStaffName
             })
         });
 
@@ -475,7 +471,6 @@ function renderSongs(songs) {
     const container = document.getElementById('song-list');
     if (!container) return;
 
-    // Apply Search Filter
     let filtered = songs.filter(s => {
         const q = songSearchQuery.toLowerCase();
         return (
@@ -485,7 +480,6 @@ function renderSongs(songs) {
         );
     });
 
-    // Apply Sorting
     filtered.sort((a, b) => {
         if (songSortBy === 'artist') {
             return (a.artist || '').localeCompare(b.artist || '');
@@ -498,13 +492,11 @@ function renderSongs(songs) {
 
     if (filtered.length === 0) {
         container.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No matching tracks found in catalog.</p>`;
-        // Clean up or ensure pagination wrapper is removed if present
         let existingPagination = document.getElementById('song-pagination-container');
         if (existingPagination) existingPagination.remove();
         return;
     }
 
-    // Pagination Calculations
     const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
     if (songCurrentPage > totalPages) songCurrentPage = totalPages;
     if (songCurrentPage < 1) songCurrentPage = 1;
@@ -549,7 +541,6 @@ function renderSongs(songs) {
         `;
     }).join('');
 
-    // Append / Update Pagination Controls Bar
     let paginationContainer = document.getElementById('song-pagination-container');
     if (!paginationContainer) {
         paginationContainer = document.createElement('div');
@@ -590,7 +581,6 @@ window.sortSongs = function(sortBy) {
     renderSongs(allSongs);
 };
 
-// --- Track Creation Modal ---
 window.openAddTrackModal = function() {
     const modal = document.getElementById('add-track-modal');
     if (modal) {
@@ -664,7 +654,6 @@ window.addTrackDirectly = async function(event) {
     }
 };
 
-// --- Track Editing Modal ---
 window.openEditTrackModal = function(songId) {
     const song = allSongs.find(s => String(s.id || s._id) === String(songId));
     if (!song) {
@@ -747,13 +736,11 @@ window.deleteSong = async function(songId) {
         return;
     }
 
-    // Find song metadata from your global/local array to get the title
     const song = (typeof allSongs !== 'undefined' ? allSongs : []).find(s => String(s.id || s._id) === String(songId));
     const songName = song ? (song.songName || song.title) : '';
 
     if (!confirm(`Are you sure you want to delete "${songName || songId}" from the live catalog?`)) return;
 
-    // Get the current moderator's username
     const activeStaffName = currentUser?.username || JSON.parse(localStorage.getItem('kw_session') || '{}')?.username || 'Unknown Staff';
 
     const btn = document.getElementById(`btn-delete-${songId}`);
@@ -762,7 +749,6 @@ window.deleteSong = async function(songId) {
     }
 
     try {
-        // Send POST request to the dedicated delete-song API endpoint
         const res = await fetch(`/api/admin/delete-song`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -776,8 +762,6 @@ window.deleteSong = async function(songId) {
         if (!res.ok) throw new Error('Failed to delete song');
 
         showDashboardAlert('Song removed from live catalog successfully!', 'success');
-        
-        // Refresh live songs catalog
         await loadSongs();
     } catch (err) {
         showDashboardAlert('Error deleting song. Please try again.', 'error');
@@ -817,7 +801,6 @@ function renderUserList(users) {
     const userContainer = document.getElementById('user-list');
     if (!userContainer) return;
 
-    // Filter Users by Search Query & Role Filter
     const filtered = users.filter(u => {
         const userTags = (u.tags || []).map(tag => String(tag));
         const q = userSearchQuery.toLowerCase();
@@ -856,7 +839,6 @@ function renderUserList(users) {
         return;
     }
 
-    // Pagination Calculations
     const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
     if (userCurrentPage > totalPages) userCurrentPage = totalPages;
     if (userCurrentPage < 1) userCurrentPage = 1;
@@ -886,7 +868,6 @@ function renderUserList(users) {
             <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-white/20 transition-all">
                 <div>
                     <div class="flex items-center justify-between gap-2 mb-2">
-                        <!-- Avatar & Username Container -->
                         <div class="flex items-center gap-3 shrink-0">
                             <img src="${escapeAttr(avatarUrl)}" 
                                  alt="${escapeAttr(u.username)}'s avatar" 
@@ -895,7 +876,6 @@ function renderUserList(users) {
                             <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
                         </div>
 
-                        <!-- Role Badges -->
                         <div class="flex items-center gap-1.5 flex-wrap justify-end">
                             ${isManagement ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Management</span>' : ''}
                             ${isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
@@ -907,22 +887,17 @@ function renderUserList(users) {
                 </div>
 
                 <div class="flex items-center gap-2 pt-3 border-t border-white/5 flex-wrap">
-                    ${isStaff ? `
-
-                    ` : `
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.restricted}',${!isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
-                            ${isRestricted ? 'Unrestrict' : 'Restrict'}
-                        </button>
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.blacklisted}', ${!isBlacklisted})" class="flex-1 py-1.5 px-2 ${isBlacklisted ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20'} border rounded-lg text-xs font-bold transition-all">
-                            ${isBlacklisted ? 'Unban' : 'Blacklist'}
-                        </button>
-                    `}
+                    <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.restricted}', ${!isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
+                        ${isRestricted ? 'Unrestrict' : 'Restrict'}
+                    </button>
+                    <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.blacklisted}', ${!isBlacklisted})" class="flex-1 py-1.5 px-2 ${isBlacklisted ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20'} border rounded-lg text-xs font-bold transition-all">
+                        ${isBlacklisted ? 'Unban' : 'Blacklist'}
+                    </button>
                 </div>
             </div>
         `;
     }).join('');
 
-    // Append / Update Pagination Controls Bar
     let paginationContainer = document.getElementById('user-pagination-container');
     if (!paginationContainer) {
         paginationContainer = document.createElement('div');
@@ -955,7 +930,6 @@ function renderManagementList(users) {
     const userContainer = document.getElementById('management-user-list');
     if (!userContainer) return;
 
-    // Filter Users by Search Query & Role Filter
     let total = 0;
     const filtered = users.filter(u => {
         const userTags = (u.tags || []).map(tag => String(tag));
@@ -980,13 +954,12 @@ function renderManagementList(users) {
         if (isManagement) {
             added = true;
             total++;
-        };
-
-        if (isStaff) {
-            if (added == false){
-                total++;
-            }
         }
+
+        if (isStaff && !added) {
+            total++;
+        }
+
         const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
         const isRestricted = userTags.includes(String(TAG_IDS.restricted));
 
@@ -1007,7 +980,6 @@ function renderManagementList(users) {
         return;
     }
 
-    // Pagination Calculations
     const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
     if (managementUserCurrentPage > totalPages) managementUserCurrentPage = totalPages;
     if (managementUserCurrentPage < 1) managementUserCurrentPage = 1;
@@ -1062,7 +1034,6 @@ function renderManagementList(users) {
         `;
     }).join('');
 
-    // Append / Update Pagination Controls Bar
     let paginationContainer = document.getElementById('management-pagination-container');
     if (!paginationContainer) {
         paginationContainer = document.createElement('div');
@@ -1085,11 +1056,10 @@ function renderManagementList(users) {
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
-    const mainTotalUsers = document.getElementById('stat-staff-count')
-
+    const mainTotalUsers = document.getElementById('stat-staff-count');
     if (mainTotalUsers) {
         mainTotalUsers.textContent = total;
-    };
+    }
 }
 
 window.changeManagementUserPage = function(targetPage) {
