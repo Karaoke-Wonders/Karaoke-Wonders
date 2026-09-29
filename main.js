@@ -392,8 +392,8 @@ function renderSongs(songs) {
     }
 }
 
-// Filter user submissions directly from the local allSongs array
-function loadMySubmissions() {
+// Load and filter user submissions independently
+async function loadMySubmissions() {
     const submissionsContainer = document.getElementById('my-submissions-list') || document.getElementById('submissions-list');
     if (!submissionsContainer) return;
 
@@ -402,12 +402,24 @@ function loadMySubmissions() {
         return;
     }
 
-    // Match currentUser.username against song.submittedBy (case-insensitive)
-    const mySubmissions = allSongs.filter(song => 
-        song.submittedBy && song.submittedBy.toLowerCase() === currentUser.username.toLowerCase()
-    );
+    try {
+        // Fetch a larger batch (e.g., 500) so it can find all user submissions across pages
+        const response = await fetch(`/api/songs?page=1&limit=500`);
+        if (!response.ok) throw new Error('Failed to fetch submissions');
 
-    renderMySubmissions(mySubmissions);
+        const data = await response.json();
+        const allTracks = data.songs || [];
+
+        // Match currentUser.username against song.submittedBy (case-insensitive)
+        const mySubmissions = allTracks.filter(song => 
+            song.submittedBy && song.submittedBy.toLowerCase() === currentUser.username.toLowerCase()
+        );
+
+        renderMySubmissions(mySubmissions);
+    } catch (err) {
+        console.error('Error loading submissions:', err);
+        submissionsContainer.innerHTML = `<p class="text-slate-500 text-xs text-center py-10 col-span-full">Unable to load your submissions.</p>`;
+    }
 }
 
 // Render user's submission cards
