@@ -213,66 +213,60 @@
 
         // Expects sessionData.tags or sessionData.roles to be an array (e.g., ['staff', 'restricted'])
         // You can adjust this property path depending on how your session JSON stores user tags.
-        renderUserStatuses(sessionData.tags || sessionData.roles || []);
+// 3. Render Status Badges (Maps Discord Snowflake IDs to friendly names)
+        function renderUserStatuses(tagsArray) {
+            statusBadgesContainer.innerHTML = '';
 
-        // Copy Thread ID handler
-        if (copyBtn && threadIdInput) {
-            copyBtn.addEventListener('click', () => {
-                const threadId = threadIdInput.value;
-                if (threadId && threadId !== 'N/A') {
-                    navigator.clipboard.writeText(threadId);
-                    showStatus('Thread ID copied to clipboard!', 'success');
-                }
-            });
-        }
+            // Fallback if no tags exist
+            if (!tagsArray || tagsArray.length === 0) {
+                statusBadgesContainer.innerHTML = `
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 border border-white/5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Member
+                    </span>
+                `;
+                return;
+            }
 
-        // Live image preview update
-        pfpInput.addEventListener('input', (e) => {
-            const url = e.target.value.trim();
-            pfpPreview.src = url || '/image/kwicon.svg';
-        });
-
-        // Fallback for broken image URLs
-        pfpPreview.addEventListener('error', () => {
-            pfpPreview.src = '/image/kwicon.svg';
-        });
-
-        // 4. Form Submit Handler
-        settingsForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const usernameVal = usernameInput.value.trim();
-            const pfpVal = pfpInput.value.trim();
-            const emailVal = emailInput.value.trim();
-
-            const updatedData = {
-                username: usernameVal
+            // Define your Discord Forum Tag ID mappings here
+            const tagMappings = {
+                // Replace these with your actual Discord Tag Snowflake IDs
+                '1548667951069007964': { label: 'Restricted', badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30', dotClass: 'bg-amber-400' },
+                // 'YOUR_STAFF_TAG_ID_HERE': { label: 'Staff Member', badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30', dotClass: 'bg-emerald-400' },
+                // 'YOUR_MANAGER_TAG_ID_HERE': { label: 'Manager', badgeClass: 'bg-purple-500/10 text-purple-400 border-purple-500/30', dotClass: 'bg-purple-400' }
             };
 
-            if (pfpVal) updatedData.pfp = pfpVal;
-            if (emailVal) updatedData.email = emailVal;
+            tagsArray.forEach(tag => {
+                const tagStr = String(tag).trim();
+                const matchedConfig = tagMappings[tagStr];
 
-            try {
-                const response = await fetch('/api/user/settings', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updatedData)
-                });
+                let label = matchedConfig ? matchedConfig.label : tagStr;
+                let badgeClass = matchedConfig ? matchedConfig.badgeClass : 'bg-slate-800 text-slate-300 border-white/5';
+                let dotClass = matchedConfig ? matchedConfig.dotClass : 'bg-slate-400';
 
-                if (response.ok) {
-                    if (pfpVal) sessionData.avatarUrl = pfpVal;
-                    if (emailVal) sessionData.email = emailVal;
-                    localStorage.setItem('kw_session', JSON.stringify(sessionData));
-
-                    showStatus('Settings updated successfully!', 'success');
-                } else {
-                    const errData = await response.json();
-                    showStatus(errData.error || 'Failed to update settings. Please try again.', 'error');
+                // Fallback text check if names are passed as strings instead of IDs
+                const lowerTag = tagStr.toLowerCase();
+                if (!matchedConfig) {
+                    if (lowerTag.includes('manager')) {
+                        badgeClass = 'bg-purple-500/10 text-purple-400 border-purple-500/30';
+                        dotClass = 'bg-purple-400';
+                        label = 'Manager';
+                    } else if (lowerTag.includes('staff')) {
+                        badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+                        dotClass = 'bg-emerald-400';
+                        label = 'Staff Member';
+                    } else if (lowerTag.includes('restricted')) {
+                        badgeClass = 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+                        dotClass = 'bg-amber-400';
+                        label = 'Restricted';
+                    }
                 }
-            } catch (err) {
-                showStatus('Network error while saving settings.', 'error');
-            }
-        });
+
+                const badge = document.createElement('span');
+                badge.className = `inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold border ${badgeClass}`;
+                badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${dotClass}"></span> ${label}`;
+                statusBadgesContainer.appendChild(badge);
+            });
+        }
 
         function showStatus(msg, type) {
             statusMsg.textContent = msg;
