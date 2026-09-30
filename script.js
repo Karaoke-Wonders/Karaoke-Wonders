@@ -224,8 +224,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                     const isStaff = Boolean(
                         data.isAdmin || 
-                        userTags.includes(TAG_IDS.staff) || 
-                        username.toLowerCase().includes('admin')
+                        userTags.includes(TAG_IDS.staff)
                     );
 
                     // Guarantees username and password are never undefined
