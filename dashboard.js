@@ -678,7 +678,6 @@ window.updateTrackDirectly = async function(event) {
     const videoId = extractVideoId(rawVideoId);
     const submitBtn = document.getElementById('btn-save-song');
 
-    // Optional: grab staff name if your app stores it in localStorage or a global variable
     const staffName = localStorage.getItem('staffName') || window.currentStaffName || 'Staff Member';
 
     if (!songId || !songName || !artist || !videoId) {
@@ -698,12 +697,15 @@ window.updateTrackDirectly = async function(event) {
             body: JSON.stringify({ songId, songName, artist, videoId, staffName })
         });
 
-        // Parse response safely as JSON
+        // Grab the raw text first so we can see what it actually is
+        const responseText = await res.text();
+
         let data;
         try {
-            data = await res.json();
+            data = JSON.parse(responseText);
         } catch (e) {
-            data = { error: 'Unexpected server response format.' };
+            // If it's not JSON, throw the raw text so we can read it in the modal!
+            throw new Error(`Non-JSON response (${res.status}): ${responseText.slice(0, 150)}...`);
         }
 
         if (!res.ok) {
@@ -715,8 +717,8 @@ window.updateTrackDirectly = async function(event) {
         await loadSongs(songCurrentPage);
 
     } catch (err) {
-        // Displays the clean error message from the worker inside your modal box
-        showModalError('edit-modal-status-message', err.message || 'Error updating track.');
+        // This will print the exact snippet of what the server sent into your modal box
+        showModalError('edit-modal-status-message', err.message);
         console.error("Update error:", err);
     } finally {
         if (submitBtn) {
