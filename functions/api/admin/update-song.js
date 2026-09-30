@@ -1,4 +1,14 @@
-import { hashCode, sendDiscordStaffAuditNotification, jsonResponse } from '../../_middleware/utils.js';
+import { sendDiscordStaffAuditNotification, jsonResponse } from '../../_middleware/utils.js';
+
+// Local hashCode fallback to guarantee it never fails to import or resolve
+function hashCode(str) {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+    }
+    return Math.abs(hash);
+}
 
 export async function onRequestPost({ request, env }) {
     let body;
@@ -28,7 +38,6 @@ export async function onRequestPost({ request, env }) {
 
     // Retry loop to handle GitHub 409 SHA conflicts seamlessly
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        // Fetch fresh file data and SHA every attempt, bypassing cache
         const existingFileRes = await fetch(url, {
             headers: { 
                 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 
@@ -45,7 +54,6 @@ export async function onRequestPost({ request, env }) {
 
         fileData = await existingFileRes.json();
         
-        // Robust base64 decode handling all whitespace/newlines
         try {
             existingContent = JSON.parse(atob(fileData.content.replace(/\s/g, '')));
         } catch (e) {
@@ -62,7 +70,6 @@ export async function onRequestPost({ request, env }) {
 
         const encodedContent = btoa(unescape(encodeURIComponent(JSON.stringify(updatedSong, null, 2))));
 
-        // Attempt the PUT request to GitHub
         response = await fetch(url, {
             method: 'PUT',
             headers: { 
@@ -79,12 +86,11 @@ export async function onRequestPost({ request, env }) {
         });
 
         if (response.ok) {
-            break; // Success! Exit the loop.
+            break;
         }
 
         const errText = await response.text();
 
-        // If it's a conflict (409) and we still have attempts left, wait and retry
         if (response.status === 409 && attempt < maxRetries) {
             console.warn(`[handleUpdateSong] Conflict (409) on attempt ${attempt}. Retrying with fresh SHA...`);
             await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
@@ -99,7 +105,6 @@ export async function onRequestPost({ request, env }) {
         return jsonResponse({ error: "Failed to update song after multiple conflict retries." }, 500);
     }
 
-    // Safely attempt Discord notification without failing the main request if it errors
     try {
         await sendDiscordStaffAuditNotification(
             "Updated Song Details",
