@@ -165,7 +165,7 @@ async function refreshUserSession() {
         user.tags = userTags;
         user.isAdmin = isStaff;
         user.isManager = isManager;
-        user.isTeam = isTeam,
+        user.isTeam = isTeam;
         user.role = isStaff ? 'administrator' : 'member';
 
         if (isStaff) {
@@ -250,7 +250,7 @@ async function loadPendingRequests() {
     const statPending = document.getElementById('stat-pending-count');
 
     try {
-        const response = await fetch(`/api/admin/pending-tracks`);
+        const response = await fetch(`/api/admin/pending-tracks?_t=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error('Failed to load pending queue.');
 
         pendingQueue = await response.json();
@@ -421,7 +421,6 @@ async function loadSongs(page = 1) {
 
     songCurrentPage = page;
 
-    // Display loading indicator immediately upon clicking page change
     container.innerHTML = `
         <div class="col-span-full text-center py-12 glass rounded-2xl border border-white/10 flex flex-col items-center justify-center space-y-3">
             <i data-lucide="loader-2" class="w-6 h-6 animate-spin text-green-400"></i>
@@ -433,12 +432,14 @@ async function loadSongs(page = 1) {
     }
 
     try {
-        const response = await fetch(`/api/songs?page=${songCurrentPage}&limit=${PAGE_SIZE}`);
+        // Cache-buster added to prevent stale edge responses
+        const response = await fetch(`/api/songs?page=${songCurrentPage}&limit=${PAGE_SIZE}&_t=${Date.now()}`, {
+            cache: 'no-store'
+        });
         if (!response.ok) throw new Error('Failed to fetch songs');
 
         const data = await response.json();
 
-        // Support both direct array and server-side paginated object responses
         if (Array.isArray(data)) {
             allSongs = data;
             songTotalPages = Math.ceil(allSongs.length / PAGE_SIZE) || 1;
@@ -471,7 +472,7 @@ function renderSongsServerSide(songs) {
     }
 
     container.innerHTML = songs.map(song => {
-        const songId = song.id || song._id || ''; // Capture the unique ID
+        const songId = song.id || song._id || '';
         const escapedSongId = escapeAttr(songId);
         const title = song.songName || song.title || 'Untitled';
         const artist = song.artist || 'Unknown Artist';
@@ -489,7 +490,6 @@ function renderSongsServerSide(songs) {
                     <p class="text-xs text-slate-400 flex items-center gap-1.5 mb-2">
                         <i data-lucide="mic-2" class="w-3.5 h-3.5 text-slate-500"></i> ${escapeHtml(artist)}
                     </p>
-                    <!-- Song ID Pill Display -->
                     <div class="flex items-center gap-1.5 text-[11px] text-slate-500 font-mono bg-black/30 px-2.5 py-1 rounded-lg border border-white/5 w-fit">
                         <span class="text-slate-500">ID:</span> 
                         <span class="select-all text-emerald-400 font-medium">${escapeHtml(songId)}</span>
@@ -536,7 +536,6 @@ function renderSongsServerSide(songs) {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-// Fallback client-side rendering if server returns raw arrays
 function renderSongsClientSide(songs) {
     let filtered = songs.filter(s => {
         const q = songSearchQuery.toLowerCase();
@@ -699,7 +698,6 @@ window.updateTrackDirectly = async function(event) {
     const videoId = extractVideoId(rawVideoId);
     const submitBtn = document.getElementById('btn-save-song');
 
-    // FIX 1: Retrieve actual staff username from the active currentUser session
     const staffName = currentUser?.username || 'Staff Member';
 
     if (!songId || !songName || !artist || !videoId) {
@@ -713,7 +711,6 @@ window.updateTrackDirectly = async function(event) {
     }
 
     try {
-        // FIX 2: Ensure path matches your endpoint (e.g., /api/update-song)
         const res = await fetch(`/api/admin/update-song`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -733,9 +730,20 @@ window.updateTrackDirectly = async function(event) {
             throw new Error(data.error || `Server returned status ${res.status}`);
         }
 
+        // Update local memory state optimistically
+        const targetSong = allSongs.find(s => String(s.id || s._id) === String(songId));
+        if (targetSong) {
+            targetSong.songName = songName;
+            targetSong.title = songName;
+            targetSong.artist = artist;
+            targetSong.videoId = videoId;
+        }
+
         showDashboardAlert('Song updated successfully!', 'success');
         closeEditTrackModal();
-        await loadSongs(songCurrentPage);
+        
+        // Brief timeout before reload to allow GitHub commit propagation
+        setTimeout(() => loadSongs(songCurrentPage), 800);
 
     } catch (err) {
         showModalError('edit-modal-status-message', err.message);
@@ -776,7 +784,7 @@ window.deleteSong = async function(songId) {
         if (!res.ok) throw new Error('Failed to delete song');
 
         showDashboardAlert('Song removed from live catalog successfully!', 'success');
-        await loadSongs(songCurrentPage);
+        setTimeout(() => loadSongs(songCurrentPage), 800);
     } catch (err) {
         showDashboardAlert('Error deleting song. Please try again.', 'error');
         if (btn) btn.disabled = false;
@@ -803,7 +811,7 @@ async function loadUserList(page = 1) {
     managementUserCurrentPage = page;
 
     try {
-        const response = await fetch(`/api/admin/users?page=${page}&limit=${PAGE_SIZE}`);
+        const response = await fetch(`/api/admin/users?page=${page}&limit=${PAGE_SIZE}&_t=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error('Failed to load user list');
 
         const data = await response.json();
@@ -942,103 +950,6 @@ function renderManagementList(users, isServerPaginated = true) {
     const userContainer = document.getElementById('management-user-list');
     if (!userContainer) return;
 
-    const filtered = users.filter(u => {
-        const q = userSearchQuery.toLowerCase();
-        const matchesQuery = (u.username || '').toLowerCase().includes(q) || (u.threadId || '').toLowerCase().includes(q);
-
-        if (!matchesQuery) return false;
-
-        if (userRoleFilter === 'manager') return u.isManager;
-        if (userRoleFilter === 'staff') return u.isStaff;
-        if (userRoleFilter === 'banned') return u.isLocked;
-        if (userRoleFilter === 'restricted') return u.isRestricted;
-
-        return true;
-    });
-
-    if (filtered.length === 0) {
-        userContainer.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No user accounts found matching constraints.</p>`;
-        const existingPagination = document.getElementById('management-pagination-container');
-        if (existingPagination) existingPagination.remove();
-        return;
-    }
-
-    let itemsToRender = filtered;
-    let totalPages = managementUserTotalPages;
-
-    if (!isServerPaginated) {
-        totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
-        if (managementUserCurrentPage > totalPages) managementUserCurrentPage = totalPages;
-        if (managementUserCurrentPage < 1) managementUserCurrentPage = 1;
-        const startIndex = (managementUserCurrentPage - 1) * PAGE_SIZE;
-        itemsToRender = filtered.slice(startIndex, startIndex + PAGE_SIZE);
-    }
-
-    userContainer.innerHTML = itemsToRender.map(u => {
-        const threadId = escapeAttr(u.threadId || '');
-
-        return `
-            <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-white/20 transition-all">
-                <div>
-                    <div class="flex items-center justify-between gap-2 mb-1">
-                        <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                            ${u.isManager ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Manager</span>' : ''}
-                            ${u.isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
-                            ${u.isLocked ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
-                            ${u.isRestricted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">Restricted</span>' : ''}
-                        </div>
-                    </div>
-                    <p class="text-[11px] text-slate-500">Thread ID: ${escapeHtml(u.threadId || 'N/A')}</p>
-                </div>
-
-                <div class="flex items-center gap-2 pt-3 border-t border-white/5 flex-wrap">
-                    ${u.isStaff ? `
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', false)" class="flex-1 py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
-                            Remove Staff
-                        </button>
-                    ` : `
-                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', true)" class="flex-1 py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
-                            Give Staff
-                        </button>
-                    `}
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    let paginationContainer = document.getElementById('management-pagination-container');
-    if (!paginationContainer) {
-        paginationContainer = document.createElement('div');
-        paginationContainer.id = 'management-pagination-container';
-        paginationContainer.className = 'col-span-full flex items-center justify-between pt-4 mt-2 border-t border-white/5 text-xs text-slate-400';
-        userContainer.parentNode.appendChild(paginationContainer);
-    }
-
-    paginationContainer.innerHTML = `
-        <span>Page ${managementUserCurrentPage} of ${totalPages}</span>
-        <div class="flex items-center gap-2">
-            <button onclick="changeManagementUserPage(${managementUserCurrentPage - 1})" ${managementUserCurrentPage <= 1 ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
-                Previous
-            </button>
-            <button onclick="changeManagementUserPage(${managementUserCurrentPage + 1})" ${managementUserCurrentPage >= totalPages ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
-                Next
-            </button>
-        </div>
-    `;
-
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-}
-
-window.changeUserPage = async function(targetPage) {
-    if (targetPage < 1 || targetPage > userTotalPages) return;
-    await loadUserList(targetPage);
-};
-
-function renderManagementList(users, isServerPaginated = true) {
-    const userContainer = document.getElementById('management-user-list');
-    if (!userContainer) return;
-
     let pageStaffTotal = 0;
     const filtered = users.filter(u => {
         const userTags = (u.tags || []).map(tag => String(tag));
@@ -1171,7 +1082,6 @@ function renderManagementList(users, isServerPaginated = true) {
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
-    // Only update staff count if in client-side mode (full dataset) or if global server metadata was provided
     const mainTotalUsers = document.getElementById('stat-staff-count');
     if (mainTotalUsers) {
         if (!isServerPaginated) {
@@ -1181,6 +1091,11 @@ function renderManagementList(users, isServerPaginated = true) {
         }
     }
 }
+
+window.changeUserPage = async function(targetPage) {
+    if (targetPage < 1 || targetPage > userTotalPages) return;
+    await loadUserList(targetPage);
+};
 
 window.changeManagementUserPage = async function(targetPage) {
     if (targetPage < 1 || targetPage > managementUserTotalPages) return;
@@ -1226,6 +1141,7 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
         showDashboardAlert('Failed to update user status.', 'error');
     }
 };
+
 // ==========================================
 // 5. UTILITY & MEDIA PREVIEW HELPERS
 // ==========================================
