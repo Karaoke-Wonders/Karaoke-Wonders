@@ -678,11 +678,6 @@ function extractYouTubeId(urlOrId) {
 
 // Handle Song Request Form
 async function submitSongRequest() {
-    if (currentUser?.isRestricted) {
-        showAlert('Your account is restricted from submitting tracks.', 'error');
-        return;
-    }
-
     const titleInput = document.getElementById('track-title') || document.getElementById('modal-track-title');
     const artistInput = document.getElementById('track-artist') || document.getElementById('modal-track-artist');
     const urlInput = document.getElementById('track-url') || document.getElementById('modal-track-url');
