@@ -471,7 +471,8 @@ function renderSongsServerSide(songs) {
     }
 
     container.innerHTML = songs.map(song => {
-        const songId = escapeAttr(song.id || song._id || '');
+        const songId = song.id || song._id || ''; // Capture the unique ID
+        const escapedSongId = escapeAttr(songId);
         const title = song.songName || song.title || 'Untitled';
         const artist = song.artist || 'Unknown Artist';
         const uploader = song.submittedBy || song.uploader || 'Member';
@@ -485,20 +486,25 @@ function renderSongsServerSide(songs) {
                         <h3 class="font-bold text-base text-white line-clamp-1">${escapeHtml(title)}</h3>
                         <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-green-500/10 text-green-400 border border-green-500/20">Live</span>
                     </div>
-                    <p class="text-xs text-slate-400 flex items-center gap-1.5">
+                    <p class="text-xs text-slate-400 flex items-center gap-1.5 mb-2">
                         <i data-lucide="mic-2" class="w-3.5 h-3.5 text-slate-500"></i> ${escapeHtml(artist)}
                     </p>
+                    <!-- Song ID Pill Display -->
+                    <div class="flex items-center gap-1.5 text-[11px] text-slate-500 font-mono bg-black/30 px-2.5 py-1 rounded-lg border border-white/5 w-fit">
+                        <span class="text-slate-500">ID:</span> 
+                        <span class="select-all text-emerald-400 font-medium">${escapeHtml(songId)}</span>
+                    </div>
                 </div>
                 <div class="pt-4 border-t border-white/5 flex items-center justify-between text-xs gap-2">
                     <span class="text-slate-500 text-[11px] truncate">By ${escapeHtml(uploader)}</span>
                     <div class="flex items-center gap-1.5">
-                        <button onclick="openEditTrackModal('${songId}')" class="px-2 py-1.5 bg-white/5 hover:bg-white/10 text-slate-300 font-bold rounded-lg transition-all flex items-center gap-1 border border-white/10 text-xs">
+                        <button onclick="openEditTrackModal('${escapedSongId}')" class="px-2 py-1.5 bg-white/5 hover:bg-white/10 text-slate-300 font-bold rounded-lg transition-all flex items-center gap-1 border border-white/10 text-xs">
                             <i data-lucide="edit-3" class="w-3.5 h-3.5 text-sky-400"></i> Edit
                         </button>
                         <button onclick="copyVRUrl('${escapeAttr(playUrl)}')" class="px-2 py-1.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-lg transition-all flex items-center gap-1 border border-white/10 text-xs">
                             <i data-lucide="copy" class="w-3.5 h-3.5 text-green-400"></i>
                         </button>
-                        <button onclick="deleteSong('${songId}')" id="btn-delete-${songId}" class="px-2 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold rounded-lg transition-all flex items-center gap-1 border border-red-500/20 text-xs">
+                        <button onclick="deleteSong('${escapedSongId}')" id="btn-delete-${escapedSongId}" class="px-2 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 font-bold rounded-lg transition-all flex items-center gap-1 border border-red-500/20 text-xs">
                             <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                         </button>
                     </div>
@@ -538,6 +544,7 @@ function renderSongsClientSide(songs) {
             (s.songName || s.title || '').toLowerCase().includes(q) ||
             (s.artist || '').toLowerCase().includes(q) ||
             (s.submittedBy || '').toLowerCase().includes(q)
+            (s.id || '').toLowerCase().includes(q)
         );
     });
 
