@@ -699,7 +699,8 @@ window.updateTrackDirectly = async function(event) {
     const videoId = extractVideoId(rawVideoId);
     const submitBtn = document.getElementById('btn-save-song');
 
-    const staffName = localStorage.getItem('staffName') || window.currentStaffName || 'Staff Member';
+    // FIX 1: Retrieve actual staff username from the active currentUser session
+    const staffName = currentUser?.username || 'Staff Member';
 
     if (!songId || !songName || !artist || !videoId) {
         showModalError('edit-modal-status-message', 'All fields are required.');
@@ -712,20 +713,19 @@ window.updateTrackDirectly = async function(event) {
     }
 
     try {
+        // FIX 2: Ensure path matches your endpoint (e.g., /api/update-song)
         const res = await fetch(`/api/admin/update-song`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ songId, songName, artist, videoId, staffName })
         });
 
-        // Grab the raw text first so we can see what it actually is
         const responseText = await res.text();
 
         let data;
         try {
             data = JSON.parse(responseText);
         } catch (e) {
-            // If it's not JSON, throw the raw text so we can read it in the modal!
             throw new Error(`Non-JSON response (${res.status}): ${responseText.slice(0, 150)}...`);
         }
 
@@ -738,7 +738,6 @@ window.updateTrackDirectly = async function(event) {
         await loadSongs(songCurrentPage);
 
     } catch (err) {
-        // This will print the exact snippet of what the server sent into your modal box
         showModalError('edit-modal-status-message', err.message);
         console.error("Update error:", err);
     } finally {
