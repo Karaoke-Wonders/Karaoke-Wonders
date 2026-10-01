@@ -1,6 +1,10 @@
-import { sendDiscordStaffAuditNotification, jsonResponse } from '../../_middleware/utils.js';
+import { 
+    sendDiscordStaffAuditNotification, 
+    saveInboxNotification, 
+    jsonResponse 
+} from '../../_middleware/utils.js';
 
-// Local hashCode fallback to guarantee it never fails to import or resolve
+// Local hashCode fallback
 function hashCode(str) {
     const s = String(str);
     let hash = 0;
@@ -13,7 +17,7 @@ function hashCode(str) {
 
 // UTF-8 safe Base64 helpers
 function decodeBase64Utf8(base64Str) {
-    const cleanStr = base64Str.replace(/\s/g, '');
+    const cleanStr = (base64Str || '').replace(/\s/g, '');
     const binary = atob(cleanStr);
     const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
     return new TextDecoder().decode(bytes);
@@ -60,9 +64,8 @@ export async function onRequestPost({ request, env }) {
         const existingFileRes = await fetch(url, {
             headers: { 
                 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 
-                'User-Agent': 'Cloudflare-Worker' 
-            },
-            cf: { cacheTtl: 0 }
+                'User-Agent': 'Cloudflare-Pages-Function' 
+            }
         });
 
         if (!existingFileRes.ok) {
@@ -94,7 +97,7 @@ export async function onRequestPost({ request, env }) {
             headers: { 
                 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 
                 'Content-Type': 'application/json', 
-                'User-Agent': 'Cloudflare-Worker' 
+                'User-Agent': 'Cloudflare-Pages-Function' 
             },
             body: JSON.stringify({
                 message: `Update song: ${songName} (${songId})`,
@@ -124,11 +127,30 @@ export async function onRequestPost({ request, env }) {
         return jsonResponse({ error: "Failed to update song after multiple conflict retries." }, 500);
     }
 
+    // 1. Send Inbox Notification to the user who requested/owns the track
+    const notificationUserKey = existingContent?.submittedBy || existingContent?.threadId || existingContent?.userKey || null;
+    
+    if (notificationUserKey) {
+        try {
+            await saveInboxNotification(
+                notificationUserKey,
+                'updated',
+                songName,
+                artist,
+                `Your track request for "${songName}" had its details updated by staff.`,
+                env
+            );
+        } catch (inboxErr) {
+            console.error(`[handleUpdateSong] Failed to save inbox notification:`, inboxErr);
+        }
+    }
+
+    // 2. Send Discord Staff Audit Log
     try {
         await sendDiscordStaffAuditNotification(
             "Updated Song Details",
             staffName || "Staff Member",
-            `Song: "${songName}" by ${artist} (ID:${songId})`,
+            `Song: "${songName}" by ${artist} (ID: ${songId})`,
             env
         );
     } catch (discordErr) {
