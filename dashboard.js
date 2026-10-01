@@ -543,7 +543,7 @@ function renderSongsClientSide(songs) {
         return (
             (s.songName || s.title || '').toLowerCase().includes(q) ||
             (s.artist || '').toLowerCase().includes(q) ||
-            (s.submittedBy || '').toLowerCase().includes(q)
+            (s.submittedBy || '').toLowerCase().includes(q) ||
             (s.id || '').toLowerCase().includes(q)
         );
     });
@@ -789,20 +789,32 @@ window.deleteSong = async function(songId) {
 // 4. USER MODERATION & ROLE MANAGEMENT
 // ==========================================
 
-async function loadUserList() {
+async function loadUserList(page = 1) {
     const userContainer = document.getElementById('user-list');
     const usersBadge = document.getElementById('users-badge');
     const statUsers = document.getElementById('stat-users-count');
     if (!userContainer) return;
 
+    userCurrentPage = page;
+
     try {
-        const response = await fetch(`/api/admin/users`);
+        const response = await fetch(`/api/admin/users?page=${userCurrentPage}&limit=${PAGE_SIZE}`);
         if (!response.ok) throw new Error('Failed to load user list');
 
-        allUsers = await response.json();
+        const data = await response.json();
 
-        if (usersBadge) usersBadge.textContent = allUsers.length;
-        if (statUsers) statUsers.textContent = allUsers.length;
+        // Handle both direct array fallback and paginated object responses
+        if (Array.isArray(data)) {
+            allUsers = data;
+            if (usersBadge) usersBadge.textContent = allUsers.length;
+            if (statUsers) statUsers.textContent = allUsers.length;
+        } else {
+            allUsers = data.users || [];
+            userCurrentPage = data.page || userCurrentPage;
+            
+            if (usersBadge) usersBadge.textContent = data.total || 0;
+            if (statUsers) statUsers.textContent = data.total || 0;
+        }
 
         renderUserList(allUsers);
         renderManagementList(allUsers);
@@ -854,14 +866,7 @@ function renderUserList(users) {
         return;
     }
 
-    const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
-    if (userCurrentPage > totalPages) userCurrentPage = totalPages;
-    if (userCurrentPage < 1) userCurrentPage = 1;
-
-    const startIndex = (userCurrentPage - 1) * PAGE_SIZE;
-    const paginatedItems = filtered.slice(startIndex, startIndex + PAGE_SIZE);
-
-    userContainer.innerHTML = paginatedItems.map(u => {
+    userContainer.innerHTML = filtered.map(u => {
         const userTags = (u.tags || []).map(tag => String(tag));
         const threadId = escapeAttr(u.threadId || '');
         const avatarUrl = u.avatarUrl || u.pfp || '/image/kwicon.svg';
@@ -927,12 +932,12 @@ function renderUserList(users) {
     }
 
     paginationContainer.innerHTML = `
-        <span>Page ${userCurrentPage} of ${totalPages}</span>
+        <span>Page ${userCurrentPage}</span>
         <div class="flex items-center gap-2">
             <button onclick="changeUserPage(${userCurrentPage - 1})" ${userCurrentPage <= 1 ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
                 Previous
             </button>
-            <button onclick="changeUserPage(${userCurrentPage + 1})" ${userCurrentPage >= totalPages ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
+            <button onclick="changeUserPage(${userCurrentPage + 1})" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold">
                 Next
             </button>
         </div>
@@ -941,9 +946,9 @@ function renderUserList(users) {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-window.changeUserPage = function(targetPage) {
-    userCurrentPage = targetPage;
-    renderUserList(allUsers);
+window.changeUserPage = async function(targetPage) {
+    if (targetPage < 1) return;
+    await loadUserList(targetPage);
 };
 
 function renderManagementList(users) {
