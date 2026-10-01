@@ -365,6 +365,12 @@ async function fetchSongFiles(fileUrls, env) {
     return songs.filter(Boolean);
 }
 
+export async function fetchSongCatalogFromGitHub(env) {
+    const { fileUrls, version } = await listSongFileUrlsFromGitHub(env);
+    const songs = await fetchSongFiles(fileUrls, env);
+    return { songs, version };
+}
+
 export async function fetchSongPageFromGitHub(env, startIndex, limit) {
     try {
         const { fileUrls, version } = await listSongFileUrlsFromGitHub(env);
@@ -378,10 +384,9 @@ export async function fetchSongPageFromGitHub(env, startIndex, limit) {
 
 export async function fetchAllSongsFromGitHub(env) {
     try {
-        const { fileUrls } = await listSongFileUrlsFromGitHub(env);
-        const validSongs = await fetchSongFiles(fileUrls, env);
-        console.log(`[fetchAllSongsFromGitHub] Loaded ${validSongs.length} songs.`);
-        return validSongs;
+        const { songs } = await fetchSongCatalogFromGitHub(env);
+        console.log(`[fetchAllSongsFromGitHub] Loaded ${songs.length} songs.`);
+        return songs;
     } catch (err) {
         console.error("[fetchAllSongsFromGitHub] Exception:", err.message);
         return [];
@@ -570,8 +575,11 @@ export async function invalidateSongCatalogVersionCache(requestUrl) {
     try {
         const cache = globalThis.caches?.default;
         if (!cache) return;
-        const cacheKey = new Request(new URL('/api/songs/version', requestUrl).toString());
-        await cache.delete(cacheKey);
+        const cacheKeys = [
+            new Request(new URL('/api/songs/version', requestUrl).toString()),
+            new Request(new URL('/api/songs/catalog-cache', requestUrl).toString())
+        ];
+        await Promise.all(cacheKeys.map(cacheKey => cache.delete(cacheKey)));
     } catch (error) {
         console.warn('[invalidateSongCatalogVersionCache] Failed to invalidate version cache:', error.message);
     }

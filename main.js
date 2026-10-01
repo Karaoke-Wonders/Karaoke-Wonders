@@ -10,7 +10,7 @@ let currentUser = null;
 let currentPage = 1;
 let totalPages = 1;
 const itemsPerPage = 10;
-cachedAllSongs = []
+let songSearchTimer = null;
 
 /**
  * Normalizes user session data regardless of whether properties are 
@@ -343,7 +343,7 @@ window.hideAlert = function() {
 };
 
 // Load approved songs for the current page from Worker API with a loading state
-async function loadSongLibrary(page = 1) {
+async function loadSongLibrary(page = currentPage, search = document.getElementById('search-input')?.value || '') {
     const songListContainer = document.getElementById('song-list');
     if (!songListContainer) return;
 
@@ -356,31 +356,17 @@ async function loadSongLibrary(page = 1) {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
     try {
-        cachedAllSongs = [];
-        let catalogPages = 1;
-        let catalogVersion = '';
-        for (let catalogPage = 1; catalogPage <= catalogPages; catalogPage++) {
-            const response = await fetch(`/api/songs?page=${catalogPage}&limit=500`);
-            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        const params = new URLSearchParams({ page: String(page), limit: String(itemsPerPage) });
+        if (search.trim()) params.set('search', search.trim());
+        const response = await fetch(`/api/songs?${params}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
 
-            const data = await response.json();
-            if (Array.isArray(data)) {
-                cachedAllSongs = data;
-                break;
-            }
-
-            cachedAllSongs.push(...(Array.isArray(data.songs) ? data.songs : []));
-            catalogVersion = data.version || catalogVersion;
-            catalogPages = Math.max(catalogPage, Number(data.totalPages) || 1);
-        }
-
-        window.setSongCatalogVersion?.(catalogVersion);
-        const query = document.getElementById('search-input')?.value || '';
-        const filteredSongs = filterSongCatalog(cachedAllSongs, query);
-        totalPages = Math.ceil(filteredSongs.length / itemsPerPage) || 1;
-        currentPage = Math.min(Math.max(page, 1), totalPages);
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        renderSongs(filteredSongs.slice(startIndex, startIndex + itemsPerPage));
+        const data = await response.json();
+        currentPage = Number(data.page) || 1;
+        totalPages = Number(data.totalPages) || 1;
+        window.setSongCatalogVersion?.(data.version);
+        renderSongs(Array.isArray(data.songs) ? data.songs : []);
+        updateMainUrlState(currentPage, search);
     } catch (err) {
         console.error('Error loading songs:', err);
         songListContainer.innerHTML = `<p class="text-slate-500 text-xs col-span-full text-center py-10">Unable to load songs at this time.</p>`;
@@ -468,15 +454,22 @@ async function loadMySubmissions() {
     }
 
     try {
-        const response = await fetch(`/api/songs?page=1&limit=500`);
-        if (!response.ok) throw new Error('Failed to fetch submissions');
-
-        const data = await response.json();
-        const allTracks = data.songs || [];
-
-        const mySubmissions = allTracks.filter(song => 
-            song.submittedBy && song.submittedBy.toLowerCase() === currentUser.username.toLowerCase()
-        );
+        const mySubmissions = [];
+        let page = 1;
+        let totalPages = 1;
+        while (page <= totalPages) {
+            const params = new URLSearchParams({
+                page: String(page),
+                limit: '100',
+                submittedBy: currentUser.username
+            });
+            const response = await fetch(`/api/songs?${params}`, { cache: 'no-store' });
+            if (!response.ok) throw new Error('Failed to fetch submissions');
+            const data = await response.json();
+            mySubmissions.push(...(Array.isArray(data.songs) ? data.songs : []));
+            totalPages = Number(data.totalPages) || 0;
+            page++;
+        }
 
         renderMySubmissions(mySubmissions);
     } catch (err) {
@@ -604,8 +597,9 @@ window.changePage = function(direction) {
     if (currentPage < 1) currentPage = 1;
     if (currentPage > totalPages) currentPage = totalPages;
 
-    renderMainCatalogPage(currentPage);
-    updateMainUrlState(currentPage, document.getElementById('search-input')?.value || '', 'pushState');
+    const search = document.getElementById('search-input')?.value || '';
+    updateMainUrlState(currentPage, search, 'pushState');
+    loadSongLibrary(currentPage, search);
     
     const libraryHeader = document.getElementById('content-library');
     if (libraryHeader) {
@@ -616,17 +610,9 @@ window.changePage = function(direction) {
 // Search and filter placeholder (can be expanded later for server-side search)
 function filterSongs(query) {
     currentPage = 1;
-    renderMainCatalogPage(currentPage);
     updateMainUrlState(currentPage, query);
-}
-
-function renderMainCatalogPage(page) {
-    const query = document.getElementById('search-input')?.value || '';
-    const filtered = filterSongCatalog(cachedAllSongs, query);
-    totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-    currentPage = Math.min(Math.max(page, 1), totalPages);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    renderSongs(filtered.slice(startIndex, startIndex + itemsPerPage));
+    window.clearTimeout(songSearchTimer);
+    songSearchTimer = window.setTimeout(() => loadSongLibrary(1, query), 250);
 }
 
 function updateMainUrlState(page, search, historyMethod = 'replaceState') {
@@ -644,20 +630,8 @@ window.addEventListener('popstate', () => {
     currentPage = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
     const searchInput = document.getElementById('search-input');
     if (searchInput) searchInput.value = urlParams.get('search') || '';
-    if (cachedAllSongs.length) renderMainCatalogPage(currentPage);
-    else loadSongLibrary(currentPage);
+    loadSongLibrary(currentPage, searchInput?.value || '');
 });
-
-function filterSongCatalog(songs, query) {
-    const normalizedQuery = String(query || '').toLowerCase().trim();
-    return songs.filter(song => {
-        const searchableText = [song.songName, song.title, song.artist, song.id, song.submittedBy, song.uploader]
-            .map(value => String(value ?? ''))
-            .join(' ')
-            .toLowerCase();
-        return searchableText.includes(normalizedQuery);
-    });
-}
 
 // Extract YouTube Video ID from any URL format or raw ID
 function extractYouTubeId(urlOrId) {

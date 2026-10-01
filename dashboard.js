@@ -9,6 +9,7 @@ let userSearchQuery = '';
 let userRoleFilter = 'all';
 let songSearchQuery = '';
 let songSortBy = 'title';
+let songSearchTimer = null;
 let pendingSearchQuery = '';
 
 // Pagination States (10 items per page)
@@ -525,35 +526,24 @@ async function loadSongs(page = 1) {
     }
 
     try {
-        allSongs = [];
-        let catalogPages = 1;
-        let catalogVersion = '';
-        let totalSongs = 0;
-        for (let catalogPage = 1; catalogPage <= catalogPages; catalogPage++) {
-            const response = await fetch(`/api/songs?page=${catalogPage}&limit=500&_t=${Date.now()}`, {
-                cache: 'no-store'
-            });
-            if (!response.ok) throw new Error('Failed to fetch songs');
+        const params = new URLSearchParams({
+            page: String(page),
+            limit: String(PAGE_SIZE),
+            search: songSearchQuery,
+            sort: songSortBy,
+            _t: String(Date.now())
+        });
+        const response = await fetch(`/api/songs?${params}`, { cache: 'no-store' });
+        if (!response.ok) throw new Error('Failed to fetch songs');
 
-            const data = await response.json();
-            if (Array.isArray(data)) {
-                allSongs = data;
-                totalSongs = data.length;
-                break;
-            }
-
-            allSongs.push(...(Array.isArray(data.songs) ? data.songs : []));
-            catalogVersion = data.version || catalogVersion;
-            catalogPages = Math.max(catalogPage, Number(data.totalPages) || 1);
-            totalSongs = Number(data.total) || allSongs.length;
-        }
-
-        window.setSongCatalogVersion?.(catalogVersion);
-        songTotalPages = Math.ceil(allSongs.length / PAGE_SIZE) || 1;
-        songCurrentPage = Math.min(Math.max(page, 1), songTotalPages);
-        if (songsBadge) songsBadge.textContent = totalSongs;
-        if (statSongs) statSongs.textContent = totalSongs;
-        renderSongsClientSide(allSongs);
+        const data = await response.json();
+        allSongs = Array.isArray(data.songs) ? data.songs : [];
+        songTotalPages = Number(data.totalPages) || 1;
+        songCurrentPage = Number(data.page) || 1;
+        window.setSongCatalogVersion?.(data.version);
+        if (songsBadge) songsBadge.textContent = Number(data.total) || 0;
+        if (statSongs) statSongs.textContent = Number(data.total) || 0;
+        renderSongsServerSide(allSongs);
     } catch (err) {
         console.error(err);
         container.innerHTML = `<p class="col-span-full text-center text-red-400 text-xs py-8">Unable to load songs at this time.</p>`;
@@ -636,55 +626,26 @@ function renderSongsServerSide(songs) {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-function renderSongsClientSide(songs) {
-    let filtered = songs.filter(s => {
-        const query = String(songSearchQuery || '').toLowerCase().trim();
-        const searchableText = [s.songName, s.title, s.artist, s.submittedBy, s.uploader, s.id, s._id]
-            .map(value => String(value ?? ''))
-            .join(' ')
-            .toLowerCase();
-        return searchableText.includes(query);
-    });
-
-    filtered.sort((a, b) => {
-        if (songSortBy === 'artist') {
-            return String(a.artist || '').localeCompare(String(b.artist || ''));
-        } else if (songSortBy === 'uploader') {
-            return String(a.submittedBy || a.uploader || '').localeCompare(String(b.submittedBy || b.uploader || ''));
-        } else {
-            return String(a.songName || a.title || '').localeCompare(String(b.songName || b.title || ''));
-        }
-    });
-
-    songTotalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
-    if (songCurrentPage > songTotalPages) songCurrentPage = songTotalPages;
-    if (songCurrentPage < 1) songCurrentPage = 1;
-
-    const startIndex = (songCurrentPage - 1) * PAGE_SIZE;
-    const paginatedItems = filtered.slice(startIndex, startIndex + PAGE_SIZE);
-
-    renderSongsServerSide(paginatedItems);
-}
-
 window.changeSongPage = async function(targetPage) {
     if (targetPage < 1 || targetPage > songTotalPages) return;
     songCurrentPage = targetPage;
     updateDashboardUrlState({ songPage: songCurrentPage }, 'pushState');
-    renderSongsClientSide(allSongs);
+    await loadSongs(songCurrentPage);
 };
 
 window.filterSongs = function(query) {
     songSearchQuery = query || '';
     songCurrentPage = 1;
     updateDashboardUrlState({ songSearch: songSearchQuery, songPage: 1 });
-    renderSongsClientSide(allSongs);
+    window.clearTimeout(songSearchTimer);
+    songSearchTimer = window.setTimeout(() => loadSongs(1), 250);
 };
 
 window.sortSongs = function(sortBy) {
     songSortBy = sortBy || 'title';
     songCurrentPage = 1;
     updateDashboardUrlState({ songSort: songSortBy, songPage: 1 });
-    renderSongsClientSide(allSongs);
+    loadSongs(1);
 };
 
 window.openEditTrackModal = function(songId) {
@@ -772,7 +733,7 @@ window.updateTrackDirectly = async function(event) {
             targetSong.title = songName;
             targetSong.artist = artist;
             targetSong.videoId = videoId;
-            renderSongsClientSide(allSongs);
+            renderSongsServerSide(allSongs);
         }
 
         showDashboardAlert('Song updated successfully!', 'success');
