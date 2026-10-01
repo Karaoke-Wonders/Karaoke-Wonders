@@ -2,7 +2,8 @@ const TAG_IDS = {
     staff: '1548667928881139712',
     restricted: '1548667951069007964',
     blacklisted: '1548667978181247027',
-    manager: '1549308000664031323'
+    manager: '1549308000664031323',
+    kwteam: '1555048910324760676'
 };
 
 let currentUser = null;
@@ -41,6 +42,10 @@ function normalizeUserData(raw) {
         base.isManager || raw.isManager || base.role == 'manager' || tags.includes(TAG_IDS.manager)
     );
 
+    const isTeam = Boolean(
+        base.isTeam || raw.isTeam || tags.includes(TAG_IDS.kwteam)
+    )
+
     return {
         ...raw,
         ...base,
@@ -51,7 +56,8 @@ function normalizeUserData(raw) {
         threadId,
         isAdmin,
         role: isAdmin ? 'administrator' : 'member',
-        isManager
+        isManager,
+        isTeam
     };
 }
 
@@ -162,6 +168,15 @@ function setupMemberProfile() {
             adminLinks.classList.remove('hidden');
         }
     }
+
+    if (currentUser.isTeam) {
+        if (roleBadge) {
+            roleBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-yellow-400"></span> Guide Manager`;
+        }
+        if (adminLinks) {
+            adminLinks.classList.remove('hidden');
+        }
+    }
 }
 
 // Tab switcher for main.html
@@ -250,6 +265,10 @@ async function refreshUserSession() {
             data.isManager || userTags.includes(TAG_IDS.manager)
         );
 
+        const isTeam = Boolean(
+            data.isTeam || userTags.includes(TAG_IDS.kwteam)
+        );
+
         // Update local session object while retaining existing properties
         const updatedUser = {
             ...user,
@@ -257,6 +276,7 @@ async function refreshUserSession() {
             tags: userTags,
             isAdmin: isStaff,
             isManager: isManager,
+            isTeam: isTeam,
             role: isStaff ? 'administrator' : 'member',
             threadId: data.threadId || user.threadId,
             avatarUrl: data.avatarUrl || user.avatarUrl
