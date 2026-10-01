@@ -7,14 +7,14 @@ import {
 
 export async function onRequestPost({ request, env }) {
     const body = await request.json();
-    const { trackId, songName, artist, staffName, submittedBy, threadId } = body;
+    const { songId, songName, artist, staffName, submittedBy, threadId } = body;
 
-    if (!trackId) {
+    if (!songId) {
         return jsonResponse({ error: "Missing required parameter: trackId" }, 400);
     }
 
     const updatedTrack = {
-        id: trackId,
+        id: songId,
         songName,
         artist,
         submittedBy,
@@ -45,7 +45,7 @@ export async function onRequestPost({ request, env }) {
     await sendDiscordStaffAuditNotification(
         "Updated Track",
         staffName || "Unknown Staff",
-        `Track: "${updatedTrack.songName}" by ${updatedTrack.artist} (ID: ${trackId})`,
+        `Track: "${updatedTrack.songName}" by ${updatedTrack.artist} (ID: ${songId})`,
         env
     );
 
