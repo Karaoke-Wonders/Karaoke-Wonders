@@ -4,7 +4,7 @@ import {
     jsonResponse 
 } from '../../_middleware/utils.js';
 
-// Local hashCode fallback
+// Local hashCode fallback to guarantee it never fails to import or resolve
 function hashCode(str) {
     const s = String(str);
     let hash = 0;
@@ -64,8 +64,9 @@ export async function onRequestPost({ request, env }) {
         const existingFileRes = await fetch(url, {
             headers: { 
                 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 
-                'User-Agent': 'Cloudflare-Pages-Function' 
-            }
+                'User-Agent': 'Cloudflare-Worker' 
+            },
+            cf: { cacheTtl: 0 }
         });
 
         if (!existingFileRes.ok) {
@@ -97,7 +98,7 @@ export async function onRequestPost({ request, env }) {
             headers: { 
                 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 
                 'Content-Type': 'application/json', 
-                'User-Agent': 'Cloudflare-Pages-Function' 
+                'User-Agent': 'Cloudflare-Worker' 
             },
             body: JSON.stringify({
                 message: `Update song: ${songName} (${songId})`,
@@ -127,9 +128,8 @@ export async function onRequestPost({ request, env }) {
         return jsonResponse({ error: "Failed to update song after multiple conflict retries." }, 500);
     }
 
-    // 1. Send Inbox Notification to the user who requested/owns the track
+    // Save notification to target user's inbox
     const notificationUserKey = existingContent?.submittedBy || existingContent?.threadId || existingContent?.userKey || null;
-    
     if (notificationUserKey) {
         try {
             await saveInboxNotification(
@@ -145,12 +145,12 @@ export async function onRequestPost({ request, env }) {
         }
     }
 
-    // 2. Send Discord Staff Audit Log
+    // Send Discord Staff Audit log
     try {
         await sendDiscordStaffAuditNotification(
             "Updated Song Details",
             staffName || "Staff Member",
-            `Song: "${songName}" by ${artist} (ID: ${songId})`,
+            `Song: "${songName}" by ${artist} (ID:${songId})`,
             env
         );
     } catch (discordErr) {
