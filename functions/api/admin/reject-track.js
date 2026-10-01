@@ -3,18 +3,27 @@ import {
     removePendingSongFromGitHub, 
     saveInboxNotification, 
     sendDiscordStaffAuditNotification, 
+    authorizeAdminRequest,
     jsonResponse 
 } from '../../_middleware/utils.js';
 
 export async function onRequestPost({ request, env }) {
+    const authorization = await authorizeAdminRequest(request, env);
+    if (authorization instanceof Response) return authorization;
+
     const body = await request.json();
-    const { trackId, songName, artist, staffName } = body;
+    const { trackId, songName, artist } = body;
     console.log(`[handleRejectTrack] Rejecting and removing trackId: ${trackId}`);
+
+    if (typeof trackId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(trackId)) {
+        return jsonResponse({ error: 'Invalid track ID.' }, 400);
+    }
 
     const pending = await fetchPendingSongsFromGitHub(env);
     const track = pending.find(t => t.id === trackId);
 
-    await removePendingSongFromGitHub(trackId, env);
+    const removed = await removePendingSongFromGitHub(trackId, env);
+    if (!removed) return jsonResponse({ error: 'Track request not found.' }, 404);
 
     const targetSongName = track?.songName || songName || null;
     const targetArtist = track?.artist || artist || null;
@@ -44,7 +53,7 @@ export async function onRequestPost({ request, env }) {
 
     await sendDiscordStaffAuditNotification(
         "Rejected/Removed Track",
-        staffName || "Unknown Staff",
+        authorization.username,
         targetDetails,
         env
     );

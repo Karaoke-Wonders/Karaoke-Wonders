@@ -278,7 +278,7 @@
             try {
                 const response = await fetch('/api/user/settings', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: window.kwAuthHeaders({ 'Content-Type': 'application/json' }),
                     body: JSON.stringify(updatedData)
                 });
 

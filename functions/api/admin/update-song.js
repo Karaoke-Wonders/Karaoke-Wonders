@@ -2,6 +2,7 @@ import {
     saveInboxNotification, 
     sendDiscordStaffAuditNotification, 
     invalidateSongCatalogVersionCache,
+    authorizeAdminRequest,
     jsonResponse 
 } from '../../_middleware/utils.js';
 
@@ -42,7 +43,10 @@ export async function onRequestPost({ request, env }) {
         return jsonResponse({ error: "Invalid JSON payload." }, 400);
     }
 
-    const { songId, songName, artist, videoId, staffName } = body;
+    const authorization = await authorizeAdminRequest(request, env);
+    if (authorization instanceof Response) return authorization;
+
+    const { songId, songName, artist, videoId } = body;
     console.log(`[handleUpdateSong] Updating song: ${songId}`);
 
     if (
@@ -148,7 +152,7 @@ export async function onRequestPost({ request, env }) {
             'updated',
             songName,
             artist,
-            `Your track "${songName}" has been updated by ${staffName || 'a staff member'}.`,
+            `Your track "${songName}" has been updated by ${authorization.username}.`,
             env
         );
         console.log(`[handleUpdateSong] Inbox notification sent to user ${notificationUserKey}`);
@@ -160,7 +164,7 @@ export async function onRequestPost({ request, env }) {
     try {
         await sendDiscordStaffAuditNotification(
             "Updated Song Details",
-            staffName || "Staff Member",
+            authorization.username,
             `Song: "${songName}" by ${artist} (ID:${songId})`,
             env
         );

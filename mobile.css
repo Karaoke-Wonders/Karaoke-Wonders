@@ -13,89 +13,48 @@ html, body {
     box-sizing: border-box !important;
 }
 
-/* 2. Container & Layout Overrides */
-.container, .wrapper, main, section, header, footer {
-    width: 100% !important;
-    max-width: 100% !important;
-    padding-left: 16px !important;
-    padding-right: 16px !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
+/* Let page-specific responsive layouts keep control of spacing and direction. */
+.container, .wrapper, main {
+    max-width: 100%;
+    min-width: 0;
 }
 
-/* Convert multi-column layouts into a single vertical stack */
-.row, .grid, .flex-container, .card-grid, .sidebar-layout {
-    display: flex !important;
-    flex-direction: column !important;
-    grid-template-columns: 1fr !important;
-    gap: 16px !important;
-}
-
-/* Force sidebars and main content blocks to full width */
-.sidebar, .main-content, .column, .col {
-    width: 100% !important;
-    max-width: 100% !important;
-}
-
-/* 3. Touch Targets & Form Elements */
-/* Ensures buttons, links, and inputs are easy to tap with thumbs */
-button, 
-.btn, 
-input[type="button"], 
-input[type="submit"], 
+/* 3. Form controls */
+button,
+input[type="button"],
+input[type="submit"],
 input[type="reset"],
-select,
-a.button {
-    width: 100% !important; /* Full width buttons for mobile usability */
-    min-height: 48px !important; /* Recommended minimum touch size */
-    padding: 12px 20px !important;
-    font-size: 16px !important; /* 16px prevents iOS Safari from zooming in on focus */
+select {
+    min-height: 44px;
     touch-action: manipulation;
 }
 
-/* Make text inputs thumb-friendly */
 input[type="text"],
 input[type="password"],
 input[type="email"],
 input[type="number"],
 input[type="search"],
+input[type="url"],
 textarea {
-    width: 100% !important;
-    min-height: 44px !important;
-    font-size: 16px !important; /* Prevents auto-zoom on mobile focus */
-    padding: 10px 14px !important;
+    max-width: 100%;
+    min-width: 0;
+    font-size: 16px;
 }
 
-/* 4. Navigation & Headers */
-nav, .navbar, .menu {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    width: 100% !important;
-}
-
-nav a, .navbar a {
-    display: block !important;
-    padding: 12px 16px !important;
-    text-align: center !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* 5. Media & Tables */
-/* Prevents images, videos, or embeds from stretching past screen limits */
+/* 4. Media & Tables */
 img, video, iframe, canvas, svg {
-    max-width: 100% !important;
-    height: auto !important;
+    max-width: 100%;
 }
 
 /* Enables horizontal swipe scrolling for data tables instead of breaking the screen */
 table {
     display: block !important;
-    width: 100% !important;
+    max-width: 100%;
     overflow-x: auto !important;
     white-space: nowrap !important;
 }
 
-/* 6. Typography Scaling */
+/* 5. Heading scaling */
 h1 {
     font-size: 1.8rem !important;
     line-height: 1.2 !important;
@@ -108,9 +67,4 @@ h2 {
 
 h3 {
     font-size: 1.25rem !important;
-}
-
-p, li, span {
-    font-size: 1rem !important;
-    line-height: 1.5 !important;
 }

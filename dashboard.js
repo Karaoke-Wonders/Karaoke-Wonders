@@ -28,6 +28,13 @@ const TAG_IDS = {
     kwteam: '1555048910324760676'
 };
 
+function adminFetch(url, options = {}) {
+    return fetch(url, {
+        ...options,
+        headers: window.kwAuthHeaders(options.headers || {})
+    });
+}
+
 function restoreDashboardUrlState() {
     const params = new URLSearchParams(window.location.search);
     const songPage = Number.parseInt(params.get('songPage'), 10);
@@ -121,11 +128,6 @@ window.addEventListener('popstate', () => {
 });
 
 function bindGlobalEventListeners() {
-    const addTrackForm = document.getElementById('add-track-form');
-    if (addTrackForm) {
-        addTrackForm.addEventListener('submit', window.addTrackDirectly);
-    }
-
     const editTrackForm = document.getElementById('edit-track-form');
     if (editTrackForm) {
         editTrackForm.addEventListener('submit', window.updateTrackDirectly);
@@ -133,7 +135,6 @@ function bindGlobalEventListeners() {
 
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            closeAddTrackModal();
             closeEditTrackModal();
             closePreviewModal();
         }
@@ -322,7 +323,7 @@ async function loadPendingRequests() {
     const statPending = document.getElementById('stat-pending-count');
 
     try {
-        const response = await fetch(`/api/admin/pending-tracks?_t=${Date.now()}`, { cache: 'no-store' });
+        const response = await adminFetch(`/api/admin/pending-tracks?_t=${Date.now()}`, { cache: 'no-store' });
         if (!response.ok) throw new Error('Failed to load pending queue.');
 
         pendingQueue = await response.json();
@@ -445,7 +446,7 @@ window.approveTrack = async function(trackId) {
     }
 
     try {
-        const res = await fetch(`/api/admin/approve-track`, {
+        const res = await adminFetch(`/api/admin/approve-track`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -478,7 +479,7 @@ window.rejectTrack = async function(trackId) {
     }
 
     try {
-        const res = await fetch(`/api/admin/reject-track`, {
+        const res = await adminFetch(`/api/admin/reject-track`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -686,79 +687,6 @@ window.sortSongs = function(sortBy) {
     renderSongsClientSide(allSongs);
 };
 
-window.openAddTrackModal = function() {
-    const modal = document.getElementById('add-track-modal');
-    if (modal) {
-        modal.classList.remove('hidden');
-        resetModalStatus('modal-status-message');
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-    }
-};
-
-window.closeAddTrackModal = function() {
-    const modal = document.getElementById('add-track-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-        const form = document.getElementById('add-track-form');
-        if (form) form.reset();
-        resetModalStatus('modal-status-message');
-    }
-};
-
-window.addTrackDirectly = async function(event) {
-    if (event) event.preventDefault();
-
-    const titleInput = document.getElementById('add-song-title');
-    const artistInput = document.getElementById('add-song-artist');
-    const videoIdInput = document.getElementById('add-song-videoid');
-    const submitBtn = document.getElementById('btn-add-song');
-
-    const songName = titleInput ? titleInput.value.trim() : '';
-    const artist = artistInput ? artistInput.value.trim() : '';
-    const videoId = videoIdInput ? extractVideoId(videoIdInput.value.trim()) : '';
-
-    if (!songName || !artist || !videoId) {
-        showModalError('modal-status-message', 'Please provide valid Title, Artist, and YouTube Video ID/URL.');
-        return;
-    }
-
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.textContent = 'Adding...';
-    }
-
-    try {
-        const res = await fetch(`/api/admin/add-song`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                songName,
-                artist,
-                videoId,
-                submittedBy: currentUser ? currentUser.username : 'Admin'
-            })
-        });
-
-        if (!res.ok) throw new Error('Failed to add track');
-
-        showDashboardAlert('Track added directly to the catalog!', 'success');
-        if (titleInput) titleInput.value = '';
-        if (artistInput) artistInput.value = '';
-        if (videoIdInput) videoIdInput.value = '';
-
-        closeAddTrackModal();
-        await loadSongs(1);
-
-    } catch (err) {
-        showModalError('modal-status-message', 'Failed to add track. Check connectivity.');
-    } finally {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'Add Track';
-        }
-    }
-};
-
 window.openEditTrackModal = function(songId) {
     const song = allSongs.find(s => String(s.id || s._id) === String(songId));
     if (!song) {
@@ -818,7 +746,7 @@ window.updateTrackDirectly = async function(event) {
     }
 
     try {
-        const res = await fetch(`/api/admin/update-song`, {
+        const res = await adminFetch(`/api/admin/update-song`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ songId, songName, artist, videoId, staffName })
@@ -877,7 +805,7 @@ window.deleteSong = async function(songId) {
     if (btn) btn.disabled = true;
 
     try {
-        const res = await fetch(`/api/admin/delete-song`, {
+        const res = await adminFetch(`/api/admin/delete-song`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -925,7 +853,7 @@ async function loadUserList(page = 1) {
             role: userRoleFilter,
             _t: String(Date.now())
         });
-        const response = await fetch(`/api/admin/users?${params}`, { cache: 'no-store' });
+        const response = await adminFetch(`/api/admin/users?${params}`, { cache: 'no-store' });
         if (!response.ok) throw new Error('Failed to load user list');
 
         const data = await response.json();
@@ -1245,14 +1173,14 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
     }
 
     try {
-        const response = await fetch(`/api/admin/toggle-lock`, {
+        const isStaffChange = tagId === TAG_IDS.staff;
+        const response = await adminFetch(isStaffChange ? `/api/admin/toggle-staff` : `/api/admin/toggle-lock`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 threadId, 
-                tagId, 
+                ...(isStaffChange ? {} : { tagId }),
                 add: shouldAdd,
-                staffName: currentUser?.username || 'Unknown Staff'
             })
         });
         if (!response.ok) throw new Error('Failed to update user tag state');

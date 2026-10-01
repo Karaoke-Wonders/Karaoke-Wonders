@@ -27,6 +27,22 @@
         window.dispatchEvent(new CustomEvent('kw-session-updated', { detail: user }));
     }
 
+    window.kwAuthHeaders = function(headers = {}) {
+        const user = readSession();
+        const result = new Headers(headers);
+        if (!user?.username || !user?.password) return result;
+
+        const bytes = new TextEncoder().encode(JSON.stringify({
+            username: user.username,
+            password: user.password,
+            threadId: user.threadId
+        }));
+        let binary = '';
+        for (const byte of bytes) binary += String.fromCharCode(byte);
+        result.set('Authorization', `Bearer ${btoa(binary)}`);
+        return result;
+    };
+
     async function syncSession() {
         if (syncInFlight || document.visibilityState === 'hidden') return;
         if (Date.now() - lastSyncAt < MIN_SYNC_GAP_MS) return;

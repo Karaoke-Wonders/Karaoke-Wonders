@@ -1,18 +1,23 @@
-import { findDiscordThreadByName, getDiscordThreadData, jsonResponse } from '../../_middleware/utils.js';
+import { authenticateAccountRequest, getDiscordThreadData, jsonResponse } from '../../_middleware/utils.js';
 
 export async function onRequestPost({ request, env }) {
-    const body = await request.json();
+    const authorization = await authenticateAccountRequest(request, env);
+    if (authorization instanceof Response) return authorization;
+
+    let body;
+    try {
+        body = await request.json();
+    } catch {
+        return jsonResponse({ error: 'Invalid JSON payload.' }, 400);
+    }
+
     const { username, pfp, email } = body;
 
-    if (!username) {
+    if (typeof username !== 'string' || username.toLowerCase() !== authorization.username.toLowerCase()) {
         return jsonResponse({ error: "Username is required to update settings." }, 400);
     }
 
-    const thread = await findDiscordThreadByName(username, env);
-    if (!thread) {
-        return jsonResponse({ error: "User account thread not found." }, 404);
-    }
-
+    const thread = authorization.thread;
     const profileData = await getDiscordThreadData(thread.id, env);
     if (!profileData) {
         return jsonResponse({ error: "Failed to retrieve account data." }, 500);

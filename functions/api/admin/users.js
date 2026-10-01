@@ -1,6 +1,9 @@
-import { resolveGuildId, jsonResponse } from '../../_middleware/utils.js';
+import { authorizeAdminRequest, resolveGuildId, jsonResponse } from '../../_middleware/utils.js';
 
 export async function onRequestGet({ request, env }) {
+    const authorization = await authorizeAdminRequest(request, env);
+    if (authorization instanceof Response) return authorization;
+
     console.log("[handleGetUsers] Fetching active threads from Discord forum channel...");
     const guildId = await resolveGuildId(env);
     if (!guildId) return jsonResponse({ users: [], total: 0, totalStaff: 0, page: 1, limit: 12, totalPages: 0 });

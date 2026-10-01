@@ -264,50 +264,6 @@
             </div>
         </section>
 
-        <!-- ADD TRACK MODAL -->
-        <div id="add-track-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-            <div class="glass border border-white/10 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl">
-                <div class="flex items-center justify-between border-b border-white/10 pb-4">
-                    <div class="flex items-center gap-3">
-                        <div class="p-2.5 bg-purple-500/20 text-purple-400 rounded-xl border border-purple-500/30">
-                            <i data-lucide="music" class="w-5 h-5"></i>
-                        </div>
-                        <h3 class="text-lg font-extrabold text-white">Add New Track</h3>
-                    </div>
-                    <button onclick="closeAddTrackModal()" class="text-slate-400 hover:text-white p-1">
-                        <i data-lucide="x" class="w-5 h-5"></i>
-                    </button>
-                </div>
-
-                <!-- Add Track Status Message Box -->
-                <div id="modal-status-message" class="hidden p-3 rounded-xl text-xs font-semibold border"></div>
-
-                <form id="add-track-form" class="space-y-4">
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Song Title</label>
-                        <input type="text" id="add-song-title" required placeholder="e.g. Bohemian Rhapsody" class="input-field w-full rounded-xl px-4 py-2.5 text-xs">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Artist</label>
-                        <input type="text" id="add-song-artist" required placeholder="e.g. Queen" class="input-field w-full rounded-xl px-4 py-2.5 text-xs">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">YouTube Video ID or URL</label>
-                        <input type="text" id="add-song-videoid" required placeholder="e.g. dQw4w9WgXcQ or https://youtu.be/..." class="input-field w-full rounded-xl px-4 py-2.5 text-xs">
-                    </div>
-
-                    <div class="flex items-center justify-end gap-3 pt-4 border-t border-white/10">
-                        <button type="button" onclick="closeAddTrackModal()" class="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-slate-300 rounded-xl text-xs font-bold transition-all border border-white/10">
-                            Cancel
-                        </button>
-                        <button type="submit" id="btn-add-song" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2">
-                            <i data-lucide="plus" class="w-4 h-4"></i> Add Track
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
         <!-- EDIT TRACK MODAL -->
         <div id="edit-track-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
             <div class="glass border border-white/10 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl relative">

@@ -7,6 +7,10 @@ export function hashCode(str) {
     return Math.abs(hash);
 }
 
+function isSafeRepositoryId(value) {
+    return typeof value === 'string' && /^[a-zA-Z0-9_-]{1,100}$/.test(value);
+}
+
 export function jsonResponse(data, status = 200) {
     return new Response(JSON.stringify(data), {
         status,
@@ -236,6 +240,74 @@ export async function getDiscordThreadData(threadId, env) {
     }
 }
 
+export async function authenticateAccountRequest(request, env) {
+    const authorization = request.headers.get('Authorization') || '';
+    if (!authorization.startsWith('Bearer ') || authorization.length > 4096) {
+        return jsonResponse({ error: 'Authentication required.' }, 401);
+    }
+
+    let credentials;
+    try {
+        const binary = atob(authorization.slice(7));
+        const bytes = Uint8Array.from(binary, character => character.charCodeAt(0));
+        credentials = JSON.parse(new TextDecoder().decode(bytes));
+    } catch {
+        return jsonResponse({ error: 'Invalid authentication credentials.' }, 401);
+    }
+
+    const username = typeof credentials.username === 'string' ? credentials.username.trim() : '';
+    const password = typeof credentials.password === 'string' ? credentials.password : '';
+    if (!username || !password) return jsonResponse({ error: 'Invalid authentication credentials.' }, 401);
+
+    try {
+        let thread = null;
+        if (typeof credentials.threadId === 'string' && /^\d{17,20}$/.test(credentials.threadId)) {
+            const response = await fetch(`https://discord.com/api/v10/channels/${credentials.threadId}`, {
+                headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` }
+            });
+            if (response.ok) {
+                const candidate = await response.json();
+                if (
+                    candidate.parent_id === env.DISCORD_FORUM_CHANNEL_ID &&
+                    String(candidate.name).toLowerCase() === username.toLowerCase()
+                ) {
+                    thread = candidate;
+                }
+            } else if (response.status === 429 || response.status >= 500) {
+                return jsonResponse({ error: 'Account verification is temporarily unavailable.' }, 503);
+            }
+        }
+
+        if (!thread) thread = await findDiscordThreadByName(username, env);
+        if (!thread) return jsonResponse({ error: 'Invalid username or password.' }, 401);
+
+        const profile = await getDiscordThreadData(thread.id, env);
+        if (!profile) return jsonResponse({ error: 'Account verification is temporarily unavailable.' }, 503);
+        if (profile.password !== password) return jsonResponse({ error: 'Invalid username or password.' }, 401);
+
+        const tags = thread.applied_tags || [];
+        const isManager = Boolean(env.DISCORD_TAG_MANAGER && tags.includes(env.DISCORD_TAG_MANAGER));
+        const isStaff = Boolean(env.DISCORD_TAG_STAFF && tags.includes(env.DISCORD_TAG_STAFF));
+        if (env.DISCORD_TAG_BLACKLISTED && tags.includes(env.DISCORD_TAG_BLACKLISTED)) {
+            return jsonResponse({ error: 'This account is blacklisted.' }, 403);
+        }
+
+        return { thread, username: thread.name, tags, isStaff, isManager };
+    } catch (error) {
+        console.error('[authenticateAccountRequest] Discord verification failed:', error.message);
+        return jsonResponse({ error: 'Account verification is temporarily unavailable.' }, 503);
+    }
+}
+
+export async function authorizeAdminRequest(request, env, managerOnly = false) {
+    const account = await authenticateAccountRequest(request, env);
+    if (account instanceof Response) return account;
+    if (managerOnly ? !account.isManager : !account.isStaff && !account.isManager) {
+        return jsonResponse({ error: 'Administrator privileges required.' }, 403);
+    }
+    return account;
+}
+
 export async function patchDiscordThread(threadId, payload, env) {
     console.log(`[patchDiscordThread] Patching thread ${threadId}`);
     return await fetch(`https://discord.com/api/v10/channels/${threadId}`, {
@@ -317,6 +389,7 @@ export async function fetchAllSongsFromGitHub(env) {
 }
 
 export async function saveSongToGitHub(songData, env) {
+    if (!isSafeRepositoryId(songData?.id)) throw new Error('Invalid song ID.');
     const owner = env.GITHUB_OWNER;
     const repo = env.GITHUB_REPO;
     const branch = env.GITHUB_BRANCH || 'main';
@@ -327,7 +400,10 @@ export async function saveSongToGitHub(songData, env) {
 
     let sha = null;
     const existingFileRes = await fetch(url, { headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' } });
-    if (existingFileRes.status === 200) sha = (await existingFileRes.json()).sha;
+    if (existingFileRes.ok) sha = (await existingFileRes.json()).sha;
+    else if (existingFileRes.status !== 404) {
+        throw new Error(`Failed to check existing song (${existingFileRes.status}): ${await existingFileRes.text()}`);
+    }
 
     const response = await fetch(url, {
         method: 'PUT',
@@ -338,6 +414,7 @@ export async function saveSongToGitHub(songData, env) {
 }
 
 export async function removeSongFromGitHub(songId, env) {
+    if (!isSafeRepositoryId(songId)) throw new Error('Invalid song ID.');
     const owner = env.GITHUB_OWNER;
     const repo = env.GITHUB_REPO;
     const branch = env.GITHUB_BRANCH || 'main';
@@ -349,7 +426,7 @@ export async function removeSongFromGitHub(songId, env) {
         headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' } 
     });
 
-    if (existingFileRes.status === 200) {
+    if (existingFileRes.ok) {
         const fileData = await existingFileRes.json();
         const deleteRes = await fetch(url, {
             method: 'DELETE',
@@ -365,31 +442,45 @@ export async function removeSongFromGitHub(songId, env) {
             throw new Error(`GitHub delete failed: ${await deleteRes.text()}`);
         }
         return fileData;
-    } else {
+    } else if (existingFileRes.status === 404) {
         throw new Error("Song file not found in repository.");
+    } else {
+        throw new Error(`Failed to read song before deletion (${existingFileRes.status}): ${await existingFileRes.text()}`);
     }
 }
 
 export async function fetchPendingSongsFromGitHub(env) {
     const owner = env.GITHUB_OWNER;
     const repo = env.GITHUB_REPO;
-    try {
-        const url = `https://api.github.com/repos/${owner}/${repo}/contents/pending`;
-        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' } });
-        if (!res.ok) return [];
-        const files = await res.json();
-        const promises = files.filter(f => f.name.endsWith('.json')).map(file =>
-            fetch(file.download_url, { headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' } })
-                .then(r => r.ok ? r.json() : null)
-        );
-        return (await Promise.all(promises)).filter(Boolean);
-    } catch (e) {
-        console.error("[fetchPendingSongsFromGitHub] Exception:", e.message);
-        return [];
-    }
+    const url = `https://api.github.com/repos/${owner}/${repo}/contents/pending`;
+    const response = await fetch(url, { headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' } });
+    if (response.status === 404) return [];
+    if (!response.ok) throw new Error(`Failed to list pending songs (${response.status}): ${await response.text()}`);
+
+    const entries = await response.json();
+    if (!Array.isArray(entries)) throw new Error('Unexpected response while listing pending songs.');
+    const files = entries.filter(file => file.name.endsWith('.json'));
+    const songs = new Array(files.length);
+    let nextIndex = 0;
+    const worker = async () => {
+        while (nextIndex < files.length) {
+            const index = nextIndex++;
+            const fileResponse = await fetch(files[index].download_url, {
+                headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' }
+            });
+            if (!fileResponse.ok) {
+                throw new Error(`Failed to read pending song (${fileResponse.status}).`);
+            }
+            songs[index] = await fileResponse.json();
+        }
+    };
+
+    await Promise.all(Array.from({ length: Math.min(25, files.length) }, worker));
+    return songs;
 }
 
 export async function savePendingSongToGitHub(songData, env) {
+    if (!isSafeRepositoryId(songData?.id)) throw new Error('Invalid pending track ID.');
     const owner = env.GITHUB_OWNER;
     const repo = env.GITHUB_REPO;
     const branch = env.GITHUB_BRANCH || 'main';
@@ -406,23 +497,33 @@ export async function savePendingSongToGitHub(songData, env) {
 }
 
 export async function removePendingSongFromGitHub(trackId, env) {
+    if (!isSafeRepositoryId(trackId)) throw new Error('Invalid pending track ID.');
     const owner = env.GITHUB_OWNER;
     const repo = env.GITHUB_REPO;
     const branch = env.GITHUB_BRANCH || 'main';
     const url = `https://api.github.com/repos/${owner}/${repo}/contents/pending/${trackId}.json`;
 
     const existingFileRes = await fetch(url, { headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' } });
-    if (existingFileRes.status === 200) {
-        const fileData = await existingFileRes.json();
-        await fetch(url, {
-            method: 'DELETE',
-            headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'Content-Type': 'application/json', 'User-Agent': 'Cloudflare-Worker' },
-            body: JSON.stringify({ message: `Remove pending song: ${trackId}`, sha: fileData.sha, branch })
-        });
+    if (existingFileRes.status === 404) return false;
+    if (!existingFileRes.ok) {
+        throw new Error(`Failed to read pending track (${existingFileRes.status}): ${await existingFileRes.text()}`);
     }
+
+    const fileData = await existingFileRes.json();
+    const deleteRes = await fetch(url, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'Content-Type': 'application/json', 'User-Agent': 'Cloudflare-Worker' },
+        body: JSON.stringify({ message: `Remove pending song: ${trackId}`, sha: fileData.sha, branch })
+    });
+    if (!deleteRes.ok) throw new Error(`Failed to delete pending track (${deleteRes.status}): ${await deleteRes.text()}`);
+    return true;
 }
 
 export async function updateThreadTag(threadId, tagId, add, env, staffName = "Staff Member", actionDescription = "Updated User Status") {
+    if (typeof threadId !== 'string' || !/^\d{17,20}$/.test(threadId)) {
+        return jsonResponse({ error: 'Invalid thread ID.' }, 400);
+    }
+    if (typeof add !== 'boolean') return jsonResponse({ error: 'Tag action must be a boolean.' }, 400);
     if (!tagId) return jsonResponse({ error: "Target tag ID is not configured." }, 400);
 
     const threadRes = await fetch(`https://discord.com/api/v10/channels/${threadId}`, {

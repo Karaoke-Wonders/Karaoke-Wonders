@@ -1,12 +1,15 @@
-import { removeSongFromGitHub, sendDiscordStaffAuditNotification, invalidateSongCatalogVersionCache, jsonResponse } from '../../_middleware/utils.js';
+import { authorizeAdminRequest, removeSongFromGitHub, sendDiscordStaffAuditNotification, invalidateSongCatalogVersionCache, jsonResponse } from '../../_middleware/utils.js';
 
 export async function onRequestPost({ request, env }) {
+    const authorization = await authorizeAdminRequest(request, env);
+    if (authorization instanceof Response) return authorization;
+
     const body = await request.json();
-    const { songId, songName, staffName } = body;
+    const { songId, songName } = body;
     console.log(`[handleDeleteSong] Deleting songId: ${songId} from live catalog`);
 
-    if (!songId) {
-        return jsonResponse({ error: "Missing required parameter: songId" }, 400);
+    if (typeof songId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(songId)) {
+        return jsonResponse({ error: "Invalid song ID." }, 400);
     }
 
     try {
@@ -19,7 +22,7 @@ export async function onRequestPost({ request, env }) {
 
         await sendDiscordStaffAuditNotification(
             "Deleted Live Song",
-            staffName || "Unknown Staff",
+            authorization.username,
             targetDetails,
             env
         );

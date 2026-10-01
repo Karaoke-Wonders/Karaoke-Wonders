@@ -6,16 +6,20 @@ import {
     sendDiscordApprovedNotification, 
     sendDiscordStaffAuditNotification, 
     invalidateSongCatalogVersionCache,
+    authorizeAdminRequest,
     jsonResponse 
 } from '../../_middleware/utils.js';
 
 export async function onRequestPost({ request, env }) {
+    const authorization = await authorizeAdminRequest(request, env);
+    if (authorization instanceof Response) return authorization;
+
     const body = await request.json();
-    const { trackId, songName, artist, staffName } = body;
+    const { trackId, songName, artist } = body;
     console.log(`[handleApproveTrack] Processing approval for trackId: ${trackId}`);
 
-    if (!trackId) {
-        return jsonResponse({ error: "Missing required parameter: trackId" }, 400);
+    if (typeof trackId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(trackId)) {
+        return jsonResponse({ error: "Invalid track ID." }, 400);
     }
 
     const pending = await fetchPendingSongsFromGitHub(env);
@@ -37,12 +41,11 @@ export async function onRequestPost({ request, env }) {
         }
     }
 
-    console.log(`[handleApproveTrack] Removing track ${trackId} from pending directory...`);
-    await removePendingSongFromGitHub(trackId, env);
-
     const approvedTrack = { ...track, approvedAt: new Date().toISOString() };
     console.log(`[handleApproveTrack] Saving track ${trackId} to production songs repository...`);
     await saveSongToGitHub(approvedTrack, env);
+    console.log(`[handleApproveTrack] Removing track ${trackId} from pending directory...`);
+    await removePendingSongFromGitHub(trackId, env);
     await invalidateSongCatalogVersionCache(request.url);
 
     const notificationUserKey = approvedTrack.threadId || approvedTrack.submittedBy || 'Guest';
@@ -63,7 +66,7 @@ export async function onRequestPost({ request, env }) {
     await sendDiscordApprovedNotification(approvedTrack, env);
     await sendDiscordStaffAuditNotification(
         "Approved Track",
-        staffName || "Unknown Staff",
+        authorization.username,
         `Track: "${approvedTrack.songName}" by ${approvedTrack.artist} (ID: ${trackId})`,
         env
     );
