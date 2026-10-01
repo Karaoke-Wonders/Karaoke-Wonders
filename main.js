@@ -10,6 +10,7 @@ let currentUser = null;
 let currentPage = 1;
 let totalPages = 1;
 const itemsPerPage = 10;
+cachedAllSongs = []
 
 /**
  * Normalizes user session data regardless of whether properties are 
@@ -330,28 +331,30 @@ async function loadSongLibrary(page = 1) {
     const songListContainer = document.getElementById('song-list');
     if (!songListContainer) return;
 
-    // Display loading indicator
     songListContainer.innerHTML = `
         <div class="col-span-full text-center py-12 glass rounded-3xl border border-white/10 flex flex-col items-center justify-center space-y-3">
             <i data-lucide="loader-2" class="w-6 h-6 animate-spin text-green-400"></i>
             <p class="text-slate-400 text-xs font-medium">Loading tracks...</p>
         </div>
     `;
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
     try {
-        const response = await fetch(`/api/songs?page=${page}&limit=${itemsPerPage}`);
+        // Fetch a larger batch or all pages so users can search IDs instantly
+        const response = await fetch(`/api/songs?page=1&limit=500`);
         if (!response.ok) throw new Error(`HTTP error ${response.status}`);
 
         const data = await response.json();
+        cachedAllSongs = data.songs || [];
         
-        const songs = data.songs || [];
-        totalPages = data.totalPages || 1;
-        currentPage = data.page || page;
+        // Paginate locally based on the current page variable
+        totalPages = Math.ceil(cachedAllSongs.length / itemsPerPage) || 1;
+        currentPage = page;
 
-        renderSongs(songs);
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const paginatedSongs = cachedAllSongs.slice(startIndex, startIndex + itemsPerPage);
+
+        renderSongs(paginatedSongs);
     } catch (err) {
         console.error('Error loading songs:', err);
         songListContainer.innerHTML = `<p class="text-slate-500 text-xs col-span-full text-center py-10">Unable to load songs at this time.</p>`;
@@ -588,7 +591,27 @@ window.changePage = function(direction) {
 function filterSongs(query) {
     const q = (query || '').toLowerCase().trim();
     currentPage = 1;
-    loadSongLibrary(currentPage);
+
+    if (!q) {
+        const startIndex = 0;
+        totalPages = Math.ceil(cachedAllSongs.length / itemsPerPage) || 1;
+        renderSongs(cachedAllSongs.slice(startIndex, startIndex + itemsPerPage));
+        return;
+    }
+
+    // Filter cached songs matching songName, artist, or unique ID
+    const filtered = cachedAllSongs.filter(song => {
+        const name = (song.songName || song.title || '').toLowerCase();
+        const artist = (song.artist || '').toLowerCase();
+        const id = (song.id || '').toLowerCase();
+        const uploader = (song.submittedBy || '').toLowerCase();
+
+        return name.includes(q) || artist.includes(q) || id.includes(q) || uploader.includes(q);
+    });
+
+    totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    renderSongs(filtered.slice(startIndex, startIndex + itemsPerPage));
 }
 
 // Extract YouTube Video ID from any URL format or raw ID
