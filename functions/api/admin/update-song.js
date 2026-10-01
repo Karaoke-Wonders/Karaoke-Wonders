@@ -2,12 +2,31 @@ import { sendDiscordStaffAuditNotification, jsonResponse } from '../../_middlewa
 
 // Local hashCode fallback to guarantee it never fails to import or resolve
 function hashCode(str) {
+    const s = String(str);
     let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = (hash << 5) - hash + str.charCodeAt(i);
+    for (let i = 0; i < s.length; i++) {
+        hash = (hash << 5) - hash + s.charCodeAt(i);
         hash |= 0;
     }
     return Math.abs(hash);
+}
+
+// UTF-8 safe Base64 helpers
+function decodeBase64Utf8(base64Str) {
+    const cleanStr = base64Str.replace(/\s/g, '');
+    const binary = atob(cleanStr);
+    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+}
+
+function encodeBase64Utf8(str) {
+    const bytes = new TextEncoder().encode(str);
+    let binary = '';
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
 }
 
 export async function onRequestPost({ request, env }) {
@@ -21,7 +40,7 @@ export async function onRequestPost({ request, env }) {
     const { songId, songName, artist, videoId, staffName } = body;
     console.log(`[handleUpdateSong] Updating song: ${songId}`);
 
-    if (!songId || !songName || !artist || !videoId) {
+    if (songId === undefined || songId === null || !songName || !artist || !videoId) {
         return jsonResponse({ error: "Missing required fields: songId, songName, artist, videoId." }, 400);
     }
 
@@ -55,9 +74,10 @@ export async function onRequestPost({ request, env }) {
         fileData = await existingFileRes.json();
         
         try {
-            existingContent = JSON.parse(atob(fileData.content.replace(/\s/g, '')));
+            existingContent = JSON.parse(decodeBase64Utf8(fileData.content));
         } catch (e) {
-            existingContent = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(fileData.content.replace(/\s/g, '')), c => c.charCodeAt(0))));
+            console.error(`[handleUpdateSong] Failed to parse existing JSON:`, e);
+            return jsonResponse({ error: "Corrupted song file in repository." }, 500);
         }
 
         const updatedSong = {
@@ -68,7 +88,7 @@ export async function onRequestPost({ request, env }) {
             updatedAt: new Date().toISOString()
         };
 
-        const encodedContent = btoa(unescape(encodeURIComponent(JSON.stringify(updatedSong, null, 2))));
+        const encodedContent = encodeBase64Utf8(JSON.stringify(updatedSong, null, 2));
 
         response = await fetch(url, {
             method: 'PUT',
