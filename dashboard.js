@@ -17,6 +17,8 @@ let songCurrentPage = 1;
 let songTotalPages = 1;
 let userCurrentPage = 1;
 let managementUserCurrentPage = 1;
+let userTotalPages = 1;
+let managementUserTotalPages = 1;
 
 // Discord Forum Tag IDs for Moderation & RBAC
 const TAG_IDS = {
@@ -796,9 +798,10 @@ async function loadUserList(page = 1) {
     if (!userContainer) return;
 
     userCurrentPage = page;
+    managementUserCurrentPage = page;
 
     try {
-        const response = await fetch(`/api/admin/users?page=${userCurrentPage}&limit=${PAGE_SIZE}`);
+        const response = await fetch(`/api/admin/users?page=${page}&limit=${PAGE_SIZE}`);
         if (!response.ok) throw new Error('Failed to load user list');
 
         const data = await response.json();
@@ -806,18 +809,27 @@ async function loadUserList(page = 1) {
         // Handle both direct array fallback and paginated object responses
         if (Array.isArray(data)) {
             allUsers = data;
+            userTotalPages = Math.ceil(allUsers.length / PAGE_SIZE) || 1;
+            managementUserTotalPages = userTotalPages;
+
             if (usersBadge) usersBadge.textContent = allUsers.length;
             if (statUsers) statUsers.textContent = allUsers.length;
+
+            renderUserList(allUsers, false);
+            renderManagementList(allUsers, false);
         } else {
             allUsers = data.users || [];
-            userCurrentPage = data.page || userCurrentPage;
+            userCurrentPage = data.page || page;
+            managementUserCurrentPage = data.page || page;
+            userTotalPages = data.totalPages || 1;
+            managementUserTotalPages = data.totalPages || 1;
             
             if (usersBadge) usersBadge.textContent = data.total || 0;
             if (statUsers) statUsers.textContent = data.total || 0;
-        }
 
-        renderUserList(allUsers);
-        renderManagementList(allUsers);
+            renderUserList(allUsers, true);
+            renderManagementList(allUsers, true);
+        }
     } catch (err) {
         console.error(err);
         userContainer.innerHTML = `<p class="col-span-full text-center text-red-400 text-xs py-8">User management service unavailable.</p>`;
@@ -951,7 +963,7 @@ window.changeUserPage = async function(targetPage) {
     await loadUserList(targetPage);
 };
 
-function renderManagementList(users) {
+function renderManagementList(users, isServerPaginated = true) {
     const userContainer = document.getElementById('management-user-list');
     if (!userContainer) return;
 
@@ -1012,14 +1024,19 @@ function renderManagementList(users) {
         return;
     }
 
-    const totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
-    if (managementUserCurrentPage > totalPages) managementUserCurrentPage = totalPages;
-    if (managementUserCurrentPage < 1) managementUserCurrentPage = 1;
+    let itemsToRender = filtered;
+    let totalPages = managementUserTotalPages;
 
-    const startIndex = (managementUserCurrentPage - 1) * PAGE_SIZE;
-    const paginatedItems = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+    if (!isServerPaginated) {
+        totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+        if (managementUserCurrentPage > totalPages) managementUserCurrentPage = totalPages;
+        if (managementUserCurrentPage < 1) managementUserCurrentPage = 1;
 
-    userContainer.innerHTML = paginatedItems.map(u => {
+        const startIndex = (managementUserCurrentPage - 1) * PAGE_SIZE;
+        itemsToRender = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+    }
+
+    userContainer.innerHTML = itemsToRender.map(u => {
         const userTags = (u.tags || []).map(tag => String(tag));
         const threadId = escapeAttr(u.threadId || '');
         
@@ -1097,25 +1114,23 @@ function renderManagementList(users) {
     }
 }
 
-window.changeManagementUserPage = function(targetPage) {
-    managementUserCurrentPage = targetPage;
-    renderManagementList(allUsers);
+window.changeManagementUserPage = async function(targetPage) {
+    if (targetPage < 1 || targetPage > managementUserTotalPages) return;
+    await loadUserList(targetPage);
 };
 
 window.filterUsers = function(query) {
     userSearchQuery = query || '';
     userCurrentPage = 1;
     managementUserCurrentPage = 1;
-    renderUserList(allUsers);
-    renderManagementList(allUsers);
+    loadUserList(1);
 };
 
 window.filterUsersByRole = function(role) {
     userRoleFilter = role || 'all';
     userCurrentPage = 1;
     managementUserCurrentPage = 1;
-    renderUserList(allUsers);
-    renderManagementList(allUsers);
+    loadUserList(1);
 };
 
 window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
@@ -1138,13 +1153,11 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
         if (!response.ok) throw new Error('Failed to update user tag state');
 
         showDashboardAlert('User authorization status updated.', 'success');
-        await loadUserList();
+        await loadUserList(userCurrentPage);
     } catch (err) {
         showDashboardAlert('Failed to update user status.', 'error');
     }
 };
-
-
 // ==========================================
 // 5. UTILITY & MEDIA PREVIEW HELPERS
 // ==========================================
