@@ -60,6 +60,7 @@
 <script>
     const INBOX_WORKER_URL = 'https://karaokewondersinbox.fetched.workers.dev';
     let currentUser = null;
+    let inboxFetchInFlight = false;
 
     document.addEventListener('DOMContentLoaded', () => {
         const sessionData = localStorage.getItem('kw_session');
@@ -81,6 +82,8 @@
     });
 
     async function fetchInboxNotifications() {
+        if (!currentUser || inboxFetchInFlight || document.visibilityState === 'hidden') return;
+
         const container = document.getElementById('inbox-container');
         const badge = document.getElementById('inbox-count-badge');
 
@@ -99,9 +102,13 @@
             return;
         }
 
+        inboxFetchInFlight = true;
         try {
             console.log(`[Inbox] Fetching notifications for user key: "${userKey}"`);
-            const response = await fetch(`${INBOX_WORKER_URL}/api/inbox?user=${encodeURIComponent(userKey)}`);
+            const inboxUrl = new URL(`${INBOX_WORKER_URL}/api/inbox`);
+            inboxUrl.searchParams.set('user', userKey);
+            inboxUrl.searchParams.set('_t', String(Date.now()));
+            const response = await fetch(inboxUrl, { cache: 'no-store' });
             
             if (!response.ok) {
                 throw new Error(`Worker returned HTTP ${response.status}`);
@@ -120,6 +127,8 @@
                 </div>
             `;
             if (typeof lucide !== 'undefined') lucide.createIcons();
+        } finally {
+            inboxFetchInFlight = false;
         }
     }
 
@@ -250,6 +259,12 @@
         if (!str) return '';
         return String(str).replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
     }
+
+    window.setInterval(fetchInboxNotifications, 15000);
+    window.addEventListener('focus', fetchInboxNotifications);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') fetchInboxNotifications();
+    });
 </script>
 </body>
 </html>

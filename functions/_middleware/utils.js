@@ -47,25 +47,45 @@ export async function saveInboxNotification(userId, type, songName, artist, mess
     const encodedContent = btoa(unescape(encodeURIComponent(jsonString)));
     const url = `https://api.github.com/repos/${owner}/${repo}/contents/${filePath}`;
 
-    const response = await fetch(url, {
-        method: 'PUT',
-        headers: {
-            'Authorization': `Bearer ${env.GITHUB_TOKEN}`,
-            'Content-Type': 'application/json',
-            'User-Agent': 'Cloudflare-Worker'
-        },
-        body: JSON.stringify({
-            message: `[Inbox Bot] Add ${type} notification for ${safeUser}`,
-            content: encodedContent,
-            branch: branch
-        })
+    const requestBody = JSON.stringify({
+        message: `[Inbox Bot] Add ${type} notification for ${safeUser}`,
+        content: encodedContent,
+        branch
     });
 
-    if (!response.ok) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+        let response;
+        try {
+            response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${env.GITHUB_TOKEN}`,
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'Cloudflare-Worker'
+                },
+                body: requestBody
+            });
+        } catch (error) {
+            if (attempt === 3) throw new Error(`Inbox notification request failed: ${error.message}`);
+            await new Promise(resolve => setTimeout(resolve, 200 * attempt));
+            continue;
+        }
+
+        if (response.ok) {
+            console.log(`[saveInboxNotification] Notification saved for user ${safeUser}: ${fileName}`);
+            return true;
+        }
+
         const errText = await response.text();
-        console.error(`[saveInboxNotification] Failed to save notification to GitHub (${response.status}):`, errText);
-    } else {
-        console.log(`[saveInboxNotification] Notification saved for user ${safeUser}: ${fileName}`);
+        const rateLimited = response.status === 403 && response.headers.get('x-ratelimit-remaining') === '0';
+        const canRetry = response.status === 409 || response.status === 429 || response.status >= 500 || rateLimited;
+        if (!canRetry || attempt === 3) {
+            throw new Error(`GitHub notification write failed (${response.status}): ${errText}`);
+        }
+
+        const retryAfterMs = Number(response.headers.get('Retry-After')) * 1000;
+        const delayMs = retryAfterMs > 0 ? Math.min(retryAfterMs, 2000) : 200 * attempt;
+        await new Promise(resolve => setTimeout(resolve, delayMs));
     }
 }
 
