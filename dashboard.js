@@ -790,6 +790,8 @@ window.closeEditTrackModal = function() {
 
 window.updateTrackDirectly = async function(event) {
     if (event) event.preventDefault();
+    const form = event?.currentTarget;
+    if (form?.dataset.submitting === 'true') return;
 
     const songId = document.getElementById('edit-song-id')?.value;
     const songName = document.getElementById('edit-song-title')?.value.trim();
@@ -805,6 +807,7 @@ window.updateTrackDirectly = async function(event) {
         return;
     }
 
+    if (form) form.dataset.submitting = 'true';
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Saving...';
@@ -847,6 +850,7 @@ window.updateTrackDirectly = async function(event) {
         showModalError('edit-modal-status-message', err.message);
         console.error("Update error:", err);
     } finally {
+        if (form) delete form.dataset.submitting;
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.textContent = 'Save Changes';

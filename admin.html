@@ -282,7 +282,7 @@
                 <!-- Add Track Status Message Box -->
                 <div id="modal-status-message" class="hidden p-3 rounded-xl text-xs font-semibold border"></div>
 
-                <form id="add-track-form" onsubmit="addTrackDirectly(event)" class="space-y-4">
+                <form id="add-track-form" class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Song Title</label>
                         <input type="text" id="add-song-title" required placeholder="e.g. Bohemian Rhapsody" class="input-field w-full rounded-xl px-4 py-2.5 text-xs">
@@ -329,7 +329,7 @@
                 <!-- Status / Error Banner -->
                 <div id="edit-modal-status-message" class="hidden p-3 rounded-xl text-xs font-semibold border"></div>
 
-                <form id="edit-track-form" onsubmit="updateTrackDirectly(event)" class="space-y-4">
+                <form id="edit-track-form" class="space-y-4">
                     <!-- Hidden field for song ID -->
                     <input type="hidden" id="edit-song-id">
 
