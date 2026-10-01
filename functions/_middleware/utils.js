@@ -225,40 +225,65 @@ export async function patchDiscordThread(threadId, payload, env) {
     });
 }
 
-export async function fetchAllSongsFromGitHub(env) {
+async function listSongFileUrlsFromGitHub(env) {
     const owner = env.GITHUB_OWNER;
     const repo = env.GITHUB_REPO;
-    try {
-        const rootUrl = `https://api.github.com/repos/${owner}/${repo}/contents/songs`;
-        const rootRes = await fetch(rootUrl, {
-            headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' }
-        });
-        if (!rootRes.ok) { console.warn(`[fetchAllSongsFromGitHub] Failed. Status: ${rootRes.status}`); return []; }
+    const rootUrl = `https://api.github.com/repos/${owner}/${repo}/contents/songs`;
+    const rootRes = await fetch(rootUrl, {
+        headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' }
+    });
+    if (!rootRes.ok) throw new Error(`Failed to list songs. Status: ${rootRes.status}`);
 
-        const items = await rootRes.json();
-        let songFilePromises = [];
-
-        for (const item of items) {
-            if (item.type === 'file' && item.name.endsWith('.json')) {
-                songFilePromises.push(
-                    fetch(item.download_url, { headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' } })
-                        .then(res => res.ok ? res.json() : null)
-                );
-            } else if (item.type === 'dir') {
-                const batchRes = await fetch(item.url, { headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' } });
-                if (batchRes.ok) {
-                    const files = await batchRes.json();
-                    songFilePromises.push(...files
-                        .filter(f => f.name.endsWith('.json'))
-                        .map(file => fetch(file.download_url, { headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' } })
-                            .then(res => res.ok ? res.json() : null))
-                    );
-                }
-            }
+    const items = await rootRes.json();
+    const fileUrls = [];
+    for (const item of items) {
+        if (item.type === 'file' && item.name.endsWith('.json')) {
+            fileUrls.push(item.download_url);
+        } else if (item.type === 'dir') {
+            const batchRes = await fetch(item.url, {
+                headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' }
+            });
+            if (!batchRes.ok) continue;
+            const files = await batchRes.json();
+            fileUrls.push(...files.filter(file => file.name.endsWith('.json')).map(file => file.download_url));
         }
+    }
+    return fileUrls;
+}
 
-        const songs = await Promise.all(songFilePromises);
-        const validSongs = songs.filter(Boolean);
+async function fetchSongFiles(fileUrls, env) {
+    const songs = new Array(fileUrls.length);
+    let nextIndex = 0;
+    const worker = async () => {
+        while (nextIndex < fileUrls.length) {
+            const index = nextIndex++;
+            const response = await fetch(fileUrls[index], {
+                headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' }
+            });
+            songs[index] = response.ok ? await response.json() : null;
+        }
+    };
+
+    const workerCount = Math.min(25, fileUrls.length);
+    await Promise.all(Array.from({ length: workerCount }, worker));
+    return songs.filter(Boolean);
+}
+
+export async function fetchSongPageFromGitHub(env, startIndex, limit) {
+    try {
+        const fileUrls = await listSongFileUrlsFromGitHub(env);
+        const validSongs = await fetchSongFiles(fileUrls.slice(startIndex, startIndex + limit), env);
+        return { songs: validSongs, total: fileUrls.length };
+    } catch (err) {
+        console.error("[fetchSongPageFromGitHub] Exception:", err.message);
+        return { songs: [], total: 0 };
+    }
+}
+
+export async function fetchAllSongsFromGitHub(env) {
+    try {
+        const fileUrls = await listSongFileUrlsFromGitHub(env);
+        const validSongs = await fetchSongFiles(fileUrls, env);
         console.log(`[fetchAllSongsFromGitHub] Loaded ${validSongs.length} songs.`);
         return validSongs;
     } catch (err) {

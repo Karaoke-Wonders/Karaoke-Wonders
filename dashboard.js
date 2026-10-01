@@ -204,6 +204,23 @@ async function refreshUserSession() {
     }
 }
 
+window.addEventListener('kw-session-updated', event => {
+    currentUser = event.detail;
+    if (!currentUser.isAdmin) {
+        window.location.replace('main.html');
+        return;
+    }
+
+    setupUserProfile();
+    const managerTab = document.getElementById('tab-management');
+    if (managerTab) managerTab.classList.toggle('hidden', !(currentUser.isManager || currentUser.isTeam));
+
+    const roleBadge = document.getElementById('user-role-label');
+    if (roleBadge) {
+        roleBadge.textContent = currentUser.isManager ? 'Guide Manager' : currentUser.isTeam ? 'KW Team' : 'KW Moderation';
+    }
+});
+
 function showDashboardAlert(message, type = 'error') {
     const alertBox = document.getElementById('dashboard-alert');
     const alertText = document.getElementById('dashboard-alert-text');
@@ -295,11 +312,14 @@ function renderPendingRequests(queue) {
     }
 
     tableBody.innerHTML = filtered.map(req => {
-        const reqId = escapeAttr(req.id || req._id || '');
+        const reqId = escapeHtml(req.id || req._id || '');
         const title = req.songName || req.title || 'Untitled';
         const artist = req.artist || 'Unknown';
         const videoId = req.videoId || '';
-        const rawUrl = videoId.startsWith('http') ? videoId : `https://www.youtube.com/watch?v=${videoId}`;
+        const normalizedVideoId = extractVideoId(videoId);
+        const rawUrl = /^[a-zA-Z0-9_-]{11}$/.test(normalizedVideoId)
+            ? `https://www.youtube.com/watch?v=${normalizedVideoId}`
+            : '#';
         const submittedBy = req.submittedBy || 'Guest';
         const dateStr = req.createdAt ? new Date(req.createdAt).toLocaleDateString() : 'N/A';
 
@@ -311,7 +331,7 @@ function renderPendingRequests(queue) {
                 </td>
                 <td class="px-6 py-4">
                     <div class="flex items-center gap-2">
-                        <button onclick="openPreviewModal('${escapeAttr(videoId)}', '${escapeAttr(title)}', '${escapeAttr(artist)}')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-400 text-xs font-medium transition-all">
+                        <button data-preview-video="${escapeHtml(videoId)}" data-preview-title="${escapeHtml(title)}" data-preview-artist="${escapeHtml(artist)}" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 text-sky-400 text-xs font-medium transition-all">
                             <i data-lucide="play" class="w-3.5 h-3.5"></i> Preview
                         </button>
                         <a href="${escapeHtml(rawUrl)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-2 py-1 text-slate-400 hover:text-white text-xs transition-all">
@@ -326,16 +346,33 @@ function renderPendingRequests(queue) {
                     ${dateStr}
                 </td>
                 <td class="px-6 py-4 text-right space-x-2 whitespace-nowrap">
-                    <button onclick="approveTrack('${reqId}')" id="btn-approve-${reqId}" class="px-3 py-1.5 bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1">
+                    <button data-track-action="approve" data-track-id="${reqId}" id="btn-approve-${reqId}" class="px-3 py-1.5 bg-green-500/20 text-green-400 hover:bg-green-500/30 border border-green-500/30 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1">
                         <i data-lucide="check" class="w-3.5 h-3.5"></i> Approve
                     </button>
-                    <button onclick="rejectTrack('${reqId}')" id="btn-reject-${reqId}" class="px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1">
+                    <button data-track-action="reject" data-track-id="${reqId}" id="btn-reject-${reqId}" class="px-3 py-1.5 bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-xs font-bold transition-all inline-flex items-center gap-1">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Reject
                     </button>
                 </td>
             </tr>
         `;
     }).join('');
+
+    tableBody.querySelectorAll('[data-preview-video]').forEach(button => {
+        button.addEventListener('click', () => {
+            openPreviewModal(
+                button.dataset.previewVideo,
+                button.dataset.previewTitle,
+                button.dataset.previewArtist
+            );
+        });
+    });
+    tableBody.querySelectorAll('[data-track-action]').forEach(button => {
+        button.addEventListener('click', () => {
+            const trackId = button.dataset.trackId;
+            if (button.dataset.trackAction === 'approve') approveTrack(trackId);
+            else if (button.dataset.trackAction === 'reject') rejectTrack(trackId);
+        });
+    });
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -477,8 +514,8 @@ function renderSongsServerSide(songs) {
         const title = song.songName || song.title || 'Untitled';
         const artist = song.artist || 'Unknown Artist';
         const uploader = song.submittedBy || song.uploader || 'Member';
-        const videoId = song.videoId || '';
-        const playUrl = videoId.startsWith('http') ? videoId : `https://www.youtube.com/watch?v=${videoId}`;
+        const videoId = extractVideoId(song.videoId);
+        const playUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : '#';
 
         return `
             <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-green-500/30 transition-all">
@@ -737,13 +774,11 @@ window.updateTrackDirectly = async function(event) {
             targetSong.title = songName;
             targetSong.artist = artist;
             targetSong.videoId = videoId;
+            renderSongsServerSide(allSongs);
         }
 
         showDashboardAlert('Song updated successfully!', 'success');
         closeEditTrackModal();
-        
-        // Brief timeout before reload to allow GitHub commit propagation
-        setTimeout(() => loadSongs(songCurrentPage), 800);
 
     } catch (err) {
         showModalError('edit-modal-status-message', err.message);
@@ -1147,6 +1182,12 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
 // ==========================================
 
 window.openPreviewModal = function(videoId, title, artist) {
+    const extractedVideoId = extractVideoId(videoId);
+    if (!/^[a-zA-Z0-9_-]{11}$/.test(extractedVideoId)) {
+        showDashboardAlert('This track does not have a valid YouTube video ID.', 'error');
+        return;
+    }
+
     let modal = document.getElementById('preview-track-modal');
     if (!modal) {
         modal = document.createElement('div');
@@ -1155,7 +1196,7 @@ window.openPreviewModal = function(videoId, title, artist) {
         document.body.appendChild(modal);
     }
 
-    const embedUrl = `https://www.youtube.com/embed/${extractVideoId(videoId)}?autoplay=1`;
+    const embedUrl = `https://www.youtube.com/embed/${extractedVideoId}?autoplay=1`;
 
     modal.innerHTML = `
         <div class="glass w-full max-w-2xl rounded-2xl border border-white/10 p-6 relative flex flex-col gap-4">
@@ -1200,12 +1241,24 @@ window.copyVRUrl = function(url) {
 
 function extractVideoId(urlOrId) {
     if (!urlOrId) return '';
-    if (!urlOrId.includes('http') && !urlOrId.includes('youtube.com') && !urlOrId.includes('youtu.be')) {
-        return urlOrId;
+    const value = String(urlOrId).trim();
+    if (/^[a-zA-Z0-9_-]{11}$/.test(value)) return value;
+
+    try {
+        const url = new URL(value);
+        const hostname = url.hostname.toLowerCase();
+        let videoId = '';
+
+        if (hostname === 'youtu.be') {
+            videoId = url.pathname.split('/')[1] || '';
+        } else if (hostname === 'youtube.com' || hostname.endsWith('.youtube.com')) {
+            videoId = url.searchParams.get('v') || url.pathname.match(/^\/(?:embed|shorts|v)\/([^/]+)/)?.[1] || '';
+        }
+
+        return /^[a-zA-Z0-9_-]{11}$/.test(videoId) ? videoId : '';
+    } catch {
+        return '';
     }
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = urlOrId.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : urlOrId;
 }
 
 function resetModalStatus(elementId) {

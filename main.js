@@ -139,6 +139,10 @@ function setupMemberProfile() {
         displayName.textContent = currentUser.username || 'Member';
     }
 
+    if (adminLinks) {
+        adminLinks.classList.toggle('hidden', !(currentUser.isAdmin || currentUser.isManager || currentUser.isTeam));
+    }
+
     if (avatar) {
         if (currentUser.avatarUrl && currentUser.avatarUrl.startsWith('http')) {
             avatar.innerHTML = `<img src="${escapeUrl(currentUser.avatarUrl)}" alt="Avatar" class="w-full h-full object-cover rounded-full">`;
@@ -179,6 +183,11 @@ function setupMemberProfile() {
         }
     }
 }
+
+window.addEventListener('kw-session-updated', event => {
+    currentUser = normalizeUserData(event.detail);
+    setupMemberProfile();
+});
 
 // Tab switcher for main.html
 window.switchTab = function(tabName) {
@@ -633,6 +642,11 @@ function extractYouTubeId(urlOrId) {
 
 // Handle Song Request Form
 async function submitSongRequest() {
+    if (currentUser?.isRestricted) {
+        showAlert('Your account is restricted from submitting tracks.', 'error');
+        return;
+    }
+
     const titleInput = document.getElementById('track-title') || document.getElementById('modal-track-title');
     const artistInput = document.getElementById('track-artist') || document.getElementById('modal-track-artist');
     const urlInput = document.getElementById('track-url') || document.getElementById('modal-track-url');

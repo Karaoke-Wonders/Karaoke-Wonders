@@ -56,6 +56,7 @@
         </div>
     </main>
 
+<script src="session-sync.js"></script>
 <script>
     const INBOX_WORKER_URL = 'https://karaokewondersinbox.fetched.workers.dev';
     let currentUser = null;
@@ -69,7 +70,7 @@
 
         try {
             currentUser = JSON.parse(sessionData);
-            console.log('[Inbox] Logged in session user:', currentUser);
+            console.log('[Inbox] Logged in as:', currentUser.username);
         } catch (e) {
             console.error('[Inbox] Session parse error:', e);
             window.location.href = 'index.html';
@@ -143,7 +144,7 @@
         }
 
         container.innerHTML = notifs.map((n, idx) => {
-            const type = (n.type || 'pending').toLowerCase();
+            const type = String(n.type || 'pending').toLowerCase();
             const fileName = n.fileName || n.id || `notif-${idx}`;
             const sha = n.sha || '';
             const cardId = `card-${String(fileName).replace(/[^a-zA-Z0-9-_]/g, '-')}`;
@@ -180,13 +181,23 @@
                     </div>
                 </div>
 
-                <button onclick="dismissNotification('${escapeHtml(fileName)}', '${escapeHtml(sha)}', '${cardId}')" 
+                <button data-dismiss-file="${escapeHtml(fileName)}" data-dismiss-sha="${escapeHtml(sha)}" data-dismiss-card="${cardId}"
                         class="px-3 py-1.5 bg-white/5 hover:bg-red-500/20 text-slate-400 hover:text-red-400 font-bold text-xs rounded-xl transition border border-white/10 hover:border-red-500/30 flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
                     <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Dismiss
                 </button>
             </div>
             `;
         }).join('');
+
+        container.querySelectorAll('[data-dismiss-file]').forEach(button => {
+            button.addEventListener('click', () => {
+                dismissNotification(
+                    button.dataset.dismissFile,
+                    button.dataset.dismissSha,
+                    button.dataset.dismissCard
+                );
+            });
+        });
 
         if (typeof lucide !== 'undefined') lucide.createIcons();
     }

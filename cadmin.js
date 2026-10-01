@@ -5,7 +5,7 @@ async function loadApplications() {
     const tableBody = document.getElementById('admin-table-body');
     tableBody.innerHTML = `
         <tr>
-            <td colspan="7" class="p-8 text-center text-sm text-slate-400">
+            <td colspan="8" class="p-8 text-center text-sm text-slate-400">
                 Refreshing applications...
             </td>
         </tr>
@@ -22,7 +22,7 @@ async function loadApplications() {
         if (result.applications.length === 0) {
             tableBody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="p-8 text-center text-sm text-slate-400">
+                    <td colspan="8" class="p-8 text-center text-sm text-slate-400">
                         No applications found yet.
                     </td>
                 </tr>
@@ -44,12 +44,13 @@ async function loadApplications() {
             }
 
             // Portfolio link helper
-            let portfolioLink = app.portfolio && app.portfolio !== 'none' ? 
-                `<a href="${app.portfolio}" target="_blank" class="text-emerald-400 hover:underline inline-flex items-center gap-1">Link <i data-lucide="external-link" class="w-3 h-3"></i></a>` : 
+            const portfolioUrl = safeHttpUrl(app.portfolio);
+            const portfolioLink = portfolioUrl ?
+                `<a href="${escapeHtml(portfolioUrl)}" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:underline inline-flex items-center gap-1">Link <i data-lucide="external-link" class="w-3 h-3"></i></a>` :
                 '<span class="text-slate-500">None</span>';
 
             // Status badge color styling
-            const status = app.status || 'Pending';
+            const status = String(app.status || 'Pending');
             let statusBadgeClass = "bg-yellow-500/10 border-yellow-500/20 text-yellow-300";
             if (status.toLowerCase() === 'approved') {
                 statusBadgeClass = "bg-emerald-500/10 border-emerald-500/20 text-emerald-300";
@@ -58,26 +59,26 @@ async function loadApplications() {
             }
 
             row.innerHTML = `
-                <td class="p-4 text-xs text-slate-400 whitespace-nowrap">${formattedDate}</td>
-                <td class="p-4 text-sm font-semibold text-white capitalize">${app.position || 'N/A'}</td>
-                <td class="p-4 text-sm text-slate-300">${app.discord || 'N/A'}</td>
-                <td class="p-4 text-sm text-slate-300">${app.vrchat || 'N/A'}</td>
-                <td class="p-4 text-sm text-slate-300">${app.why_apply || 'N/A'}</td>
-                <td class="p-4 text-sm text-slate-400">${app.availability || 'N/A'}</td>
+                <td class="p-4 text-xs text-slate-400 whitespace-nowrap">${escapeHtml(formattedDate)}</td>
+                <td class="p-4 text-sm font-semibold text-white capitalize">${escapeHtml(app.position || 'N/A')}</td>
+                <td class="p-4 text-sm text-slate-300">${escapeHtml(app.discord || 'N/A')}</td>
+                <td class="p-4 text-sm text-slate-300">${escapeHtml(app.vrchat || 'N/A')}</td>
+                <td class="p-4 text-sm text-slate-300">${escapeHtml(app.why_apply || 'N/A')}</td>
+                <td class="p-4 text-sm text-slate-400">${escapeHtml(app.availability || 'N/A')}</td>
                 <td class="p-4 text-sm">${portfolioLink}</td>
                 <td class="p-4 text-sm">
                     <div class="flex items-center justify-between gap-2">
                         <span class="px-2.5 py-1 border rounded-full text-xs font-medium ${statusBadgeClass}">
-                            ${status}
+                            ${escapeHtml(status)}
                         </span>
                         <div class="flex items-center gap-1">
-                            <button onclick="updateStatus('${app.discord}', '${app.vrchat}', 'Approved')" title="Approve" class="p-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 transition-colors cursor-pointer">
+                            <button data-action="approve" data-discord="${escapeHtml(app.discord || '')}" data-vrchat="${escapeHtml(app.vrchat || '')}" title="Approve" class="p-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 transition-colors cursor-pointer">
                                 <i data-lucide="check" class="w-3.5 h-3.5"></i>
                             </button>
-                            <button onclick="updateStatus('${app.discord}', '${app.vrchat}', 'Rejected')" title="Reject" class="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 transition-colors cursor-pointer">
+                            <button data-action="reject" data-discord="${escapeHtml(app.discord || '')}" data-vrchat="${escapeHtml(app.vrchat || '')}" title="Reject" class="p-1.5 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-300 transition-colors cursor-pointer">
                                 <i data-lucide="x" class="w-3.5 h-3.5"></i>
                             </button>
-                            <button onclick="deleteApplication('${app.discord}', '${app.vrchat}')" title="Delete" class="p-1.5 rounded-lg bg-slate-500/20 hover:bg-slate-500/30 text-slate-300 transition-colors cursor-pointer">
+                            <button data-action="delete" data-discord="${escapeHtml(app.discord || '')}" data-vrchat="${escapeHtml(app.vrchat || '')}" title="Delete" class="p-1.5 rounded-lg bg-slate-500/20 hover:bg-slate-500/30 text-slate-300 transition-colors cursor-pointer">
                                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
                             </button>
                         </div>
@@ -85,6 +86,14 @@ async function loadApplications() {
                 </td>
             `;
             tableBody.appendChild(row);
+            row.querySelectorAll('[data-action]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const { action, discord, vrchat } = button.dataset;
+                    if (action === 'approve') updateStatus(discord, vrchat, 'Approved');
+                    else if (action === 'reject') updateStatus(discord, vrchat, 'Rejected');
+                    else if (action === 'delete') deleteApplication(discord, vrchat);
+                });
+            });
         });
 
         // Re-run lucide icons to render any newly injected icons
@@ -93,11 +102,30 @@ async function loadApplications() {
     } catch (err) {
         tableBody.innerHTML = `
             <tr>
-                <td colspan="7" class="p-8 text-center text-sm text-red-400">
-                    Error loading data: ${err.message}
+                <td colspan="8" class="p-8 text-center text-sm text-red-400">
+                    Error loading data: ${escapeHtml(err.message)}
                 </td>
             </tr>
         `;
+    }
+}
+
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[character]);
+}
+
+function safeHttpUrl(value) {
+    try {
+        const url = new URL(String(value));
+        return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : null;
+    } catch {
+        return null;
     }
 }
 

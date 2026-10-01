@@ -44,7 +44,12 @@ export async function onRequestPost({ request, env }) {
     const { songId, songName, artist, videoId, staffName } = body;
     console.log(`[handleUpdateSong] Updating song: ${songId}`);
 
-    if (songId === undefined || songId === null || !songName || !artist || !videoId) {
+    if (
+        typeof songId !== 'string' || !/^[a-zA-Z0-9_-]{1,100}$/.test(songId) ||
+        typeof songName !== 'string' || !songName.trim() || songName.length > 200 ||
+        typeof artist !== 'string' || !artist.trim() || artist.length > 200 ||
+        typeof videoId !== 'string' || !/^[a-zA-Z0-9_-]{11}$/.test(videoId)
+    ) {
         return jsonResponse({ error: "Missing required fields: songId, songName, artist, videoId." }, 400);
     }
 
@@ -70,8 +75,12 @@ export async function onRequestPost({ request, env }) {
         });
 
         if (!existingFileRes.ok) {
-            console.error(`[handleUpdateSong] Song file not found: ${filePath}`);
-            return jsonResponse({ error: "Song not found in repository." }, 404);
+            if (existingFileRes.status === 404) {
+                console.warn(`[handleUpdateSong] Song file not found: ${filePath}`);
+                return jsonResponse({ error: "Song not found in repository." }, 404);
+            }
+            console.error(`[handleUpdateSong] Failed to read song (${existingFileRes.status}):`, await existingFileRes.text());
+            return jsonResponse({ error: "Could not read the song from GitHub. Please try again." }, 502);
         }
 
         fileData = await existingFileRes.json();

@@ -123,6 +123,7 @@
         </div>
     </main>
 
+<script src="session-sync.js"></script>
 <!-- Client-Side Script -->
 <script>
     document.addEventListener('DOMContentLoaded', () => {
@@ -152,7 +153,7 @@
 
         // Redirect if user is not logged in or session is invalid
         if (!sessionData || !sessionData.username) {
-            window.location.href = '/login';
+            window.location.href = '/index.html';
             return;
         }
 
@@ -226,6 +227,16 @@
 
         // Execute the render function using session data tags/roles (defaults to empty array if missing)
         renderUserStatuses(sessionData.tags || sessionData.roles || []);
+
+        window.addEventListener('kw-session-updated', (event) => {
+            sessionData = event.detail;
+            usernameInput.value = sessionData.username || '';
+            if (threadIdInput) threadIdInput.value = sessionData.threadId || 'N/A';
+            pfpInput.value = sessionData.avatarUrl || '';
+            pfpPreview.src = sessionData.avatarUrl || '/image/kwicon.svg';
+            emailInput.value = sessionData.email || '';
+            renderUserStatuses(sessionData.tags || []);
+        });
 
         // Copy Thread ID handler
         if (copyBtn && threadIdInput) {
