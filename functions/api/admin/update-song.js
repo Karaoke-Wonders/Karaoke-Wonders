@@ -62,7 +62,6 @@ export async function onRequestPost({ request, env }) {
                 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 
                 'User-Agent': 'Cloudflare-Worker' 
             },
-            cache: 'no-store',
             cf: { cacheTtl: 0 }
         });
 
