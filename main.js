@@ -171,7 +171,7 @@ function setupMemberProfile() {
 
     if (currentUser.isTeam) {
         if (roleBadge) {
-            roleBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-yellow-400"></span> Guide Manager`;
+            roleBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-yellow-400"></span> KW Team`;
         }
         if (adminLinks) {
             adminLinks.classList.remove('hidden');

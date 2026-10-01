@@ -24,7 +24,8 @@ const TAG_IDS = {
     staff: '1548667928881139712',
     restricted: '1548667951069007964',
     blacklisted: '1548667978181247027',
-    manager: '1549308000664031323'
+    manager: '1549308000664031323',
+    kwteam: '1555048910324760676'
 };
 
 // ==========================================
@@ -159,10 +160,12 @@ async function refreshUserSession() {
 
         const isStaff = Boolean(data.isAdmin || userTags.includes(TAG_IDS.staff));
         const isManager = Boolean(data.isManager || userTags.includes(TAG_IDS.manager));
+        const isTeam = Boolean(data.isTeam || userTags.includes(TAG_IDS.kwteam));
 
         user.tags = userTags;
         user.isAdmin = isStaff;
         user.isManager = isManager;
+        user.isTeam = isTeam,
         user.role = isStaff ? 'administrator' : 'member';
 
         if (isStaff) {
@@ -177,6 +180,17 @@ async function refreshUserSession() {
             const roleBadge = document.getElementById('user-role-label');
             if (roleBadge) {
                 roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Guide Manager';
+            }
+            if (managerPage) {
+                managerPage.classList.remove('hidden');
+            }
+        }
+
+        if (isTeam) {
+            user.role = 'team';
+            const roleBadge = document.getElementById("user-role-label");
+            if (roleBadge) {
+                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-yellow-400"></span> KW Team';
             }
             if (managerPage) {
                 managerPage.classList.remove('hidden');
@@ -855,6 +869,10 @@ function renderUserList(users) {
             userTags.includes(String(TAG_IDS.staff))
         );
 
+        const isTeam = Boolean(
+            u.isTeam || (u.role && u.role.toLowerCase() == 'team') || userTags.includes(String(TAG_IDS.kwteam))
+        );
+
         const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
         const isRestricted = userTags.includes(String(TAG_IDS.restricted));
 
@@ -871,6 +889,7 @@ function renderUserList(users) {
                         </div>
 
                         <div class="flex items-center gap-1.5 flex-wrap justify-end">
+                            ${isTeam ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-blue-300 border border-blue-500/30 font-bold">KW Team</span>' : ''}
                             ${isManagement ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Management</span>' : ''}
                             ${isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
                             ${isBlacklisted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
@@ -944,6 +963,8 @@ function renderManagementList(users) {
             userTags.includes(String(TAG_IDS.staff))
         );
 
+        const isTeam = Boolean(u.isTeam || u.role.toLowerCase() === 'team' || userTags.includes(String(TAG_IDS.kwteam)));
+
         let added = false;
         if (isManagement) {
             added = true;
@@ -954,11 +975,16 @@ function renderManagementList(users) {
             total++;
         }
 
+        if (isTeam && !added) {
+            total++;
+        }
+
         const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
         const isRestricted = userTags.includes(String(TAG_IDS.restricted));
 
         if (!matchesQuery) return false;
 
+        if (userRoleFilter === 'team') return isTeam;
         if (userRoleFilter === 'manager') return isManagement;
         if (userRoleFilter === 'staff') return isStaff;
         if (userRoleFilter === 'banned') return isBlacklisted;
@@ -995,6 +1021,8 @@ function renderManagementList(users) {
             userTags.includes(String(TAG_IDS.staff))
         );
 
+        const isTeam = Boolean(u.isTeam || u.role.toLowerCase() === 'team' || userTags.includes(String(TAG_IDS.kwteam)));
+
         const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
         const isRestricted = userTags.includes(String(TAG_IDS.restricted));
 
@@ -1004,6 +1032,7 @@ function renderManagementList(users) {
                     <div class="flex items-center justify-between gap-2 mb-1">
                         <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
                         <div class="flex items-center gap-1.5 flex-wrap">
+                            ${isTeam ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-blue-300 border border-blue-500/30 font-bold">Management</span>' : ''}
                             ${isManagement ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Management</span>' : ''}
                             ${isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
                             ${isBlacklisted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
