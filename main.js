@@ -367,7 +367,7 @@ function renderSongs(songs) {
         songListContainer.innerHTML = `
             <div class="col-span-full text-center py-12 glass rounded-3xl border border-white/10">
                 <i data-lucide="music" class="w-8 h-8 mx-auto text-slate-500 mb-2"></i>
-                <p class="text-slate-400 text-sm">No approved songs available yet.</p>
+                <p class="text-slate-400 text-sm">No approved songs found.</p>
             </div>
         `;
         renderPaginationControls();
@@ -380,6 +380,7 @@ function renderSongs(songs) {
         const artist = song.artist || 'Unknown Artist';
         const uploader = song.submittedBy || song.uploader || 'Member';
         const rawVideoId = song.videoId || '';
+        const songId = song.id || ''; // Get the unique song ID from JSON
 
         let playUrl = '#';
         if (rawVideoId.startsWith('http://') || rawVideoId.startsWith('https://')) {
@@ -399,13 +400,18 @@ function renderSongs(songs) {
         return `
         <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-green-500/30 transition-all">
             <div>
-                <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="flex items-start justify-between gap-2 mb-1">
                     <h3 class="font-bold text-base text-white tracking-tight">${escapeHtml(title)}</h3>
                     <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-green-500/10 text-green-400 border border-green-500/20">Ready</span>
                 </div>
-                <p class="text-xs text-slate-400 flex items-center gap-1.5">
+                <p class="text-xs text-slate-400 flex items-center gap-1.5 mb-2">
                     <i data-lucide="mic-2" class="w-3.5 h-3.5 text-slate-500"></i> ${escapeHtml(artist)}
                 </p>
+                <!-- Song ID Pill / Text -->
+                <div class="flex items-center gap-1.5 text-[11px] text-slate-500 font-mono bg-black/30 px-2.5 py-1 rounded-lg border border-white/5 w-fit">
+                    <span class="text-slate-500">ID:</span> 
+                    <span class="select-all text-emerald-400 font-medium">${escapeHtml(songId)}</span>
+                </div>
             </div>
             <div class="pt-4 border-t border-white/5 flex items-center justify-between text-xs">
                 <span class="text-slate-500 text-[11px]">Requested by ${escapeHtml(uploader)}</span>
