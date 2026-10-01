@@ -1,6 +1,7 @@
 import { 
     saveInboxNotification, 
     sendDiscordStaffAuditNotification, 
+    invalidateSongCatalogVersionCache,
     jsonResponse 
 } from '../../_middleware/utils.js';
 
@@ -136,6 +137,8 @@ export async function onRequestPost({ request, env }) {
     if (!response || !response.ok) {
         return jsonResponse({ error: "Failed to update song after multiple conflict retries." }, 500);
     }
+
+    await invalidateSongCatalogVersionCache(request.url);
 
     // Dispatch Inbox Notification to the user
     const notificationUserKey = existingContent.threadId || existingContent.submittedBy || 'Guest';

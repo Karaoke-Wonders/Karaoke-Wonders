@@ -11,14 +11,17 @@ export async function onRequestGet({ request, env }) {
         : 12;
 
     const startIndex = (page - 1) * limit;
-    const { songs, total } = await fetchSongPageFromGitHub(env, startIndex, limit);
+    const { songs, total, version } = await fetchSongPageFromGitHub(env, startIndex, limit);
     console.log(`[handleGetSongs] Found ${total} total songs.`);
 
-    return jsonResponse({
+    const response = jsonResponse({
         songs,
         total,
+        version,
         page: page,
         limit: limit,
         totalPages: Math.ceil(total / limit)
     });
+    response.headers.set('Cache-Control', 'no-store');
+    return response;
 }

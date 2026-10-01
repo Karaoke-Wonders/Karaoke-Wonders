@@ -1,4 +1,4 @@
-import { removeSongFromGitHub, sendDiscordStaffAuditNotification, jsonResponse } from '../../_middleware/utils.js';
+import { removeSongFromGitHub, sendDiscordStaffAuditNotification, invalidateSongCatalogVersionCache, jsonResponse } from '../../_middleware/utils.js';
 
 export async function onRequestPost({ request, env }) {
     const body = await request.json();
@@ -11,6 +11,7 @@ export async function onRequestPost({ request, env }) {
 
     try {
         await removeSongFromGitHub(songId, env);
+        await invalidateSongCatalogVersionCache(request.url);
 
         const targetDetails = songName 
             ? `Track: "${songName}" (ID: ${songId})` 

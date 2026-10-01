@@ -230,25 +230,28 @@ async function listSongFileUrlsFromGitHub(env) {
     const repo = env.GITHUB_REPO;
     const rootUrl = `https://api.github.com/repos/${owner}/${repo}/contents/songs`;
     const rootRes = await fetch(rootUrl, {
-        headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' }
+        headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' },
+        cf: { cacheTtl: 0 }
     });
     if (!rootRes.ok) throw new Error(`Failed to list songs. Status: ${rootRes.status}`);
 
     const items = await rootRes.json();
     const fileUrls = [];
+    const version = items.map(item => `${item.name}:${item.sha || ''}`).sort().join('|');
     for (const item of items) {
         if (item.type === 'file' && item.name.endsWith('.json')) {
             fileUrls.push(item.download_url);
         } else if (item.type === 'dir') {
             const batchRes = await fetch(item.url, {
-                headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' }
+                headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' },
+                cf: { cacheTtl: 0 }
             });
             if (!batchRes.ok) continue;
             const files = await batchRes.json();
             fileUrls.push(...files.filter(file => file.name.endsWith('.json')).map(file => file.download_url));
         }
     }
-    return fileUrls;
+    return { fileUrls, version };
 }
 
 async function fetchSongFiles(fileUrls, env) {
@@ -258,7 +261,8 @@ async function fetchSongFiles(fileUrls, env) {
         while (nextIndex < fileUrls.length) {
             const index = nextIndex++;
             const response = await fetch(fileUrls[index], {
-                headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' }
+                headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' },
+                cf: { cacheTtl: 0 }
             });
             songs[index] = response.ok ? await response.json() : null;
         }
@@ -271,9 +275,9 @@ async function fetchSongFiles(fileUrls, env) {
 
 export async function fetchSongPageFromGitHub(env, startIndex, limit) {
     try {
-        const fileUrls = await listSongFileUrlsFromGitHub(env);
+        const { fileUrls, version } = await listSongFileUrlsFromGitHub(env);
         const validSongs = await fetchSongFiles(fileUrls.slice(startIndex, startIndex + limit), env);
-        return { songs: validSongs, total: fileUrls.length };
+        return { songs: validSongs, total: fileUrls.length, version };
     } catch (err) {
         console.error("[fetchSongPageFromGitHub] Exception:", err.message);
         return { songs: [], total: 0 };
@@ -282,7 +286,7 @@ export async function fetchSongPageFromGitHub(env, startIndex, limit) {
 
 export async function fetchAllSongsFromGitHub(env) {
     try {
-        const fileUrls = await listSongFileUrlsFromGitHub(env);
+        const { fileUrls } = await listSongFileUrlsFromGitHub(env);
         const validSongs = await fetchSongFiles(fileUrls, env);
         console.log(`[fetchAllSongsFromGitHub] Loaded ${validSongs.length} songs.`);
         return validSongs;
@@ -427,4 +431,27 @@ export async function updateThreadTag(threadId, tagId, add, env, staffName = "St
     );
 
     return jsonResponse({ success: true, message: "User status updated." });
+}
+
+export async function fetchSongCatalogVersionFromGitHub(env) {
+    const url = `https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/songs`;
+    const response = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${env.GITHUB_TOKEN}`, 'User-Agent': 'Cloudflare-Worker' },
+        cf: { cacheTtl: 0 }
+    });
+    if (!response.ok) throw new Error(`Failed to get song catalog version. Status: ${response.status}`);
+
+    const items = await response.json();
+    return items.map(item => `${item.name}:${item.sha || ''}`).sort().join('|');
+}
+
+export async function invalidateSongCatalogVersionCache(requestUrl) {
+    try {
+        const cache = globalThis.caches?.default;
+        if (!cache) return;
+        const cacheKey = new Request(new URL('/api/songs/version', requestUrl).toString());
+        await cache.delete(cacheKey);
+    } catch (error) {
+        console.warn('[invalidateSongCatalogVersionCache] Failed to invalidate version cache:', error.message);
+    }
 }

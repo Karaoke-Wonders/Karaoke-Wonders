@@ -28,6 +28,34 @@ const TAG_IDS = {
     kwteam: '1555048910324760676'
 };
 
+function restoreDashboardUrlState() {
+    const params = new URLSearchParams(window.location.search);
+    const songPage = Number.parseInt(params.get('songPage'), 10);
+    const userPage = Number.parseInt(params.get('userPage'), 10);
+    songCurrentPage = Number.isFinite(songPage) && songPage > 0 ? songPage : 1;
+    userCurrentPage = Number.isFinite(userPage) && userPage > 0 ? userPage : 1;
+    managementUserCurrentPage = userCurrentPage;
+    songSearchQuery = params.get('songSearch') || '';
+    songSortBy = params.get('songSort') || 'title';
+    userSearchQuery = params.get('userSearch') || '';
+    userRoleFilter = params.get('userRole') || 'all';
+}
+
+function updateDashboardUrlState(changes, historyMethod = 'replaceState') {
+    const url = new URL(window.location.href);
+    Object.entries(changes).forEach(([key, value]) => {
+        const isDefaultPage = (key === 'songPage' || key === 'userPage') && Number(value) <= 1;
+        const isDefaultSort = key === 'songSort' && value === 'title';
+        const isDefaultRole = key === 'userRole' && value === 'all';
+        if (value === null || value === undefined || value === '' || isDefaultPage || isDefaultSort || isDefaultRole) {
+            url.searchParams.delete(key);
+        } else {
+            url.searchParams.set(key, String(value));
+        }
+    });
+    window.history[historyMethod]({}, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
 // ==========================================
 // 1. INITIALIZATION & SESSION GOVERNANCE
 // ==========================================
@@ -57,6 +85,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    restoreDashboardUrlState();
+    const songSearchInput = document.getElementById('admin-search-input');
+    const userSearchInput = document.getElementById('user-search-input');
+    const managementSearchInput = document.getElementById('management-search-input');
+    if (songSearchInput) songSearchInput.value = songSearchQuery;
+    if (userSearchInput) userSearchInput.value = userSearchQuery;
+    if (managementSearchInput) managementSearchInput.value = userSearchQuery;
+
     setupUserProfile();
     bindGlobalEventListeners();
 
@@ -66,9 +102,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await Promise.all([
         loadPendingRequests(),
-        loadUserList(),
-        loadSongs(1)
+        loadUserList(userCurrentPage),
+        loadSongs(songCurrentPage)
     ]);
+});
+
+window.addEventListener('popstate', () => {
+    if (!currentUser?.isAdmin) return;
+    restoreDashboardUrlState();
+    const songSearchInput = document.getElementById('admin-search-input');
+    const userSearchInput = document.getElementById('user-search-input');
+    const managementSearchInput = document.getElementById('management-search-input');
+    if (songSearchInput) songSearchInput.value = songSearchQuery;
+    if (userSearchInput) userSearchInput.value = userSearchQuery;
+    if (managementSearchInput) managementSearchInput.value = userSearchQuery;
+    loadSongs(songCurrentPage);
+    loadUserList(userCurrentPage);
 });
 
 function bindGlobalEventListeners() {
@@ -220,6 +269,8 @@ window.addEventListener('kw-session-updated', event => {
         roleBadge.textContent = currentUser.isManager ? 'Guide Manager' : currentUser.isTeam ? 'KW Team' : 'KW Moderation';
     }
 });
+
+window.addEventListener('kw-song-catalog-updated', () => loadSongs(songCurrentPage));
 
 function showDashboardAlert(message, type = 'error') {
     const alertBox = document.getElementById('dashboard-alert');
@@ -471,6 +522,7 @@ async function loadSongs(page = 1) {
     try {
         allSongs = [];
         let catalogPages = 1;
+        let catalogVersion = '';
         let totalSongs = 0;
         for (let catalogPage = 1; catalogPage <= catalogPages; catalogPage++) {
             const response = await fetch(`/api/songs?page=${catalogPage}&limit=500&_t=${Date.now()}`, {
@@ -486,10 +538,12 @@ async function loadSongs(page = 1) {
             }
 
             allSongs.push(...(Array.isArray(data.songs) ? data.songs : []));
+            catalogVersion = data.version || catalogVersion;
             catalogPages = Math.max(catalogPage, Number(data.totalPages) || 1);
             totalSongs = Number(data.total) || allSongs.length;
         }
 
+        window.setSongCatalogVersion?.(catalogVersion);
         songTotalPages = Math.ceil(allSongs.length / PAGE_SIZE) || 1;
         songCurrentPage = Math.min(Math.max(page, 1), songTotalPages);
         if (songsBadge) songsBadge.textContent = totalSongs;
@@ -610,18 +664,21 @@ function renderSongsClientSide(songs) {
 window.changeSongPage = async function(targetPage) {
     if (targetPage < 1 || targetPage > songTotalPages) return;
     songCurrentPage = targetPage;
+    updateDashboardUrlState({ songPage: songCurrentPage }, 'pushState');
     renderSongsClientSide(allSongs);
 };
 
 window.filterSongs = function(query) {
     songSearchQuery = query || '';
     songCurrentPage = 1;
+    updateDashboardUrlState({ songSearch: songSearchQuery, songPage: 1 });
     renderSongsClientSide(allSongs);
 };
 
 window.sortSongs = function(sortBy) {
     songSortBy = sortBy || 'title';
     songCurrentPage = 1;
+    updateDashboardUrlState({ songSort: songSortBy, songPage: 1 });
     renderSongsClientSide(allSongs);
 };
 
@@ -1143,11 +1200,13 @@ function renderManagementList(users, isServerPaginated = true) {
 
 window.changeUserPage = async function(targetPage) {
     if (targetPage < 1 || targetPage > userTotalPages) return;
+    updateDashboardUrlState({ userPage: targetPage }, 'pushState');
     await loadUserList(targetPage);
 };
 
 window.changeManagementUserPage = async function(targetPage) {
     if (targetPage < 1 || targetPage > managementUserTotalPages) return;
+    updateDashboardUrlState({ userPage: targetPage }, 'pushState');
     await loadUserList(targetPage);
 };
 
@@ -1155,6 +1214,7 @@ window.filterUsers = function(query) {
     userSearchQuery = query || '';
     userCurrentPage = 1;
     managementUserCurrentPage = 1;
+    updateDashboardUrlState({ userSearch: userSearchQuery, userPage: 1 });
     window.clearTimeout(userSearchTimer);
     userSearchTimer = window.setTimeout(() => loadUserList(1), 250);
 };
@@ -1165,6 +1225,7 @@ window.filterUsersByRole = function(role) {
     userRoleFilter = role || 'all';
     userCurrentPage = 1;
     managementUserCurrentPage = 1;
+    updateDashboardUrlState({ userRole: userRoleFilter, userPage: 1 });
     window.clearTimeout(userSearchTimer);
     loadUserList(1);
 };

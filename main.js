@@ -88,16 +88,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestedPage = Number.parseInt(urlParams.get('page'), 10);
+    currentPage = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) searchInput.value = urlParams.get('search') || '';
+
     // 2. Render UI immediately using normalized credentials
     setupMemberProfile();
-    loadSongLibrary();
+    loadSongLibrary(currentPage);
 
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
 
     // 3. Search input listener
-    const searchInput = document.getElementById('search-input');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             filterSongs(e.target.value);
@@ -188,6 +193,8 @@ window.addEventListener('kw-session-updated', event => {
     currentUser = normalizeUserData(event.detail);
     setupMemberProfile();
 });
+
+window.addEventListener('kw-song-catalog-updated', () => loadSongLibrary(currentPage));
 
 // Tab switcher for main.html
 window.switchTab = function(tabName) {
@@ -351,6 +358,7 @@ async function loadSongLibrary(page = 1) {
     try {
         cachedAllSongs = [];
         let catalogPages = 1;
+        let catalogVersion = '';
         for (let catalogPage = 1; catalogPage <= catalogPages; catalogPage++) {
             const response = await fetch(`/api/songs?page=${catalogPage}&limit=500`);
             if (!response.ok) throw new Error(`HTTP error ${response.status}`);
@@ -362,9 +370,11 @@ async function loadSongLibrary(page = 1) {
             }
 
             cachedAllSongs.push(...(Array.isArray(data.songs) ? data.songs : []));
+            catalogVersion = data.version || catalogVersion;
             catalogPages = Math.max(catalogPage, Number(data.totalPages) || 1);
         }
 
+        window.setSongCatalogVersion?.(catalogVersion);
         const query = document.getElementById('search-input')?.value || '';
         const filteredSongs = filterSongCatalog(cachedAllSongs, query);
         totalPages = Math.ceil(filteredSongs.length / itemsPerPage) || 1;
@@ -594,8 +604,8 @@ window.changePage = function(direction) {
     if (currentPage < 1) currentPage = 1;
     if (currentPage > totalPages) currentPage = totalPages;
 
-    // Fetch the new page from the backend server
-    loadSongLibrary(currentPage);
+    renderMainCatalogPage(currentPage);
+    updateMainUrlState(currentPage, document.getElementById('search-input')?.value || '', 'pushState');
     
     const libraryHeader = document.getElementById('content-library');
     if (libraryHeader) {
@@ -605,11 +615,38 @@ window.changePage = function(direction) {
 
 // Search and filter placeholder (can be expanded later for server-side search)
 function filterSongs(query) {
-    const filtered = filterSongCatalog(cachedAllSongs, query);
     currentPage = 1;
-    totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-    renderSongs(filtered.slice(0, itemsPerPage));
+    renderMainCatalogPage(currentPage);
+    updateMainUrlState(currentPage, query);
 }
+
+function renderMainCatalogPage(page) {
+    const query = document.getElementById('search-input')?.value || '';
+    const filtered = filterSongCatalog(cachedAllSongs, query);
+    totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
+    currentPage = Math.min(Math.max(page, 1), totalPages);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    renderSongs(filtered.slice(startIndex, startIndex + itemsPerPage));
+}
+
+function updateMainUrlState(page, search, historyMethod = 'replaceState') {
+    const url = new URL(window.location.href);
+    if (page > 1) url.searchParams.set('page', String(page));
+    else url.searchParams.delete('page');
+    if (search.trim()) url.searchParams.set('search', search.trim());
+    else url.searchParams.delete('search');
+    window.history[historyMethod]({}, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
+window.addEventListener('popstate', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const requestedPage = Number.parseInt(urlParams.get('page'), 10);
+    currentPage = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1;
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) searchInput.value = urlParams.get('search') || '';
+    if (cachedAllSongs.length) renderMainCatalogPage(currentPage);
+    else loadSongLibrary(currentPage);
+});
 
 function filterSongCatalog(songs, query) {
     const normalizedQuery = String(query || '').toLowerCase().trim();

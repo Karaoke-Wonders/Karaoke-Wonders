@@ -5,6 +5,7 @@ import {
     saveInboxNotification, 
     sendDiscordApprovedNotification, 
     sendDiscordStaffAuditNotification, 
+    invalidateSongCatalogVersionCache,
     jsonResponse 
 } from '../../_middleware/utils.js';
 
@@ -42,6 +43,7 @@ export async function onRequestPost({ request, env }) {
     const approvedTrack = { ...track, approvedAt: new Date().toISOString() };
     console.log(`[handleApproveTrack] Saving track ${trackId} to production songs repository...`);
     await saveSongToGitHub(approvedTrack, env);
+    await invalidateSongCatalogVersionCache(request.url);
 
     const notificationUserKey = approvedTrack.threadId || approvedTrack.submittedBy || 'Guest';
     try {
