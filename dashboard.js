@@ -17,8 +17,6 @@ let songCurrentPage = 1;
 let songTotalPages = 1;
 let userCurrentPage = 1;
 let managementUserCurrentPage = 1;
-let userTotalPages = 1;
-let managementUserTotalPages = 1;
 
 // Discord Forum Tag IDs for Moderation & RBAC
 const TAG_IDS = {
@@ -791,10 +789,15 @@ window.deleteSong = async function(songId) {
 // 4. USER MODERATION & ROLE MANAGEMENT
 // ==========================================
 
+let userTotalPages = 1;
+let managementUserTotalPages = 1;
+let totalStaffCount = 0;
+
 async function loadUserList(page = 1) {
     const userContainer = document.getElementById('user-list');
     const usersBadge = document.getElementById('users-badge');
     const statUsers = document.getElementById('stat-users-count');
+    const mainTotalUsers = document.getElementById('stat-staff-count');
     if (!userContainer) return;
 
     userCurrentPage = page;
@@ -812,8 +815,23 @@ async function loadUserList(page = 1) {
             userTotalPages = Math.ceil(allUsers.length / PAGE_SIZE) || 1;
             managementUserTotalPages = userTotalPages;
 
+            // Calculate total staff globally across all cached users
+            totalStaffCount = allUsers.filter(u => {
+                const userTags = (u.tags || []).map(tag => String(tag));
+                return Boolean(
+                    (u.role && u.role.toLowerCase() === 'manager') ||
+                    (TAG_IDS.manager && userTags.includes(TAG_IDS.manager)) ||
+                    u.isAdmin ||
+                    (u.role && u.role.toLowerCase() === 'administrator') ||
+                    userTags.includes(String(TAG_IDS.staff)) ||
+                    u.isTeam ||
+                    userTags.includes(String(TAG_IDS.kwteam))
+                );
+            }).length;
+
             if (usersBadge) usersBadge.textContent = allUsers.length;
             if (statUsers) statUsers.textContent = allUsers.length;
+            if (mainTotalUsers) mainTotalUsers.textContent = totalStaffCount;
 
             renderUserList(allUsers, false);
             renderManagementList(allUsers, false);
@@ -827,6 +845,17 @@ async function loadUserList(page = 1) {
             if (usersBadge) usersBadge.textContent = data.total || 0;
             if (statUsers) statUsers.textContent = data.total || 0;
 
+            // Check if server returned explicit total staff count metadata
+            if (data.totalStaff !== undefined) {
+                totalStaffCount = data.totalStaff;
+            } else if (data.staffCount !== undefined) {
+                totalStaffCount = data.staffCount;
+            }
+
+            if (mainTotalUsers && (data.totalStaff !== undefined || data.staffCount !== undefined)) {
+                mainTotalUsers.textContent = totalStaffCount;
+            }
+
             renderUserList(allUsers, true);
             renderManagementList(allUsers, true);
         }
@@ -836,7 +865,7 @@ async function loadUserList(page = 1) {
     }
 }
 
-function renderUserList(users) {
+function renderUserList(users, isServerPaginated = true) {
     const userContainer = document.getElementById('user-list');
     if (!userContainer) return;
 
@@ -878,7 +907,18 @@ function renderUserList(users) {
         return;
     }
 
-    userContainer.innerHTML = filtered.map(u => {
+    let itemsToRender = filtered;
+    let totalPages = userTotalPages;
+
+    if (!isServerPaginated) {
+        totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+        if (userCurrentPage > totalPages) userCurrentPage = totalPages;
+        if (userCurrentPage < 1) userCurrentPage = 1;
+        const startIndex = (userCurrentPage - 1) * PAGE_SIZE;
+        itemsToRender = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+    }
+
+    userContainer.innerHTML = itemsToRender.map(u => {
         const userTags = (u.tags || []).map(tag => String(tag));
         const threadId = escapeAttr(u.threadId || '');
         const avatarUrl = u.avatarUrl || u.pfp || '/image/kwicon.svg';
@@ -944,12 +984,12 @@ function renderUserList(users) {
     }
 
     paginationContainer.innerHTML = `
-        <span>Page ${userCurrentPage}</span>
+        <span>Page ${userCurrentPage} of ${totalPages}</span>
         <div class="flex items-center gap-2">
             <button onclick="changeUserPage(${userCurrentPage - 1})" ${userCurrentPage <= 1 ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
                 Previous
             </button>
-            <button onclick="changeUserPage(${userCurrentPage + 1})" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold">
+            <button onclick="changeUserPage(${userCurrentPage + 1})" ${userCurrentPage >= totalPages ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
                 Next
             </button>
         </div>
@@ -959,7 +999,7 @@ function renderUserList(users) {
 }
 
 window.changeUserPage = async function(targetPage) {
-    if (targetPage < 1) return;
+    if (targetPage < 1 || targetPage > userTotalPages) return;
     await loadUserList(targetPage);
 };
 
@@ -967,7 +1007,7 @@ function renderManagementList(users, isServerPaginated = true) {
     const userContainer = document.getElementById('management-user-list');
     if (!userContainer) return;
 
-    let total = 0;
+    let pageStaffTotal = 0;
     const filtered = users.filter(u => {
         const userTags = (u.tags || []).map(tag => String(tag));
         const q = userSearchQuery.toLowerCase();
@@ -990,18 +1030,9 @@ function renderManagementList(users, isServerPaginated = true) {
         const isTeam = Boolean(u.isTeam || userTags.includes(String(TAG_IDS.kwteam)));
 
         let added = false;
-        if (isManagement) {
-            added = true;
-            total++;
-        }
-
-        if (isStaff && !added) {
-            total++;
-        }
-
-        if (isTeam && !added) {
-            total++;
-        }
+        if (isManagement) { added = true; pageStaffTotal++; }
+        if (isStaff && !added) { added = true; pageStaffTotal++; }
+        if (isTeam && !added) { pageStaffTotal++; }
 
         const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
         const isRestricted = userTags.includes(String(TAG_IDS.restricted));
@@ -1108,9 +1139,14 @@ function renderManagementList(users, isServerPaginated = true) {
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
+    // Only update staff count if in client-side mode (full dataset) or if global server metadata was provided
     const mainTotalUsers = document.getElementById('stat-staff-count');
     if (mainTotalUsers) {
-        mainTotalUsers.textContent = total;
+        if (!isServerPaginated) {
+            mainTotalUsers.textContent = pageStaffTotal;
+        } else if (totalStaffCount > 0) {
+            mainTotalUsers.textContent = totalStaffCount;
+        }
     }
 }
 
