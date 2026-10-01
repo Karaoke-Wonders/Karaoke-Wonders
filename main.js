@@ -143,7 +143,7 @@ function setupMemberProfile() {
     // If user is admin/staff, reveal the Admin Hub link in sidebar
     if (currentUser.isAdmin) {
         if (roleBadge) {
-            roleBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Moderator`;
+            roleBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> KW Moderation`;
         }
         if (adminLinks) {
             adminLinks.classList.remove('hidden');
@@ -156,7 +156,7 @@ function setupMemberProfile() {
 
     if (currentUser.isManager) {
         if (roleBadge) {
-            roleBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Manager`;
+            roleBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Guide Manager`;
         }
         if (adminLinks) {
             adminLinks.classList.remove('hidden');

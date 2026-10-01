@@ -168,7 +168,7 @@ async function refreshUserSession() {
         if (isStaff) {
             const roleBadge = document.getElementById('user-role-label');
             if (roleBadge) {
-                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> Moderator';
+                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> KW Moderation';
             }
         }
 
@@ -176,7 +176,7 @@ async function refreshUserSession() {
             user.role = 'manager';
             const roleBadge = document.getElementById('user-role-label');
             if (roleBadge) {
-                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Manager';
+                roleBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Guide Manager';
             }
             if (managerPage) {
                 managerPage.classList.remove('hidden');
