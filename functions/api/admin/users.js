@@ -1,21 +1,33 @@
 import { resolveGuildId, jsonResponse } from '../../_middleware/utils.js';
 
-export async function onRequestGet({ env }) {
+export async function onRequestGet({ request, env }) {
     console.log("[handleGetUsers] Fetching active threads from Discord forum channel...");
     const guildId = await resolveGuildId(env);
-    if (!guildId) return jsonResponse([]);
+    if (!guildId) return jsonResponse({ users: [], total: 0, page: 1, limit: 12, totalPages: 0 });
 
     const res = await fetch(`https://discord.com/api/v10/guilds/${guildId}/threads/active`, {
         headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` }
     });
+    
     if (!res.ok) {
         console.error(`[handleGetUsers] Failed to fetch active threads: ${res.status}`);
-        return jsonResponse([]);
+        return jsonResponse({ users: [], total: 0, page: 1, limit: 12, totalPages: 0 });
     }
+
     const data = await res.json();
     const threads = (data.threads || []).filter(t => t.parent_id === env.DISCORD_FORUM_CHANNEL_ID);
 
-    const users = await Promise.all(threads.map(async (t) => {
+    // Parse query parameters for pagination (default to page 1, 12 items per page)
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page')) || 1;
+    const limit = parseInt(url.searchParams.get('limit')) || 12;
+
+    // Calculate slice indices and paginate threads BEFORE fetching messages to save API calls
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedThreads = threads.slice(startIndex, endIndex);
+
+    const users = await Promise.all(paginatedThreads.map(async (t) => {
         const tags = t.applied_tags || [];
         let avatarUrl = 'https://cdn.discordapp.com/embed/avatars/0.png';
 
@@ -53,6 +65,14 @@ export async function onRequestGet({ env }) {
         };
     }));
 
-    console.log(`[handleGetUsers] Retrieved ${users.length} active users.`);
-    return jsonResponse(users);
+    console.log(`[handleGetUsers] Retrieved ${users.length} users for page ${page} (Total threads: ${threads.length}).`);
+    
+    // Return structured response matching your song pagination format
+    return jsonResponse({
+        users: users,
+        total: threads.length,
+        page: page,
+        limit: limit,
+        totalPages: Math.ceil(threads.length / limit)
+    });
 }
