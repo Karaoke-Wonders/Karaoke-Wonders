@@ -469,28 +469,32 @@ async function loadSongs(page = 1) {
     }
 
     try {
-        // Cache-buster added to prevent stale edge responses
-        const response = await fetch(`/api/songs?page=${songCurrentPage}&limit=${PAGE_SIZE}&_t=${Date.now()}`, {
-            cache: 'no-store'
-        });
-        if (!response.ok) throw new Error('Failed to fetch songs');
+        allSongs = [];
+        let catalogPages = 1;
+        let totalSongs = 0;
+        for (let catalogPage = 1; catalogPage <= catalogPages; catalogPage++) {
+            const response = await fetch(`/api/songs?page=${catalogPage}&limit=500&_t=${Date.now()}`, {
+                cache: 'no-store'
+            });
+            if (!response.ok) throw new Error('Failed to fetch songs');
 
-        const data = await response.json();
+            const data = await response.json();
+            if (Array.isArray(data)) {
+                allSongs = data;
+                totalSongs = data.length;
+                break;
+            }
 
-        if (Array.isArray(data)) {
-            allSongs = data;
-            songTotalPages = Math.ceil(allSongs.length / PAGE_SIZE) || 1;
-            renderSongsClientSide(allSongs);
-        } else {
-            allSongs = data.songs || [];
-            songTotalPages = data.totalPages || 1;
-            songCurrentPage = data.page || songCurrentPage;
-            
-            if (songsBadge) songsBadge.textContent = data.total || allSongs.length;
-            if (statSongs) statSongs.textContent = data.total || allSongs.length;
-            
-            renderSongsServerSide(allSongs);
+            allSongs.push(...(Array.isArray(data.songs) ? data.songs : []));
+            catalogPages = Math.max(catalogPage, Number(data.totalPages) || 1);
+            totalSongs = Number(data.total) || allSongs.length;
         }
+
+        songTotalPages = Math.ceil(allSongs.length / PAGE_SIZE) || 1;
+        songCurrentPage = Math.min(Math.max(page, 1), songTotalPages);
+        if (songsBadge) songsBadge.textContent = totalSongs;
+        if (statSongs) statSongs.textContent = totalSongs;
+        renderSongsClientSide(allSongs);
     } catch (err) {
         console.error(err);
         container.innerHTML = `<p class="col-span-full text-center text-red-400 text-xs py-8">Unable to load songs at this time.</p>`;
@@ -575,22 +579,21 @@ function renderSongsServerSide(songs) {
 
 function renderSongsClientSide(songs) {
     let filtered = songs.filter(s => {
-        const q = songSearchQuery.toLowerCase();
-        return (
-            (s.songName || s.title || '').toLowerCase().includes(q) ||
-            (s.artist || '').toLowerCase().includes(q) ||
-            (s.submittedBy || '').toLowerCase().includes(q) ||
-            (s.id || '').toLowerCase().includes(q)
-        );
+        const query = String(songSearchQuery || '').toLowerCase().trim();
+        const searchableText = [s.songName, s.title, s.artist, s.submittedBy, s.uploader, s.id, s._id]
+            .map(value => String(value ?? ''))
+            .join(' ')
+            .toLowerCase();
+        return searchableText.includes(query);
     });
 
     filtered.sort((a, b) => {
         if (songSortBy === 'artist') {
-            return (a.artist || '').localeCompare(b.artist || '');
+            return String(a.artist || '').localeCompare(String(b.artist || ''));
         } else if (songSortBy === 'uploader') {
-            return (a.submittedBy || '').localeCompare(b.submittedBy || '');
+            return String(a.submittedBy || a.uploader || '').localeCompare(String(b.submittedBy || b.uploader || ''));
         } else {
-            return (a.songName || a.title || '').localeCompare(b.songName || b.title || '');
+            return String(a.songName || a.title || '').localeCompare(String(b.songName || b.title || ''));
         }
     });
 
@@ -606,17 +609,20 @@ function renderSongsClientSide(songs) {
 
 window.changeSongPage = async function(targetPage) {
     if (targetPage < 1 || targetPage > songTotalPages) return;
-    await loadSongs(targetPage);
+    songCurrentPage = targetPage;
+    renderSongsClientSide(allSongs);
 };
 
 window.filterSongs = function(query) {
     songSearchQuery = query || '';
-    loadSongs(1);
+    songCurrentPage = 1;
+    renderSongsClientSide(allSongs);
 };
 
 window.sortSongs = function(sortBy) {
     songSortBy = sortBy || 'title';
-    loadSongs(1);
+    songCurrentPage = 1;
+    renderSongsClientSide(allSongs);
 };
 
 window.openAddTrackModal = function() {
@@ -774,7 +780,7 @@ window.updateTrackDirectly = async function(event) {
             targetSong.title = songName;
             targetSong.artist = artist;
             targetSong.videoId = videoId;
-            renderSongsServerSide(allSongs);
+            renderSongsClientSide(allSongs);
         }
 
         showDashboardAlert('Song updated successfully!', 'success');
@@ -834,6 +840,7 @@ window.deleteSong = async function(songId) {
 let userTotalPages = 1;
 let managementUserTotalPages = 1;
 let totalStaffCount = 0;
+let userSearchTimer = null;
 
 async function loadUserList(page = 1) {
     const userContainer = document.getElementById('user-list');
@@ -846,7 +853,14 @@ async function loadUserList(page = 1) {
     managementUserCurrentPage = page;
 
     try {
-        const response = await fetch(`/api/admin/users?page=${page}&limit=${PAGE_SIZE}&_t=${Date.now()}`, { cache: 'no-store' });
+        const params = new URLSearchParams({
+            page: String(page),
+            limit: String(PAGE_SIZE),
+            search: userSearchQuery,
+            role: userRoleFilter,
+            _t: String(Date.now())
+        });
+        const response = await fetch(`/api/admin/users?${params}`, { cache: 'no-store' });
         if (!response.ok) throw new Error('Failed to load user list');
 
         const data = await response.json();
@@ -1141,13 +1155,17 @@ window.filterUsers = function(query) {
     userSearchQuery = query || '';
     userCurrentPage = 1;
     managementUserCurrentPage = 1;
-    loadUserList(1);
+    window.clearTimeout(userSearchTimer);
+    userSearchTimer = window.setTimeout(() => loadUserList(1), 250);
 };
+
+window.filterManagementUsers = window.filterUsers;
 
 window.filterUsersByRole = function(role) {
     userRoleFilter = role || 'all';
     userCurrentPage = 1;
     managementUserCurrentPage = 1;
+    window.clearTimeout(userSearchTimer);
     loadUserList(1);
 };
 

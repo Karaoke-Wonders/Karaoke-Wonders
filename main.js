@@ -349,21 +349,28 @@ async function loadSongLibrary(page = 1) {
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
     try {
-        // Fetch a larger batch or all pages so users can search IDs instantly
-        const response = await fetch(`/api/songs?page=1&limit=500`);
-        if (!response.ok) throw new Error(`HTTP error ${response.status}`);
+        cachedAllSongs = [];
+        let catalogPages = 1;
+        for (let catalogPage = 1; catalogPage <= catalogPages; catalogPage++) {
+            const response = await fetch(`/api/songs?page=${catalogPage}&limit=500`);
+            if (!response.ok) throw new Error(`HTTP error ${response.status}`);
 
-        const data = await response.json();
-        cachedAllSongs = data.songs || [];
-        
-        // Paginate locally based on the current page variable
-        totalPages = Math.ceil(cachedAllSongs.length / itemsPerPage) || 1;
-        currentPage = page;
+            const data = await response.json();
+            if (Array.isArray(data)) {
+                cachedAllSongs = data;
+                break;
+            }
 
+            cachedAllSongs.push(...(Array.isArray(data.songs) ? data.songs : []));
+            catalogPages = Math.max(catalogPage, Number(data.totalPages) || 1);
+        }
+
+        const query = document.getElementById('search-input')?.value || '';
+        const filteredSongs = filterSongCatalog(cachedAllSongs, query);
+        totalPages = Math.ceil(filteredSongs.length / itemsPerPage) || 1;
+        currentPage = Math.min(Math.max(page, 1), totalPages);
         const startIndex = (currentPage - 1) * itemsPerPage;
-        const paginatedSongs = cachedAllSongs.slice(startIndex, startIndex + itemsPerPage);
-
-        renderSongs(paginatedSongs);
+        renderSongs(filteredSongs.slice(startIndex, startIndex + itemsPerPage));
     } catch (err) {
         console.error('Error loading songs:', err);
         songListContainer.innerHTML = `<p class="text-slate-500 text-xs col-span-full text-center py-10">Unable to load songs at this time.</p>`;
@@ -598,29 +605,21 @@ window.changePage = function(direction) {
 
 // Search and filter placeholder (can be expanded later for server-side search)
 function filterSongs(query) {
-    const q = (query || '').toLowerCase().trim();
+    const filtered = filterSongCatalog(cachedAllSongs, query);
     currentPage = 1;
-
-    if (!q) {
-        const startIndex = 0;
-        totalPages = Math.ceil(cachedAllSongs.length / itemsPerPage) || 1;
-        renderSongs(cachedAllSongs.slice(startIndex, startIndex + itemsPerPage));
-        return;
-    }
-
-    // Filter cached songs matching songName, artist, or unique ID
-    const filtered = cachedAllSongs.filter(song => {
-        const name = (song.songName || song.title || '').toLowerCase();
-        const artist = (song.artist || '').toLowerCase();
-        const id = (song.id || '').toLowerCase();
-        const uploader = (song.submittedBy || '').toLowerCase();
-
-        return name.includes(q) || artist.includes(q) || id.includes(q) || uploader.includes(q);
-    });
-
     totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    renderSongs(filtered.slice(startIndex, startIndex + itemsPerPage));
+    renderSongs(filtered.slice(0, itemsPerPage));
+}
+
+function filterSongCatalog(songs, query) {
+    const normalizedQuery = String(query || '').toLowerCase().trim();
+    return songs.filter(song => {
+        const searchableText = [song.songName, song.title, song.artist, song.id, song.submittedBy, song.uploader]
+            .map(value => String(value ?? ''))
+            .join(' ')
+            .toLowerCase();
+        return searchableText.includes(normalizedQuery);
+    });
 }
 
 // Extract YouTube Video ID from any URL format or raw ID
