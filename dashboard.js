@@ -266,7 +266,11 @@ window.addEventListener('kw-session-updated', event => {
 
     const roleBadge = document.getElementById('user-role-label');
     if (roleBadge) {
-        roleBadge.textContent = currentUser.isManager ? 'Guide Manager' : currentUser.isTeam ? 'KW Team' : 'KW Moderation';
+        roleBadge.innerHTML = currentUser.isTeam
+            ? '<span class="w-1.5 h-1.5 rounded-full bg-yellow-400"></span> KW Team'
+            : currentUser.isManager
+                ? '<span class="w-1.5 h-1.5 rounded-full bg-red-400"></span> Guide Manager'
+                : '<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> KW Moderation';
     }
 });
 
