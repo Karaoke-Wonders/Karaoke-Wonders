@@ -187,7 +187,8 @@
             const tagMappings = {
                 '1548667951069007964': { label: 'Restricted', badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30', dotClass: 'bg-amber-400' },
                 '1548667928881139712': { label: 'KW Moderation', badgeClass: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30', dotClass: 'bg-emerald-400' },
-                '1549308000664031323': { label: 'Guide Manager', badgeClass: 'bg-purple-500/10 text-purple-400 border-purple-500/30', dotClass: 'bg-purple-400' }
+                '1549308000664031323': { label: 'Guide Manager', badgeClass: 'bg-purple-500/10 text-purple-400 border-purple-500/30', dotClass: 'bg-purple-400' },
+                '1555048910324760676': { label: 'KW Team', badgeClass: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30', dotClass: 'bg-yellow-400' }
             };
 
             tagsArray.forEach(tag => {
@@ -201,11 +202,11 @@
                 // Fallback text check if names are passed as strings instead of IDs
                 const lowerTag = tagStr.toLowerCase();
                 if (!matchedConfig) {
-                    if (lowerTag.includes('manager')) {
+                    if (lowerTag.includes('guide manager')) {
                         badgeClass = 'bg-purple-500/10 text-purple-400 border-purple-500/30';
                         dotClass = 'bg-purple-400';
                         label = 'Manager';
-                    } else if (lowerTag.includes('staff')) {
+                    } else if (lowerTag.includes('kw moderation')) {
                         badgeClass = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
                         dotClass = 'bg-emerald-400';
                         label = 'Staff Member';
