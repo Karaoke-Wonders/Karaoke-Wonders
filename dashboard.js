@@ -889,7 +889,7 @@ function renderUserList(users) {
                         </div>
 
                         <div class="flex items-center gap-1.5 flex-wrap justify-end">
-                            ${isTeam ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-blue-300 border border-blue-500/30 font-bold">KW Team</span>' : ''}
+                            ${isTeam ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 font-bold">KW Team</span>' : ''}
                             ${isManagement ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Management</span>' : ''}
                             ${isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
                             ${isBlacklisted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
@@ -1032,7 +1032,7 @@ function renderManagementList(users) {
                     <div class="flex items-center justify-between gap-2 mb-1">
                         <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
                         <div class="flex items-center gap-1.5 flex-wrap">
-                            ${isTeam ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-blue-300 border border-blue-500/30 font-bold">KW Team</span>' : ''}
+                            ${isTeam ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 font-bold">KW Team</span>' : ''}
                             ${isManagement ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Management</span>' : ''}
                             ${isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
                             ${isBlacklisted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
