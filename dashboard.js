@@ -809,29 +809,16 @@ async function loadUserList(page = 1) {
 
         const data = await response.json();
 
-        // Handle both direct array fallback and paginated object responses
         if (Array.isArray(data)) {
             allUsers = data;
             userTotalPages = Math.ceil(allUsers.length / PAGE_SIZE) || 1;
             managementUserTotalPages = userTotalPages;
 
-            // Calculate total staff globally across all cached users
-            totalStaffCount = allUsers.filter(u => {
-                const userTags = (u.tags || []).map(tag => String(tag));
-                return Boolean(
-                    (u.role && u.role.toLowerCase() === 'manager') ||
-                    (TAG_IDS.manager && userTags.includes(TAG_IDS.manager)) ||
-                    u.isAdmin ||
-                    (u.role && u.role.toLowerCase() === 'administrator') ||
-                    userTags.includes(String(TAG_IDS.staff)) ||
-                    u.isTeam ||
-                    userTags.includes(String(TAG_IDS.kwteam))
-                );
-            }).length;
+            const totalStaff = allUsers.filter(u => u.isStaff || u.isManager).length;
 
             if (usersBadge) usersBadge.textContent = allUsers.length;
             if (statUsers) statUsers.textContent = allUsers.length;
-            if (mainTotalUsers) mainTotalUsers.textContent = totalStaffCount;
+            if (mainTotalUsers) mainTotalUsers.textContent = totalStaff;
 
             renderUserList(allUsers, false);
             renderManagementList(allUsers, false);
@@ -841,20 +828,10 @@ async function loadUserList(page = 1) {
             managementUserCurrentPage = data.page || page;
             userTotalPages = data.totalPages || 1;
             managementUserTotalPages = data.totalPages || 1;
-            
+
             if (usersBadge) usersBadge.textContent = data.total || 0;
             if (statUsers) statUsers.textContent = data.total || 0;
-
-            // Check if server returned explicit total staff count metadata
-            if (data.totalStaff !== undefined) {
-                totalStaffCount = data.totalStaff;
-            } else if (data.staffCount !== undefined) {
-                totalStaffCount = data.staffCount;
-            }
-
-            if (mainTotalUsers && (data.totalStaff !== undefined || data.staffCount !== undefined)) {
-                mainTotalUsers.textContent = totalStaffCount;
-            }
+            if (mainTotalUsers) mainTotalUsers.textContent = data.totalStaff ?? allUsers.filter(u => u.isStaff || u.isManager).length;
 
             renderUserList(allUsers, true);
             renderManagementList(allUsers, true);
@@ -870,39 +847,22 @@ function renderUserList(users, isServerPaginated = true) {
     if (!userContainer) return;
 
     const filtered = users.filter(u => {
-        const userTags = (u.tags || []).map(tag => String(tag));
         const q = userSearchQuery.toLowerCase();
-        
-        const matchesQuery = (
-            (u.username || '').toLowerCase().includes(q) ||
-            (u.threadId || '').toLowerCase().includes(q)
-        );
-
-        const isManagement = Boolean(
-            (u.role && u.role.toLowerCase() === 'manager') ||
-            (TAG_IDS.manager && userTags.includes(TAG_IDS.manager))
-        );
-        const isStaff = Boolean(
-            u.isAdmin ||
-            (u.role && u.role.toLowerCase() === 'administrator') ||
-            userTags.includes(String(TAG_IDS.staff))
-        );
-        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
-        const isRestricted = userTags.includes(String(TAG_IDS.restricted));
+        const matchesQuery = (u.username || '').toLowerCase().includes(q) || (u.threadId || '').toLowerCase().includes(q);
 
         if (!matchesQuery) return false;
 
-        if (userRoleFilter === 'manager') return isManagement;
-        if (userRoleFilter === 'staff') return isStaff;
-        if (userRoleFilter === 'banned') return isBlacklisted;
-        if (userRoleFilter === 'restricted') return isRestricted;
+        if (userRoleFilter === 'manager') return u.isManager;
+        if (userRoleFilter === 'staff') return u.isStaff;
+        if (userRoleFilter === 'banned') return u.isLocked;
+        if (userRoleFilter === 'restricted') return u.isRestricted;
 
         return true;
     });
 
     if (filtered.length === 0) {
         userContainer.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No user accounts found matching constraints.</p>`;
-        let existingPagination = document.getElementById('user-pagination-container');
+        const existingPagination = document.getElementById('user-pagination-container');
         if (existingPagination) existingPagination.remove();
         return;
     }
@@ -919,26 +879,8 @@ function renderUserList(users, isServerPaginated = true) {
     }
 
     userContainer.innerHTML = itemsToRender.map(u => {
-        const userTags = (u.tags || []).map(tag => String(tag));
         const threadId = escapeAttr(u.threadId || '');
-        const avatarUrl = u.avatarUrl || u.pfp || '/image/kwicon.svg';
-        
-        const isManagement = Boolean(
-            (u.role && u.role.toLowerCase() === 'manager') ||
-            (TAG_IDS.manager && userTags.includes(String(TAG_IDS.manager)))
-        );
-        const isStaff = Boolean(
-            u.isAdmin ||
-            (u.role && u.role.toLowerCase() === 'administrator') ||
-            userTags.includes(String(TAG_IDS.staff))
-        );
-
-        const isTeam = Boolean(
-            u.isTeam || userTags.includes(String(TAG_IDS.kwteam))
-        );
-
-        const isBlacklisted = userTags.includes(String(TAG_IDS.blacklisted)) || Boolean(u.isLocked);
-        const isRestricted = userTags.includes(String(TAG_IDS.restricted));
+        const avatarUrl = u.avatarUrl || '/image/kwicon.svg';
 
         return `
             <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-white/20 transition-all">
@@ -953,22 +895,21 @@ function renderUserList(users, isServerPaginated = true) {
                         </div>
 
                         <div class="flex items-center gap-1.5 flex-wrap justify-end">
-                            ${isTeam ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 font-bold">KW Team</span>' : ''}
-                            ${isManagement ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Management</span>' : ''}
-                            ${isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
-                            ${isBlacklisted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
-                            ${isRestricted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">Restricted</span>' : ''}
+                            ${u.isManager ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Manager</span>' : ''}
+                            ${u.isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
+                            ${u.isLocked ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
+                            ${u.isRestricted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">Restricted</span>' : ''}
                         </div>
                     </div>
                     <p class="text-[11px] text-slate-500">Thread ID: ${escapeHtml(u.threadId || 'N/A')}</p>
                 </div>
 
                 <div class="flex items-center gap-2 pt-3 border-t border-white/5 flex-wrap">
-                    <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.restricted}', ${!isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
-                        ${isRestricted ? 'Unrestrict' : 'Restrict'}
+                    <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.restricted}', ${!u.isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
+                        ${u.isRestricted ? 'Unrestrict' : 'Restrict'}
                     </button>
-                    <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.blacklisted}', ${!isBlacklisted})" class="flex-1 py-1.5 px-2 ${isBlacklisted ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20'} border rounded-lg text-xs font-bold transition-all">
-                        ${isBlacklisted ? 'Unban' : 'Blacklist'}
+                    <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.blacklisted}', ${!u.isLocked})" class="flex-1 py-1.5 px-2 ${u.isLocked ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20'} border rounded-lg text-xs font-bold transition-all">
+                        ${u.isLocked ? 'Unban' : 'Blacklist'}
                     </button>
                 </div>
             </div>
@@ -990,6 +931,98 @@ function renderUserList(users, isServerPaginated = true) {
                 Previous
             </button>
             <button onclick="changeUserPage(${userCurrentPage + 1})" ${userCurrentPage >= totalPages ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
+                Next
+            </button>
+        </div>
+    `;
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function renderManagementList(users, isServerPaginated = true) {
+    const userContainer = document.getElementById('management-user-list');
+    if (!userContainer) return;
+
+    const filtered = users.filter(u => {
+        const q = userSearchQuery.toLowerCase();
+        const matchesQuery = (u.username || '').toLowerCase().includes(q) || (u.threadId || '').toLowerCase().includes(q);
+
+        if (!matchesQuery) return false;
+
+        if (userRoleFilter === 'manager') return u.isManager;
+        if (userRoleFilter === 'staff') return u.isStaff;
+        if (userRoleFilter === 'banned') return u.isLocked;
+        if (userRoleFilter === 'restricted') return u.isRestricted;
+
+        return true;
+    });
+
+    if (filtered.length === 0) {
+        userContainer.innerHTML = `<p class="col-span-full text-center text-slate-500 text-xs py-8">No user accounts found matching constraints.</p>`;
+        const existingPagination = document.getElementById('management-pagination-container');
+        if (existingPagination) existingPagination.remove();
+        return;
+    }
+
+    let itemsToRender = filtered;
+    let totalPages = managementUserTotalPages;
+
+    if (!isServerPaginated) {
+        totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+        if (managementUserCurrentPage > totalPages) managementUserCurrentPage = totalPages;
+        if (managementUserCurrentPage < 1) managementUserCurrentPage = 1;
+        const startIndex = (managementUserCurrentPage - 1) * PAGE_SIZE;
+        itemsToRender = filtered.slice(startIndex, startIndex + PAGE_SIZE);
+    }
+
+    userContainer.innerHTML = itemsToRender.map(u => {
+        const threadId = escapeAttr(u.threadId || '');
+
+        return `
+            <div class="glass p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4 hover:border-white/20 transition-all">
+                <div>
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <span class="font-bold text-white text-sm">${escapeHtml(u.username)}</span>
+                        <div class="flex items-center gap-1.5 flex-wrap">
+                            ${u.isManager ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Manager</span>' : ''}
+                            ${u.isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
+                            ${u.isLocked ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
+                            ${u.isRestricted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">Restricted</span>' : ''}
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-slate-500">Thread ID: ${escapeHtml(u.threadId || 'N/A')}</p>
+                </div>
+
+                <div class="flex items-center gap-2 pt-3 border-t border-white/5 flex-wrap">
+                    ${u.isStaff ? `
+                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', false)" class="flex-1 py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
+                            Remove Staff
+                        </button>
+                    ` : `
+                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.staff}', true)" class="flex-1 py-1.5 px-2 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg text-xs font-bold transition-all">
+                            Give Staff
+                        </button>
+                    `}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    let paginationContainer = document.getElementById('management-pagination-container');
+    if (!paginationContainer) {
+        paginationContainer = document.createElement('div');
+        paginationContainer.id = 'management-pagination-container';
+        paginationContainer.className = 'col-span-full flex items-center justify-between pt-4 mt-2 border-t border-white/5 text-xs text-slate-400';
+        userContainer.parentNode.appendChild(paginationContainer);
+    }
+
+    paginationContainer.innerHTML = `
+        <span>Page ${managementUserCurrentPage} of ${totalPages}</span>
+        <div class="flex items-center gap-2">
+            <button onclick="changeManagementUserPage(${managementUserCurrentPage - 1})" ${managementUserCurrentPage <= 1 ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
+                Previous
+            </button>
+            <button onclick="changeManagementUserPage(${managementUserCurrentPage + 1})" ${managementUserCurrentPage >= totalPages ? 'disabled class="px-3 py-1.5 rounded-lg bg-white/5 text-slate-600 border border-white/5 cursor-not-allowed"' : 'class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white border border-white/10 transition-all font-bold"'}>
                 Next
             </button>
         </div>
