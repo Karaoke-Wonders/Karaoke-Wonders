@@ -114,6 +114,7 @@ export function normalizeAccountProfile(profileData = {}, overrides = {}) {
         email: profileData.email || '',
         createdAt: profileData.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        ipAddress: ipAddress || null,
         ...overrides
     };
 
