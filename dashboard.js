@@ -1540,6 +1540,25 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
     }
 };
 
+window.migrateUserProfiles = async function() {
+    try {
+        showDashboardAlert('Migrating account profiles...', 'success');
+        const response = await adminFetch('/api/admin/migrate-profiles', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            throw new Error(data.error || 'Profile migration failed.');
+        }
+
+        showDashboardAlert(`Profile migration complete: ${data.migrated || 0} updated, ${data.failed || 0} failed.`, 'success');
+        await loadUserList();
+    } catch (err) {
+        showDashboardAlert(err.message || 'Failed to migrate user profiles.', 'error');
+    }
+};
+
 // ==========================================
 // 5. UTILITY & MEDIA PREVIEW HELPERS
 // ==========================================

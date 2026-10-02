@@ -105,6 +105,66 @@ export async function findBlacklistedThreadForIp(ip, env) {
     return null;
 }
 
+export function normalizeAccountProfile(profileData = {}, overrides = {}) {
+    const safeAvatar = profileData.avatarUrl || profileData.pfp || profileData.profilePicture || 'https://cdn.discordapp.com/embed/avatars/0.png';
+    const normalized = {
+        ...profileData,
+        password: typeof profileData.password === 'string' ? profileData.password : '',
+        avatarUrl: safeAvatar,
+        email: profileData.email || '',
+        createdAt: profileData.createdAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        ...overrides
+    };
+
+    if (!normalized.password && typeof overrides.password === 'string') normalized.password = overrides.password;
+    if (!normalized.avatarUrl) normalized.avatarUrl = 'https://cdn.discordapp.com/embed/avatars/0.png';
+    return normalized;
+}
+
+export async function migrateAllAccountProfiles(env) {
+    const threads = await listForumThreads(env);
+    let migrated = 0;
+    let skipped = 0;
+    let failed = 0;
+
+    for (const thread of threads) {
+        try {
+            const profileData = await getDiscordThreadData(thread.id, env);
+            if (!profileData || typeof profileData !== 'object') {
+                skipped += 1;
+                continue;
+            }
+
+            const normalizedProfile = normalizeAccountProfile(profileData);
+            const content = `\`\`\`json\n${JSON.stringify(normalizedProfile, null, 2)}\n\`\`\``;
+
+            const messageId = thread.id;
+            const patchRes = await fetch(`https://discord.com/api/v10/channels/${thread.id}/messages/${messageId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ content })
+            });
+
+            if (!patchRes.ok) {
+                failed += 1;
+                console.warn(`[migrateAllAccountProfiles] Failed to update thread ${thread.id}: ${patchRes.status}`);
+                continue;
+            }
+
+            migrated += 1;
+        } catch (error) {
+            failed += 1;
+            console.error(`[migrateAllAccountProfiles] Failed for thread ${thread.id}:`, error.message);
+        }
+    }
+
+    return { migrated, skipped, failed };
+}
+
 export async function saveInboxNotification(userId, type, songName, artist, message, env) {
     const owner = env.GITHUB_OWNER;
     const repo = env.GITHUB_REPO;
