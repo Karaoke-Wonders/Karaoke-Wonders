@@ -60,12 +60,15 @@ export async function onRequestPost({ request, env }) {
         return jsonResponse({ error: "Account already exists." }, 400);
     }
 
-    const jsonPayloadString = JSON.stringify({
+    const profilePayload = {
         password: password,
         avatarUrl: 'https://cdn.discordapp.com/embed/avatars/0.png',
+        email: '',
         createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         ipAddress: ipAddress || null
-    });
+    };
+    const jsonPayloadString = `\`\`\`json\n${JSON.stringify(profilePayload, null, 2)}\n\`\`\``;
 
     const threadPayload = {
         name: username,
