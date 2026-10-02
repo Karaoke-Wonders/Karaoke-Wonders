@@ -1100,7 +1100,7 @@ function renderUserList(users, isServerPaginated = true) {
 
                         <div class="flex items-center gap-1.5 flex-wrap justify-end">
                             ${u.isManager ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Manager</span>' : ''}
-                            ${u.isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-200 border border-purple-500/30 font-bold">Staff Protected</span>' : ''}
+                            ${u.isStaff ? '<span class="inline-flex items-center gap-1.5 rounded-md border border-purple-400/50 bg-purple-500/20 px-2.5 py-1 text-[10px] font-bold text-purple-100 shadow-sm"><i data-lucide="shield-check" class="w-3 h-3"></i>Staff Protected</span>' : ''}
                             ${u.isLocked ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
                             ${u.isRestricted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">Restricted</span>' : ''}
                         </div>
