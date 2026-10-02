@@ -28,24 +28,10 @@ function normalizeUserData(raw) {
     const tags = Array.isArray(base.tags) ? base.tags : (Array.isArray(raw.tags) ? raw.tags : []);
     const threadId = base.threadId || raw.threadId || '';
 
-    // Determine staff/admin privilege
-    const isAdmin = Boolean(
-        base.isAdmin || 
-        raw.isAdmin || 
-        base.admin || 
-        raw.admin || 
-        base.role === 'admin' || 
-        base.role === 'administrator' || 
-        tags.includes(TAG_IDS.staff)
-    );
-
-    const isManager = Boolean(
-        base.isManager || raw.isManager || base.role == 'manager' || tags.includes(TAG_IDS.manager)
-    );
-
-    const isTeam = Boolean(
-        base.isTeam || raw.isTeam || tags.includes(TAG_IDS.kwteam)
-    )
+    const isStaff = tags.includes(TAG_IDS.staff);
+    const isManager = tags.includes(TAG_IDS.manager);
+    const isAdmin = isStaff || isManager;
+    const isTeam = tags.includes(TAG_IDS.kwteam);
 
     return {
         ...raw,

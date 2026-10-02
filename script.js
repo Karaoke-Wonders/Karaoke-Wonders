@@ -44,8 +44,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const password = user.password || rawUser.password || '';
 
             if (!username || !password) {
-                console.warn('Session is missing credentials. Retaining local session.');
-                return;
+                console.warn('Session is missing credentials.');
+                localStorage.removeItem('kw_session');
+                return null;
             }
 
             const response = await fetch(`/api/get-account`, {
@@ -58,12 +59,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (response.status === 401 || response.status === 403) {
                 console.error('Session validation rejected by worker:', response.status);
                 localStorage.removeItem('kw_session');
-                return;
+                return null;
             }
 
             if (!response.ok) {
-                console.warn(`Background session check returned HTTP ${response.status}. Retaining local session.`);
-                return;
+                console.warn(`Session verification returned HTTP ${response.status}.`);
+                return null;
             }
 
             const data = await response.json();
@@ -73,52 +74,40 @@ document.addEventListener('DOMContentLoaded', async () => {
                 localStorage.removeItem('kw_session');
                 alert('Your account has been restricted or blacklisted.');
                 window.location.href = 'index.html';
-                return;
+                return null;
             }
 
-            const isStaff = Boolean(
-                data.isAdmin || 
-                userTags.includes(TAG_IDS.staff)
-            );
-
-            const isManager = Boolean(
-                data.isManager || userTags.includes(TAG_IDS.manager)
-            );
+            const isStaff = userTags.includes(TAG_IDS.staff);
+            const isManager = userTags.includes(TAG_IDS.manager);
 
             const updatedSession = {
-                ...rawUser,
                 username: data.username || username,
                 password: password,
                 threadId: data.threadId || user.threadId || '',
                 avatarUrl: data.avatarUrl || user.avatarUrl || '',
                 tags: userTags,
-                isAdmin: isStaff,
+                isAdmin: isStaff || isManager,
+                isStaff,
                 isManager: isManager,
-                role: isStaff ? 'administrator' : 'member'
+                role: isManager ? 'manager' : isStaff ? 'administrator' : 'member'
             };
             
             localStorage.setItem('kw_session', JSON.stringify(updatedSession));
+            return updatedSession;
 
         } catch (err) {
             console.error('Failed to sync session background state:', err);
+            return null;
         }
     }
 
     // 1. Check and refresh existing session on load
     const existingSession = localStorage.getItem('kw_session');
     if (existingSession) {
-        await refreshUserSession();
-        const updatedSession = localStorage.getItem('kw_session');
-        if (updatedSession) {
-            try {
-                const user = JSON.parse(updatedSession);
-                if (user && user.username) {
-                    window.location.href = user.isAdmin ? 'admin.html' : 'main.html';
-                    return;
-                }
-            } catch (e) {
-                localStorage.removeItem('kw_session');
-            }
+        const verifiedUser = await refreshUserSession();
+        if (verifiedUser) {
+            window.location.href = verifiedUser.isAdmin ? 'admin.html' : 'main.html';
+            return;
         }
     }
 
@@ -222,10 +211,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         return;
                     }
 
-                    const isStaff = Boolean(
-                        data.isAdmin || 
-                        userTags.includes(TAG_IDS.staff)
-                    );
+                    const isStaff = userTags.includes(TAG_IDS.staff);
+                    const isManager = userTags.includes(TAG_IDS.manager);
 
                     // Guarantees username and password are never undefined
                     const userSession = {
@@ -234,21 +221,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                         password: password,
                         avatarUrl: data.avatarUrl || '',
                         tags: userTags,
-                        role: isStaff ? 'administrator' : 'member',
-                        isAdmin: isStaff,
+                        role: isManager ? 'manager' : isStaff ? 'administrator' : 'member',
+                        isAdmin: isStaff || isManager,
+                        isStaff,
+                        isManager,
                         loggedInAt: new Date().toISOString()
                     };
 
                     localStorage.setItem('kw_session', JSON.stringify(userSession));
                     
-                    if (isStaff) {
+                    if (isStaff || isManager) {
                         showAlert('Staff credentials verified! Redirecting to Admin Hub...', 'success');
                     } else {
                         showAlert('Login verified! Redirecting to stage...', 'success');
                     }
 
                     setTimeout(() => {
-                        window.location.href = isStaff ? 'admin.html' : 'main.html';
+                        window.location.href = (isStaff || isManager) ? 'admin.html' : 'main.html';
                     }, 1000);
                 }
 
