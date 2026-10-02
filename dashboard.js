@@ -138,6 +138,8 @@ function bindGlobalEventListeners() {
     const worldStaffInput = document.getElementById('world-staff-name-input');
     const worldStaffAddBtn = document.getElementById('world-staff-add-btn');
     const worldStaffRemoveBtn = document.getElementById('world-staff-remove-btn');
+    const worldStaffSearchInput = document.getElementById('world-staff-search-input');
+    const copyWorldStaffBtn = document.getElementById('copy-world-staff-btn');
     if (worldStaffInput) {
         worldStaffInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -151,6 +153,34 @@ function bindGlobalEventListeners() {
     }
     if (worldStaffRemoveBtn) {
         worldStaffRemoveBtn.addEventListener('click', () => window.removeWorldStaffFromInput());
+    }
+    if (worldStaffSearchInput) {
+        worldStaffSearchInput.addEventListener('input', (e) => {
+            const query = (e.target.value || '').trim().toLowerCase();
+            const list = document.getElementById('world-staff-list');
+            if (!list) return;
+            const cards = Array.from(list.querySelectorAll('[data-world-staff-card]'));
+            cards.forEach((card) => {
+                const name = (card.dataset.worldStaffName || '').toLowerCase();
+                card.classList.toggle('hidden', query && !name.includes(query));
+            });
+        });
+    }
+    if (copyWorldStaffBtn) {
+        copyWorldStaffBtn.addEventListener('click', async () => {
+            const list = document.getElementById('world-staff-list');
+            if (!list) return;
+            const names = Array.from(list.querySelectorAll('[data-world-staff-card]'))
+                .map(card => card.dataset.worldStaffName)
+                .filter(Boolean);
+            const text = names.join('\n');
+            try {
+                await navigator.clipboard.writeText(text);
+                showDashboardAlert('World staff list copied to clipboard.', 'success');
+            } catch (err) {
+                showDashboardAlert('Unable to copy the world staff list.', 'error');
+            }
+        });
     }
 
     document.addEventListener('keydown', (e) => {
@@ -201,6 +231,7 @@ async function refreshUserSession() {
     console.log("refreshUserSession Fired");
     const sessionData = localStorage.getItem('kw_session');
     const managerPage = document.getElementById('tab-management');
+    const worldStaffPage = document.getElementById('tab-world-staff');
     if (!sessionData) return;
 
     try {
@@ -254,6 +285,9 @@ async function refreshUserSession() {
             if (managerPage) {
                 managerPage.classList.remove('hidden');
             }
+            if (worldStaffPage) {
+                worldStaffPage.classList.remove('hidden');
+            }
         }
 
         if (isTeam) {
@@ -264,6 +298,9 @@ async function refreshUserSession() {
             }
             if (managerPage) {
                 managerPage.classList.remove('hidden');
+            }
+            if (worldStaffPage) {
+                worldStaffPage.classList.remove('hidden');
             }
         }
         
@@ -283,7 +320,9 @@ window.addEventListener('kw-session-updated', event => {
 
     setupUserProfile();
     const managerTab = document.getElementById('tab-management');
+    const worldStaffTab = document.getElementById('tab-world-staff');
     if (managerTab) managerTab.classList.toggle('hidden', !(currentUser.isManager || currentUser.isTeam));
+    if (worldStaffTab) worldStaffTab.classList.toggle('hidden', !(currentUser.isManager || currentUser.isTeam));
 
     const roleBadge = document.getElementById('user-role-label');
     if (roleBadge) {
@@ -1137,10 +1176,35 @@ window.filterUsers = function(query) {
 
 window.filterManagementUsers = window.filterUsers;
 
+function ensureManagerSession() {
+    const sessionData = localStorage.getItem('kw_session');
+    if (!sessionData) {
+        showDashboardAlert('Your admin session is missing. Please sign in again.', 'error');
+        setTimeout(() => window.location.href = 'index.html', 1200);
+        return false;
+    }
+
+    try {
+        const session = JSON.parse(sessionData);
+        if (!session?.username || !session?.password) {
+            showDashboardAlert('Your admin session is invalid. Please sign in again.', 'error');
+            setTimeout(() => window.location.href = 'index.html', 1200);
+            return false;
+        }
+    } catch (err) {
+        showDashboardAlert('Your admin session could not be read. Please sign in again.', 'error');
+        setTimeout(() => window.location.href = 'index.html', 1200);
+        return false;
+    }
+
+    return true;
+}
+
 async function loadWorldStaffList() {
     const listContainer = document.getElementById('world-staff-list');
     const countBadge = document.getElementById('world-staff-count');
     if (!listContainer) return;
+    if (!ensureManagerSession()) return;
 
     try {
         const response = await adminFetch('/api/admin/staff', { cache: 'no-store' });
@@ -1151,14 +1215,22 @@ async function loadWorldStaffList() {
         if (countBadge) countBadge.textContent = String(staff.length);
 
         if (staff.length === 0) {
-            listContainer.innerHTML = '<span class="text-xs text-slate-500">No world staff names saved yet.</span>';
+            listContainer.innerHTML = '<div class="col-span-full rounded-2xl border border-dashed border-red-500/20 bg-slate-900/40 p-6 text-center text-xs text-slate-500">No world staff names saved yet.</div>';
             return;
         }
 
         listContainer.innerHTML = staff.map((name) => `
-            <div class="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-2.5 py-2 text-xs text-red-100">
-                <span class="font-medium">${escapeHtml(name)}</span>
-                <button type="button" data-world-staff-name="${escapeAttr(name)}" class="world-staff-remove-btn ml-auto rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1 text-[10px] font-bold text-red-300 hover:bg-red-500/20 transition-all">Remove</button>
+            <div data-world-staff-card data-world-staff-name="${escapeAttr(name)}" class="glass rounded-2xl border border-red-500/20 bg-red-500/5 p-4 flex flex-col gap-3 hover:border-red-500/30 transition-all">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-300 font-bold text-xs">${escapeHtml(name).charAt(0).toUpperCase() || 'W'}</div>
+                        <div>
+                            <p class="font-bold text-white text-sm">${escapeHtml(name)}</p>
+                            <p class="text-[10px] uppercase tracking-[0.2em] text-red-300/80">World Staff</p>
+                        </div>
+                    </div>
+                    <button type="button" data-world-staff-name="${escapeAttr(name)}" class="world-staff-remove-btn rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1 text-[10px] font-bold text-red-300 hover:bg-red-500/20 transition-all">Remove</button>
+                </div>
             </div>
         `).join('');
 
@@ -1169,7 +1241,7 @@ async function loadWorldStaffList() {
         });
     } catch (err) {
         console.error('[loadWorldStaffList]', err);
-        listContainer.innerHTML = '<span class="text-xs text-red-300">World staff list unavailable.</span>';
+        listContainer.innerHTML = '<div class="col-span-full rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center text-xs text-red-300">World staff list unavailable.</div>';
     }
 }
 
@@ -1181,6 +1253,8 @@ function parseWorldStaffNames(value) {
 }
 
 window.addWorldStaff = async function() {
+    if (!ensureManagerSession()) return;
+
     const input = document.getElementById('world-staff-name-input');
     if (!input) return;
 
@@ -1191,6 +1265,7 @@ window.addWorldStaff = async function() {
     }
 
     try {
+        console.log('[WorldStaff] Adding names:', names);
         const response = await adminFetch('/api/admin/staff', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1209,6 +1284,8 @@ window.addWorldStaff = async function() {
 };
 
 window.removeWorldStaffFromInput = async function() {
+    if (!ensureManagerSession()) return;
+
     const input = document.getElementById('world-staff-name-input');
     if (!input) return;
 
@@ -1219,6 +1296,7 @@ window.removeWorldStaffFromInput = async function() {
     }
 
     try {
+        console.log('[WorldStaff] Removing names:', names);
         const response = await adminFetch('/api/admin/staff', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1237,10 +1315,13 @@ window.removeWorldStaffFromInput = async function() {
 };
 
 window.removeWorldStaff = async function(name) {
+    if (!ensureManagerSession()) return;
+
     const safeName = String(name || '').trim();
     if (!safeName) return;
 
     try {
+        console.log('[WorldStaff] Removing single name:', safeName);
         const response = await adminFetch('/api/admin/staff', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
