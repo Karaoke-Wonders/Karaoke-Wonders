@@ -21,15 +21,30 @@
     <link rel="stylesheet" href="mobile.css" media="screen and (max-width: 768px)">
     <script src="schema.js" defer></script>
 </head>
-<body class="min-h-screen relative flex overflow-x-hidden bg-slate-950 text-slate-100 font-sans">
+<body class="min-h-screen relative flex flex-col md:flex-row overflow-x-hidden bg-slate-950 text-slate-100 font-sans">
 
     <!-- Background Glow Effects -->
     <div class="fixed top-1/4 left-10 w-96 h-96 bg-fuchsia-500/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
     <div class="fixed bottom-10 right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
     <div class="fixed top-1/2 right-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
+    <header class="md:hidden sticky top-0 z-30 flex items-center justify-between gap-3 px-4 py-3 border-b border-white/10 bg-slate-950/95 backdrop-blur">
+        <div class="flex items-center gap-3 min-w-0">
+            <div class="inline-flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-500/20 to-sky-500/20 border border-purple-500/30 shrink-0">
+                <i data-lucide="shield-check" class="w-4 h-4 text-purple-400"></i>
+            </div>
+            <div class="min-w-0">
+                <p class="text-sm font-bold text-white truncate">KaraokeWonders</p>
+                <p class="text-[10px] text-purple-300 uppercase tracking-wider">Admin Hub</p>
+            </div>
+        </div>
+        <button type="button" onclick="toggleAdminSidebar()" aria-label="Open admin navigation" class="inline-flex items-center justify-center w-11 h-11 rounded-xl border border-white/10 bg-white/5 text-slate-200">
+            <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+    </header>
+
     <!-- Sidebar Navigation -->
-    <aside class="w-72 glass border-r border-white/10 flex flex-col justify-between h-screen sticky top-0 z-20 shrink-0">
+    <aside id="admin-sidebar" class="fixed md:sticky top-0 left-0 z-50 md:z-20 w-72 glass border-r border-white/10 flex flex-col justify-between h-screen shrink-0 transition-transform duration-300 -translate-x-full md:translate-x-0">
         <div>
             <!-- Brand Header -->
             <div class="p-6 pb-4 border-b border-white/10 flex items-center gap-3">
@@ -113,8 +128,10 @@
         </div>
     </aside>
 
+    <div id="admin-sidebar-backdrop" onclick="closeAdminSidebar()" class="fixed inset-0 z-40 hidden bg-slate-950/70 backdrop-blur-sm md:hidden"></div>
+
     <!-- Main Content Workspace -->
-    <main class="flex-1 p-8 sm:p-10 max-w-7xl mx-auto overflow-y-auto min-h-screen">
+    <main class="w-full min-w-0 flex-1 p-4 sm:p-6 md:p-10 max-w-7xl mx-auto overflow-y-auto min-h-screen">
 
         <!-- Global Dashboard Alert Banner -->
         <div id="dashboard-alert" class="hidden mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between">

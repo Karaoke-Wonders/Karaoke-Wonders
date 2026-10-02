@@ -243,7 +243,6 @@ window.switchTab = function(tabName) {
     }
 };
 
-window.handleTabClick = window.switchTab;
 window.addEventListener('popstate', () => {
     const tab = restoreMainTabFromUrl('library');
     if (tab) {

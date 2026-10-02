@@ -40,6 +40,23 @@ function adminFetch(url, options = {}) {
     });
 }
 
+window.toggleAdminSidebar = function() {
+    const sidebar = document.getElementById('admin-sidebar');
+    const backdrop = document.getElementById('admin-sidebar-backdrop');
+    if (!sidebar || !backdrop) return;
+
+    const isOpening = sidebar.classList.contains('-translate-x-full');
+    sidebar.classList.toggle('-translate-x-full', !isOpening);
+    backdrop.classList.toggle('hidden', !isOpening);
+    document.body.classList.toggle('overflow-hidden', isOpening);
+};
+
+window.closeAdminSidebar = function() {
+    document.getElementById('admin-sidebar')?.classList.add('-translate-x-full');
+    document.getElementById('admin-sidebar-backdrop')?.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+};
+
 function restoreDashboardUrlState() {
     const params = new URLSearchParams(window.location.search);
     const songPage = Number.parseInt(params.get('songPage'), 10);
@@ -305,6 +322,8 @@ window.switchTab = function(tabName) {
         }
         updateDashboardUrlState(urlChanges, 'pushState');
     }
+
+    if (window.innerWidth < 768) window.closeAdminSidebar();
 
     hideDashboardAlert();
     if (typeof lucide !== 'undefined') {

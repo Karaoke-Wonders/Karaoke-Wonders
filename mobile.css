@@ -68,3 +68,147 @@ h2 {
 h3 {
     font-size: 1.25rem !important;
 }
+
+/* Mobile page-specific layout support */
+#admin-sidebar {
+    height: 100vh;
+    height: 100dvh;
+}
+
+#admin-sidebar > div:first-child {
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+}
+
+#inbox-header-inner {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding-inline: 1rem;
+}
+
+#inbox-header-actions {
+    margin-left: auto;
+    gap: 0.5rem;
+}
+
+#inbox-title {
+    min-width: 0;
+    font-size: 1rem !important;
+    line-height: 1.25;
+}
+
+#applications-header-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+#applications-header-actions > * {
+    width: 100%;
+    justify-content: center;
+}
+
+#settings-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+#settings-actions > * {
+    flex: 1 1 8rem;
+    justify-content: center;
+}
+
+body.mobile-secondary-page {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: max(0.75rem, env(safe-area-inset-top)) 1rem 1.5rem;
+}
+
+.mobile-site-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 80rem;
+    margin: 0 auto 1rem;
+    padding: 0.25rem 0 0.75rem;
+}
+
+.mobile-site-brand,
+.mobile-site-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.625rem;
+    min-height: 44px;
+}
+
+.mobile-site-brand {
+    min-width: 0;
+    color: #f1f5f9;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.mobile-site-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: 0 0 auto;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.06);
+    color: #a78bfa;
+}
+
+.mobile-site-back {
+    flex: 0 0 auto;
+    padding: 0 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+body.mobile-secondary-page > main {
+    width: 100%;
+    margin-inline: auto;
+}
+
+.overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+
+@media (max-width: 380px) {
+    #settings-actions > * {
+        flex-basis: 100%;
+    }
+}
+
+body.member-page {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+}
+
+#member-mobile-nav {
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+}
+
+#form-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+#form-header > div:first-child {
+    min-width: 0;
+}

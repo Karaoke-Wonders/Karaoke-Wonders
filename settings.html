@@ -19,11 +19,21 @@
     <link rel="stylesheet" href="mobile.css" media="screen and (max-width: 768px)">
     <meta name="theme-color" content="#90ee90" />
 </head>
-<body class="min-h-screen relative flex items-center justify-center bg-slate-950 text-slate-100 overflow-x-hidden font-['Inter',sans-serif] py-12">
+<body class="mobile-secondary-page min-h-screen relative flex items-center justify-center bg-slate-950 text-slate-100 overflow-x-hidden font-['Inter',sans-serif] py-12">
 
     <!-- Background Glow Effects -->
     <div class="fixed top-1/4 left-1/4 w-96 h-96 bg-fuchsia-500/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
     <div class="fixed bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
+
+    <header class="mobile-site-header md:hidden">
+        <a href="/main" class="mobile-site-brand" aria-label="Karaoke Wonders main portal">
+            <span class="mobile-site-mark"><i data-lucide="mic" class="w-4 h-4"></i></span>
+            <span>Karaoke Wonders</span>
+        </a>
+        <a href="/main" class="mobile-site-back">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i><span>Portal</span>
+        </a>
+    </header>
 
     <!-- Main Container -->
     <main class="w-full max-w-lg p-6">
@@ -109,7 +119,7 @@
                 <div id="status-message" class="hidden p-3 rounded-xl text-xs font-medium border"></div>
 
                 <!-- Action Buttons -->
-                <div class="flex items-center justify-between pt-4 border-t border-white/10">
+                <div id="settings-actions" class="flex items-center justify-between pt-4 border-t border-white/10">
                     <a href="/main" class="px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all inline-flex items-center gap-2">
                         <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
                         <span>Cancel</span>

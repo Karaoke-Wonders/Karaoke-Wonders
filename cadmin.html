@@ -17,13 +17,23 @@
     <link rel="icon" type="image/png" href="/image/kwicon.svg" />
     <link rel="stylesheet" href="mobile.css" media="screen and (max-width: 768px)">
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-100 font-['Inter',sans-serif] p-6 sm:p-12">
+<body class="mobile-secondary-page min-h-screen bg-slate-950 text-slate-100 font-['Inter',sans-serif] p-6 sm:p-12">
 
     <!-- Background Glow Effects -->
     <div class="fixed top-1/4 left-1/4 w-96 h-96 bg-fuchsia-500/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
     <div class="fixed bottom-1/4 right-1/4 w-96 h-96 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none -z-10"></div>
 
-    <main class="max-w-7xl mx-auto space-y-8">
+    <header class="mobile-site-header md:hidden">
+        <a href="/main" class="mobile-site-brand" aria-label="Karaoke Wonders main portal">
+            <span class="mobile-site-mark"><i data-lucide="mic" class="w-4 h-4"></i></span>
+            <span>Karaoke Wonders</span>
+        </a>
+        <a href="/main" class="mobile-site-back">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i><span>Portal</span>
+        </a>
+    </header>
+
+    <main class="w-full max-w-7xl mx-auto space-y-8">
         
         <!-- Header -->
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/10 pb-6">
@@ -32,7 +42,7 @@
                 <h1 class="text-3xl font-extrabold text-white mt-1">Applications Dashboard</h1>
                 <p class="text-xs text-slate-400 mt-1">Review and manage incoming submissions.</p>
             </div>
-            <div class="flex items-center gap-3">
+            <div id="applications-header-actions" class="flex items-center gap-3">
                 <button onclick="loadApplications()" class="px-4 py-2 rounded-xl text-xs font-semibold bg-white/5 hover:bg-white/10 border border-white/10 text-slate-200 transition-all flex items-center gap-2 cursor-pointer">
                     <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Refresh Data
                 </button>
