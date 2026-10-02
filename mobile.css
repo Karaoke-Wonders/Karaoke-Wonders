@@ -70,6 +70,15 @@ h3 {
 }
 
 /* Mobile page-specific layout support */
+body.mobile-centered-page {
+    min-height: 100vh;
+    min-height: 100dvh;
+    align-items: flex-start;
+    justify-content: center;
+    overflow-y: auto !important;
+    padding: max(1rem, env(safe-area-inset-top)) 1rem 1.5rem;
+}
+
 #admin-sidebar {
     height: 100vh;
     height: 100dvh;
