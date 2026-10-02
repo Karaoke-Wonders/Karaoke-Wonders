@@ -100,6 +100,13 @@
                     </div>
                 </button>
 
+                <button onclick="switchTab('kw-team')" id="tab-kw-team" class="sidebar-link w-full flex items-center justify-between px-4 py-3 rounded-xl text-yellow-300 hover:text-white hover:bg-yellow-500/10 border border-transparent hover:border-yellow-500/20 transition-all text-sm font-medium/10 hidden">
+                    <div class="flex items-center gap-3">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-yellow-400"></i>
+                        <span class="font-bold text-yellow-300">KW Team</span>
+                    </div>
+                </button>
+
                 <div class="pt-4 mt-4 border-t border-white/10">
                     <a href="main.html" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all text-sm font-medium">
                         <i data-lucide="external-link" class="w-4 h-4 text-slate-400"></i>
@@ -325,6 +332,74 @@
 
             <div id="world-staff-list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 <!-- Loaded via JS -->
+            </div>
+        </section>
+
+        <!-- TAB 6: KW TEAM -->
+        <section id="content-kw-team" class="tab-content hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-yellow-500/20 pb-6">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase bg-yellow-500/20 text-yellow-300 border border-yellow-500/30 tracking-wider mb-2">
+                        <i data-lucide="sparkles" class="w-3 h-3"></i> KW Team
+                    </div>
+                    <h2 class="text-3xl font-extrabold tracking-tight text-white">Community Operations</h2>
+                    <p class="text-slate-400 text-sm mt-1">Broadcast announcements, manage important site updates, and migrate accounts.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div class="glass rounded-2xl border border-yellow-500/20 p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-white">Main Page Announcement</h3>
+                        <span class="text-[10px] uppercase tracking-wider px-2 py-1 rounded-full bg-yellow-500/15 text-yellow-300 border border-yellow-500/30">Live</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="block text-[10px] font-extrabold uppercase tracking-[0.2em] text-yellow-300">Announcement Title</label>
+                        <input id="kw-announcement-title" type="text" placeholder="e.g. Weekly event update" class="input-field w-full rounded-xl px-4 py-3 text-xs border-yellow-500/20 focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="block text-[10px] font-extrabold uppercase tracking-[0.2em] text-yellow-300">Announcement Body</label>
+                        <textarea id="kw-announcement-body" rows="4" placeholder="Write the message that should appear at the top of the main page..." class="input-field w-full rounded-xl px-4 py-3 text-xs border-yellow-500/20 focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500"></textarea>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="block text-[10px] font-extrabold uppercase tracking-[0.2em] text-yellow-300">Priority</label>
+                        <select id="kw-announcement-type" class="input-field w-full rounded-xl px-4 py-3 text-xs border-yellow-500/20 focus:border-yellow-500 focus:ring-1 focus:ring-yellow-500">
+                            <option value="info">Info</option>
+                            <option value="success">Success</option>
+                            <option value="warning">Warning</option>
+                            <option value="error">Important</option>
+                        </select>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button onclick="window.publishKWAnnouncement()" class="flex-1 px-4 py-2.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 rounded-xl text-xs font-bold transition-all">Publish Announcement</button>
+                        <button onclick="window.clearKWAnnouncement()" class="flex-1 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition-all border border-slate-700">Clear</button>
+                    </div>
+                </div>
+
+                <div class="glass rounded-2xl border border-purple-500/20 p-5 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-white">Website Notes</h3>
+                        <span class="text-[10px] uppercase tracking-wider px-2 py-1 rounded-full bg-purple-500/15 text-purple-300 border border-purple-500/30">Key Info</span>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="block text-[10px] font-extrabold uppercase tracking-[0.2em] text-purple-300">Important Website Message</label>
+                        <textarea id="kw-website-note" rows="6" placeholder="Add a critical update, maintenance note, or important reminder for the main page..." class="input-field w-full rounded-xl px-4 py-3 text-xs border-purple-500/20 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"></textarea>
+                    </div>
+
+                    <button onclick="window.saveKWWebsiteNote()" class="w-full px-4 py-2.5 bg-purple-500 hover:bg-purple-400 text-white rounded-xl text-xs font-bold transition-all">Save Website Note</button>
+
+                    <div class="pt-4 border-t border-white/10">
+                        <h4 class="text-[10px] uppercase tracking-[0.2em] text-slate-400 mb-3">Maintenance Actions</h4>
+                        <button onclick="window.migrateUserProfiles()" class="w-full px-4 py-2.5 bg-emerald-500/15 hover:bg-emerald-500/20 text-emerald-300 rounded-xl text-xs font-bold transition-all border border-emerald-500/30 flex items-center justify-center gap-2">
+                            <i data-lucide="database" class="w-3.5 h-3.5"></i> Migrate All Existing Accounts
+                        </button>
+                    </div>
+                </div>
             </div>
         </section>
 

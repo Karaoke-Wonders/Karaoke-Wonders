@@ -57,6 +57,94 @@ window.closeAdminSidebar = function() {
     document.body.classList.remove('overflow-hidden');
 };
 
+const KW_TEAM_STORAGE = {
+    announcements: 'kw_team_announcements',
+    websiteNote: 'kw_team_website_note'
+};
+
+function getStoredKWAnnouncements() {
+    try {
+        const value = localStorage.getItem(KW_TEAM_STORAGE.announcements);
+        if (!value) return [];
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function saveStoredKWAnnouncements(items) {
+    localStorage.setItem(KW_TEAM_STORAGE.announcements, JSON.stringify(items));
+}
+
+function getStoredKWWebsiteNote() {
+    try {
+        return localStorage.getItem(KW_TEAM_STORAGE.websiteNote) || '';
+    } catch {
+        return '';
+    }
+}
+
+function saveStoredKWWebsiteNote(message) {
+    localStorage.setItem(KW_TEAM_STORAGE.websiteNote, String(message || ''));
+}
+
+function renderKWTeamPanel() {
+    const titleInput = document.getElementById('kw-announcement-title');
+    const bodyInput = document.getElementById('kw-announcement-body');
+    const typeInput = document.getElementById('kw-announcement-type');
+    const noteInput = document.getElementById('kw-website-note');
+    if (titleInput) titleInput.value = '';
+    if (bodyInput) bodyInput.value = '';
+    if (typeInput) typeInput.value = 'info';
+    if (noteInput) noteInput.value = getStoredKWWebsiteNote();
+}
+
+window.publishKWAnnouncement = function() {
+    const titleInput = document.getElementById('kw-announcement-title');
+    const bodyInput = document.getElementById('kw-announcement-body');
+    const typeInput = document.getElementById('kw-announcement-type');
+
+    const title = (titleInput?.value || '').trim();
+    const message = (bodyInput?.value || '').trim();
+    const type = typeInput?.value || 'info';
+    if (!title || !message) {
+        showDashboardAlert('Add both a title and a message before publishing the announcement.', 'error');
+        return;
+    }
+
+    const announcements = getStoredKWAnnouncements();
+    announcements.push({
+        id: `announce_${Date.now()}`,
+        title,
+        message,
+        type,
+        active: true,
+        createdAt: new Date().toISOString()
+    });
+    saveStoredKWAnnouncements(announcements);
+
+    if (titleInput) titleInput.value = '';
+    if (bodyInput) bodyInput.value = '';
+    if (typeInput) typeInput.value = 'info';
+    showDashboardAlert('Announcement published to the main page.', 'success');
+    renderMainAnnouncements();
+};
+
+window.clearKWAnnouncement = function() {
+    saveStoredKWAnnouncements([]);
+    showDashboardAlert('Announcement cleared from the main page.', 'success');
+    renderMainAnnouncements();
+};
+
+window.saveKWWebsiteNote = function() {
+    const noteInput = document.getElementById('kw-website-note');
+    const note = noteInput?.value || '';
+    saveStoredKWWebsiteNote(note);
+    showDashboardAlert('Website note saved.', 'success');
+    renderMainAnnouncements();
+};
+
 function restoreDashboardUrlState() {
     const params = new URLSearchParams(window.location.search);
     const songPage = Number.parseInt(params.get('songPage'), 10);
@@ -144,6 +232,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (worldStaffSearchInput) worldStaffSearchInput.value = worldStaffSearchQuery;
 
     setupUserProfile();
+    renderKWTeamPanel();
     bindGlobalEventListeners();
 
     const initialTab = restoreDashboardTabFromUrl('queue');
@@ -267,7 +356,7 @@ function applyWorldStaffSearch(query) {
 }
 
 window.switchTab = function(tabName) {
-    const validTabs = new Set(['queue', 'users', 'library', 'management', 'world-staff']);
+    const validTabs = new Set(['queue', 'users', 'library', 'management', 'world-staff', 'kw-team']);
     const nextTab = validTabs.has(tabName) ? tabName : 'queue';
 
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -348,6 +437,7 @@ async function refreshUserSession() {
     const sessionData = localStorage.getItem('kw_session');
     const managerPage = document.getElementById('tab-management');
     const worldStaffPage = document.getElementById('tab-world-staff');
+    const kwTeamPage = document.getElementById('tab-kw-team');
     if (!sessionData) return;
 
     try {
@@ -418,6 +508,9 @@ async function refreshUserSession() {
             if (worldStaffPage) {
                 worldStaffPage.classList.remove('hidden');
             }
+            if (kwTeamPage) {
+                kwTeamPage.classList.remove('hidden');
+            }
         }
         
         localStorage.setItem('kw_session', JSON.stringify(user));
@@ -437,8 +530,10 @@ window.addEventListener('kw-session-updated', event => {
     setupUserProfile();
     const managerTab = document.getElementById('tab-management');
     const worldStaffTab = document.getElementById('tab-world-staff');
+    const kwTeamTab = document.getElementById('tab-kw-team');
     if (managerTab) managerTab.classList.toggle('hidden', !(currentUser.isManager || currentUser.isTeam));
     if (worldStaffTab) worldStaffTab.classList.toggle('hidden', !(currentUser.isManager || currentUser.isTeam));
+    if (kwTeamTab) kwTeamTab.classList.toggle('hidden', !currentUser.isTeam);
 
     const roleBadge = document.getElementById('user-role-label');
     if (roleBadge) {
