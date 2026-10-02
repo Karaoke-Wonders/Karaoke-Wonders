@@ -2,10 +2,12 @@
 let currentUser = null;
 let allSongs = [];
 let allUsers = [];
+let allManagementUsers = [];
 let pendingQueue = [];
 
 // Filtering & Sorting State
 let userSearchQuery = '';
+let managementSearchQuery = '';
 let userRoleFilter = 'all';
 let songSearchQuery = '';
 let songSortBy = 'title';
@@ -42,12 +44,14 @@ function restoreDashboardUrlState() {
     const params = new URLSearchParams(window.location.search);
     const songPage = Number.parseInt(params.get('songPage'), 10);
     const userPage = Number.parseInt(params.get('userPage'), 10);
+    const managementPage = Number.parseInt(params.get('managementPage'), 10);
     songCurrentPage = Number.isFinite(songPage) && songPage > 0 ? songPage : 1;
     userCurrentPage = Number.isFinite(userPage) && userPage > 0 ? userPage : 1;
-    managementUserCurrentPage = userCurrentPage;
+    managementUserCurrentPage = Number.isFinite(managementPage) && managementPage > 0 ? managementPage : 1;
     songSearchQuery = params.get('songSearch') || '';
     songSortBy = params.get('songSort') || 'title';
     userSearchQuery = params.get('userSearch') || '';
+    managementSearchQuery = params.get('managementSearch') || '';
     userRoleFilter = params.get('userRole') || 'all';
     worldStaffSearchQuery = params.get('worldStaffSearch') || '';
 }
@@ -55,7 +59,7 @@ function restoreDashboardUrlState() {
 function updateDashboardUrlState(changes, historyMethod = 'replaceState') {
     const url = new URL(window.location.href);
     Object.entries(changes).forEach(([key, value]) => {
-        const isDefaultPage = (key === 'songPage' || key === 'userPage') && Number(value) <= 1;
+        const isDefaultPage = (key === 'songPage' || key === 'userPage' || key === 'managementPage') && Number(value) <= 1;
         const isDefaultSort = key === 'songSort' && value === 'title';
         const isDefaultRole = key === 'userRole' && value === 'all';
         const isDefaultTab = key === 'tab' && value === 'queue';
@@ -119,7 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const worldStaffSearchInput = document.getElementById('world-staff-search-input');
     if (songSearchInput) songSearchInput.value = songSearchQuery;
     if (userSearchInput) userSearchInput.value = userSearchQuery;
-    if (managementSearchInput) managementSearchInput.value = userSearchQuery;
+    if (managementSearchInput) managementSearchInput.value = managementSearchQuery;
     if (worldStaffSearchInput) worldStaffSearchInput.value = worldStaffSearchQuery;
 
     setupUserProfile();
@@ -134,7 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await Promise.all([
         loadPendingRequests(),
-        loadUserList(userCurrentPage),
+        loadUserList(),
         loadWorldStaffList(),
         loadSongs(songCurrentPage)
     ]);
@@ -149,14 +153,15 @@ window.addEventListener('popstate', () => {
     const worldStaffSearchInput = document.getElementById('world-staff-search-input');
     window.clearTimeout(songSearchTimer);
     window.clearTimeout(userSearchTimer);
+    window.clearTimeout(managementSearchTimer);
     window.clearTimeout(worldStaffSearchTimer);
     if (songSearchInput) songSearchInput.value = songSearchQuery;
     if (userSearchInput) userSearchInput.value = userSearchQuery;
-    if (managementSearchInput) managementSearchInput.value = userSearchQuery;
+    if (managementSearchInput) managementSearchInput.value = managementSearchQuery;
     if (worldStaffSearchInput) worldStaffSearchInput.value = worldStaffSearchQuery;
     applyWorldStaffSearch(worldStaffSearchQuery);
     loadSongs(songCurrentPage);
-    loadUserList(userCurrentPage);
+    loadUserList();
 });
 
 function bindGlobalEventListeners() {
@@ -257,11 +262,48 @@ window.switchTab = function(tabName) {
     const activeBtn = document.getElementById(`tab-${nextTab}`);
     if (activeBtn) activeBtn.classList.add('active');
 
-    const url = new URL(window.location.href);
-    const currentTab = url.searchParams.get('tab');
+    const currentTab = new URLSearchParams(window.location.search).get('tab') || 'queue';
     if (currentTab !== nextTab) {
-        url.searchParams.set('tab', nextTab);
-        window.history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`);
+        const urlChanges = { tab: nextTab };
+        if (currentTab === 'library') {
+            const hadSearchState = Boolean(songSearchQuery) || songCurrentPage !== 1;
+            window.clearTimeout(songSearchTimer);
+            songSearchQuery = '';
+            songCurrentPage = 1;
+            urlChanges.songSearch = '';
+            urlChanges.songPage = 1;
+            const searchInput = document.getElementById('admin-search-input');
+            if (searchInput) searchInput.value = '';
+            if (hadSearchState) loadSongs(1);
+        } else if (currentTab === 'users') {
+            const hadSearchState = Boolean(userSearchQuery) || userCurrentPage !== 1;
+            window.clearTimeout(userSearchTimer);
+            userSearchQuery = '';
+            userCurrentPage = 1;
+            urlChanges.userSearch = '';
+            urlChanges.userPage = 1;
+            const searchInput = document.getElementById('user-search-input');
+            if (searchInput) searchInput.value = '';
+            if (hadSearchState) loadUserList(1, 'users');
+        } else if (currentTab === 'management') {
+            const hadSearchState = Boolean(managementSearchQuery) || managementUserCurrentPage !== 1;
+            window.clearTimeout(managementSearchTimer);
+            managementSearchQuery = '';
+            managementUserCurrentPage = 1;
+            urlChanges.managementSearch = '';
+            urlChanges.managementPage = 1;
+            const searchInput = document.getElementById('management-search-input');
+            if (searchInput) searchInput.value = '';
+            if (hadSearchState) loadUserList(1, 'management');
+        } else if (currentTab === 'world-staff') {
+            window.clearTimeout(worldStaffSearchTimer);
+            worldStaffSearchQuery = '';
+            urlChanges.worldStaffSearch = '';
+            const searchInput = document.getElementById('world-staff-search-input');
+            if (searchInput) searchInput.value = '';
+            applyWorldStaffSearch('');
+        }
+        updateDashboardUrlState(urlChanges, 'pushState');
     }
 
     hideDashboardAlert();
@@ -910,60 +952,78 @@ let userTotalPages = 1;
 let managementUserTotalPages = 1;
 let totalStaffCount = 0;
 let userSearchTimer = null;
+let managementSearchTimer = null;
 
-async function loadUserList(page = 1) {
+async function fetchAdminUsers(page, search) {
+    const params = new URLSearchParams({
+        page: String(page),
+        limit: String(PAGE_SIZE),
+        search,
+        role: userRoleFilter,
+        _t: String(Date.now())
+    });
+    const response = await adminFetch(`/api/admin/users?${params}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error('Failed to load user list');
+    return response.json();
+}
+
+async function loadUserList(page, view = 'both') {
     const userContainer = document.getElementById('user-list');
     const usersBadge = document.getElementById('users-badge');
     const statUsers = document.getElementById('stat-users-count');
     const mainTotalUsers = document.getElementById('stat-staff-count');
     if (!userContainer) return;
 
-    userCurrentPage = page;
-    managementUserCurrentPage = page;
+    if (page !== undefined) {
+        if (view !== 'management') userCurrentPage = page;
+        if (view !== 'users') managementUserCurrentPage = page;
+    }
 
     try {
-        const params = new URLSearchParams({
-            page: String(page),
-            limit: String(PAGE_SIZE),
-            search: userSearchQuery,
-            role: userRoleFilter,
-            _t: String(Date.now())
-        });
-        const response = await adminFetch(`/api/admin/users?${params}`, { cache: 'no-store' });
-        if (!response.ok) throw new Error('Failed to load user list');
+        const [userData, managementData] = await Promise.all([
+            view === 'management' ? null : fetchAdminUsers(userCurrentPage, userSearchQuery),
+            view === 'users' ? null : fetchAdminUsers(managementUserCurrentPage, managementSearchQuery)
+        ]);
 
-        const data = await response.json();
+        if (userData !== null) {
+            allUsers = Array.isArray(userData) ? userData : (userData.users || []);
+            userCurrentPage = Array.isArray(userData) ? userCurrentPage : (Number(userData.page) || userCurrentPage);
+            userTotalPages = Array.isArray(userData)
+                ? Math.ceil(allUsers.length / PAGE_SIZE) || 1
+                : (Number(userData.totalPages) || 1);
 
-        if (Array.isArray(data)) {
-            allUsers = data;
-            userTotalPages = Math.ceil(allUsers.length / PAGE_SIZE) || 1;
-            managementUserTotalPages = userTotalPages;
+            if (usersBadge) usersBadge.textContent = Array.isArray(userData) ? allUsers.length : (userData.total || 0);
+            if (statUsers) statUsers.textContent = Array.isArray(userData) ? allUsers.length : (userData.total || 0);
+            if (mainTotalUsers) {
+                mainTotalUsers.textContent = Array.isArray(userData)
+                    ? allUsers.filter(user => user.isStaff || user.isManager).length
+                    : (userData.totalStaff ?? allUsers.filter(user => user.isStaff || user.isManager).length);
+            }
 
-            const totalStaff = allUsers.filter(u => u.isStaff || u.isManager).length;
+            renderUserList(allUsers, !Array.isArray(userData));
+        }
 
-            if (usersBadge) usersBadge.textContent = allUsers.length;
-            if (statUsers) statUsers.textContent = allUsers.length;
-            if (mainTotalUsers) mainTotalUsers.textContent = totalStaff;
+        if (managementData !== null) {
+            allManagementUsers = Array.isArray(managementData)
+                ? managementData
+                : (managementData.users || []);
+            managementUserCurrentPage = Array.isArray(managementData)
+                ? managementUserCurrentPage
+                : (Number(managementData.page) || managementUserCurrentPage);
+            managementUserTotalPages = Array.isArray(managementData)
+                ? Math.ceil(allManagementUsers.length / PAGE_SIZE) || 1
+                : (Number(managementData.totalPages) || 1);
 
-            renderUserList(allUsers, false);
-            renderManagementList(allUsers, false);
-        } else {
-            allUsers = data.users || [];
-            userCurrentPage = data.page || page;
-            managementUserCurrentPage = data.page || page;
-            userTotalPages = data.totalPages || 1;
-            managementUserTotalPages = data.totalPages || 1;
-
-            if (usersBadge) usersBadge.textContent = data.total || 0;
-            if (statUsers) statUsers.textContent = data.total || 0;
-            if (mainTotalUsers) mainTotalUsers.textContent = data.totalStaff ?? allUsers.filter(u => u.isStaff || u.isManager).length;
-
-            renderUserList(allUsers, true);
-            renderManagementList(allUsers, true);
+            renderManagementList(allManagementUsers, !Array.isArray(managementData));
         }
     } catch (err) {
         console.error(err);
-        userContainer.innerHTML = `<p class="col-span-full text-center text-red-400 text-xs py-8">User management service unavailable.</p>`;
+        const errorMessage = `<p class="col-span-full text-center text-red-400 text-xs py-8">User management service unavailable.</p>`;
+        if (view !== 'management') userContainer.innerHTML = errorMessage;
+        if (view !== 'users') {
+            const managementContainer = document.getElementById('management-user-list');
+            if (managementContainer) managementContainer.innerHTML = errorMessage;
+        }
     }
 }
 
@@ -1071,7 +1131,7 @@ function renderManagementList(users, isServerPaginated = true) {
     let pageStaffTotal = 0;
     const filtered = users.filter(u => {
         const userTags = (u.tags || []).map(tag => String(tag));
-        const q = userSearchQuery.toLowerCase();
+        const q = managementSearchQuery.toLowerCase();
         
         const matchesQuery = (
             (u.username || '').toLowerCase().includes(q) ||
@@ -1213,27 +1273,34 @@ function renderManagementList(users, isServerPaginated = true) {
 window.changeUserPage = async function(targetPage) {
     if (targetPage < 1 || targetPage > userTotalPages) return;
     updateDashboardUrlState({ userPage: targetPage }, 'pushState');
-    await loadUserList(targetPage);
+    await loadUserList(targetPage, 'users');
 };
 
 window.changeManagementUserPage = async function(targetPage) {
     if (targetPage < 1 || targetPage > managementUserTotalPages) return;
-    updateDashboardUrlState({ userPage: targetPage }, 'pushState');
-    await loadUserList(targetPage);
+    updateDashboardUrlState({ managementPage: targetPage }, 'pushState');
+    await loadUserList(targetPage, 'management');
 };
 
 window.filterUsers = function(query) {
     userSearchQuery = query || '';
     userCurrentPage = 1;
-    managementUserCurrentPage = 1;
     window.clearTimeout(userSearchTimer);
     userSearchTimer = window.setTimeout(() => {
         updateDashboardUrlState({ userSearch: userSearchQuery, userPage: 1 }, 'pushState');
-        loadUserList(1);
+        loadUserList(1, 'users');
     }, 250);
 };
 
-window.filterManagementUsers = window.filterUsers;
+window.filterManagementUsers = function(query) {
+    managementSearchQuery = query || '';
+    managementUserCurrentPage = 1;
+    window.clearTimeout(managementSearchTimer);
+    managementSearchTimer = window.setTimeout(() => {
+        updateDashboardUrlState({ managementSearch: managementSearchQuery, managementPage: 1 }, 'pushState');
+        loadUserList(1, 'management');
+    }, 250);
+};
 
 function ensureManagerSession() {
     const sessionData = localStorage.getItem('kw_session');
@@ -1402,8 +1469,15 @@ window.filterUsersByRole = function(role) {
     userRoleFilter = role || 'all';
     userCurrentPage = 1;
     managementUserCurrentPage = 1;
-    updateDashboardUrlState({ userRole: userRoleFilter, userPage: 1 }, 'pushState');
+    updateDashboardUrlState({
+        userRole: userRoleFilter,
+        userPage: 1,
+        userSearch: userSearchQuery,
+        managementPage: 1,
+        managementSearch: managementSearchQuery
+    }, 'pushState');
     window.clearTimeout(userSearchTimer);
+    window.clearTimeout(managementSearchTimer);
     loadUserList(1);
 };
 
@@ -1427,7 +1501,7 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
         if (!response.ok) throw new Error('Failed to update user tag state');
 
         showDashboardAlert('User authorization status updated.', 'success');
-        await loadUserList(userCurrentPage);
+        await loadUserList();
     } catch (err) {
         showDashboardAlert('Failed to update user status.', 'error');
     }

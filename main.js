@@ -212,8 +212,21 @@ window.switchTab = function(tabName) {
     if (activeBtn) activeBtn.classList.add('active');
 
     const url = new URL(window.location.href);
-    const currentTab = url.searchParams.get('tab');
+    const currentTab = url.searchParams.get('tab') || 'library';
     if (currentTab !== nextTab) {
+        if (currentTab === 'library') {
+            const searchInput = document.getElementById('search-input');
+            const hadLibraryFilter = Boolean(searchInput?.value.trim()) ||
+                currentPage !== 1 ||
+                url.searchParams.has('search') ||
+                url.searchParams.has('page');
+            window.clearTimeout(songSearchTimer);
+            if (searchInput) searchInput.value = '';
+            currentPage = 1;
+            url.searchParams.delete('search');
+            url.searchParams.delete('page');
+            if (hadLibraryFilter) loadSongLibrary(1, '');
+        }
         url.searchParams.set('tab', nextTab);
         window.history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`);
     }
