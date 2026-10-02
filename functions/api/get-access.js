@@ -1,9 +1,18 @@
-import { findDiscordThreadByName, patchDiscordThread, getDiscordThreadData, jsonResponse } from '../_middleware/utils.js';
+import { findBlacklistedThreadForIp, findDiscordThreadByName, getRequestIp, patchDiscordThread, getDiscordThreadData, jsonResponse } from '../_middleware/utils.js';
 
 export async function onRequestPost({ request, env }) {
     const body = await request.json();
     console.log("[handleGetAccount] Login attempt for username:", body.username);
     const { username, password } = body;
+    const ipAddress = getRequestIp(request);
+
+    if (ipAddress) {
+        const blacklistedThread = await findBlacklistedThreadForIp(ipAddress, env);
+        if (blacklistedThread) {
+            console.warn(`[handleGetAccount] Access blocked for IP ${ipAddress}: it is tied to a blacklisted account.`);
+            return jsonResponse({ error: 'This IP is currently blacklisted until the active blacklist tag is removed.' }, 403);
+        }
+    }
 
     if (!username) {
         console.warn("[handleGetAccount] Username field is missing.");

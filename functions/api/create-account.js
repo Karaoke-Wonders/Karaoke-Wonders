@@ -1,4 +1,4 @@
-import { findDiscordThreadByName, jsonResponse } from '../_middleware/utils.js';
+import { findBlacklistedThreadForIp, findDiscordThreadByName, getRequestIp, jsonResponse } from '../_middleware/utils.js';
 // Import the text file directly (supported by Cloudflare Pages/Vite build tools)
 import blacklistText from '../../files/nameBL.txt?raw'; 
 // Note: Adjust the relative path above depending on where this function file is located 
@@ -12,6 +12,15 @@ export async function onRequestPost({ request, env }) {
     if (!username || !password) {
         console.warn("[handleCreateAccount] Missing username or password.");
         return jsonResponse({ error: "Username and password are required." }, 400);
+    }
+
+    const ipAddress = getRequestIp(request);
+    if (ipAddress) {
+        const blacklistedThread = await findBlacklistedThreadForIp(ipAddress, env);
+        if (blacklistedThread) {
+            console.warn(`[handleCreateAccount] IP ${ipAddress} is blacklisted and cannot create a new account while the blacklist tag remains active.`);
+            return jsonResponse({ error: "This IP is currently blacklisted and cannot create a new account until the blacklist is removed." }, 403);
+        }
     }
 
     const lowerUsername = username.trim().toLowerCase();
@@ -54,7 +63,8 @@ export async function onRequestPost({ request, env }) {
     const jsonPayloadString = JSON.stringify({
         password: password,
         avatarUrl: 'https://cdn.discordapp.com/embed/avatars/0.png',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        ipAddress: ipAddress || null
     });
 
     const threadPayload = {

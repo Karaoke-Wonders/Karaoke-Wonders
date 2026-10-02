@@ -27,6 +27,84 @@ export function sanitizeUser(userId) {
     return String(userId).replace(/[^a-zA-Z0-9_\-]/g, '_');
 }
 
+export function getRequestIp(request) {
+    const candidates = [
+        'cf-connecting-ip',
+        'x-real-ip',
+        'x-forwarded-for',
+        'true-client-ip'
+    ];
+
+    for (const headerName of candidates) {
+        const rawValue = request?.headers?.get?.(headerName);
+        if (!rawValue) continue;
+        const value = rawValue.split(',')[0].trim();
+        if (value) return value;
+    }
+
+    return '';
+}
+
+export function normalizeIpAddress(ip) {
+    return String(ip || '').trim().replace(/^\[|\]$/g, '').toLowerCase();
+}
+
+export async function listForumThreads(env) {
+    const threads = [];
+    const seen = new Set();
+
+    const guildId = await resolveGuildId(env);
+    if (guildId) {
+        const activeRes = await fetch(`https://discord.com/api/v10/guilds/${guildId}/threads/active`, {
+            headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` }
+        });
+        if (activeRes.ok) {
+            const activeData = await activeRes.json();
+            for (const thread of activeData.threads || []) {
+                if (thread.parent_id === env.DISCORD_FORUM_CHANNEL_ID && !seen.has(thread.id)) {
+                    seen.add(thread.id);
+                    threads.push(thread);
+                }
+            }
+        }
+    }
+
+    const archivedRes = await fetch(`https://discord.com/api/v10/channels/${env.DISCORD_FORUM_CHANNEL_ID}/threads/archived/public`, {
+        headers: { 'Authorization': `Bot ${env.DISCORD_BOT_TOKEN}` }
+    });
+    if (archivedRes.ok) {
+        const archivedData = await archivedRes.json();
+        for (const thread of archivedData.threads || []) {
+            if (!seen.has(thread.id)) {
+                seen.add(thread.id);
+                threads.push(thread);
+            }
+        }
+    }
+
+    return threads;
+}
+
+export async function findBlacklistedThreadForIp(ip, env) {
+    const normalizedIp = normalizeIpAddress(ip);
+    if (!normalizedIp || !env.DISCORD_TAG_BLACKLISTED) return null;
+
+    const threads = await listForumThreads(env);
+    for (const thread of threads) {
+        const tags = thread.applied_tags || [];
+        if (!tags.includes(env.DISCORD_TAG_BLACKLISTED)) continue;
+
+        const profile = await getDiscordThreadData(thread.id, env);
+        if (!profile) continue;
+
+        if (normalizeIpAddress(profile.ipAddress) === normalizedIp) {
+            return thread;
+        }
+    }
+
+    return null;
+}
+
 export async function saveInboxNotification(userId, type, songName, artist, message, env) {
     const owner = env.GITHUB_OWNER;
     const repo = env.GITHUB_REPO;
@@ -241,6 +319,14 @@ export async function getDiscordThreadData(threadId, env) {
 }
 
 export async function authenticateAccountRequest(request, env) {
+    const ipAddress = getRequestIp(request);
+    if (ipAddress) {
+        const blacklistedThread = await findBlacklistedThreadForIp(ipAddress, env);
+        if (blacklistedThread) {
+            return jsonResponse({ error: 'This IP is currently blacklisted until the active blacklist tag is removed.' }, 403);
+        }
+    }
+
     const authorization = request.headers.get('Authorization') || '';
     if (!authorization.startsWith('Bearer ') || authorization.length > 4096) {
         return jsonResponse({ error: 'Authentication required.' }, 401);
