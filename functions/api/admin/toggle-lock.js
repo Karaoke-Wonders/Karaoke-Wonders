@@ -14,5 +14,5 @@ export async function onRequestPost({ request, env }) {
         ? (add ? "Blacklisted User" : "Un-blacklisted User")
         : (add ? "Restricted User" : "Un-restricted User");
     
-    return await updateThreadTag(threadId, targetTag, add, env, authorization.username, actionLabel);
+    return await updateThreadTag(threadId, targetTag, add, env, authorization.username, actionLabel, true);
 }

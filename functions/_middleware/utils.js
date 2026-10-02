@@ -524,7 +524,7 @@ export async function removePendingSongFromGitHub(trackId, env) {
     return true;
 }
 
-export async function updateThreadTag(threadId, tagId, add, env, staffName = "Staff Member", actionDescription = "Updated User Status") {
+export async function updateThreadTag(threadId, tagId, add, env, staffName = "Staff Member", actionDescription = "Updated User Status", protectStaff = false) {
     if (typeof threadId !== 'string' || !/^\d{17,20}$/.test(threadId)) {
         return jsonResponse({ error: 'Invalid thread ID.' }, 400);
     }
@@ -540,6 +540,9 @@ export async function updateThreadTag(threadId, tagId, add, env, staffName = "St
     }
     const threadData = await threadRes.json();
     let tags = threadData.applied_tags || [];
+    if (protectStaff && add && tags.includes(env.DISCORD_TAG_STAFF)) {
+        return jsonResponse({ error: 'Staff accounts are protected from new restrictions and blacklists.' }, 403);
+    }
     if (add && !tags.includes(tagId)) tags.push(tagId);
     else if (!add) tags = tags.filter(t => t !== tagId);
 

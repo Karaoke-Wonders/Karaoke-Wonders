@@ -1100,7 +1100,7 @@ function renderUserList(users, isServerPaginated = true) {
 
                         <div class="flex items-center gap-1.5 flex-wrap justify-end">
                             ${u.isManager ? '<span class="text-[10px] px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-bold">Manager</span>' : ''}
-                            ${u.isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30 font-bold">Staff</span>' : ''}
+                            ${u.isStaff ? '<span class="text-[10px] px-2 py-0.5 rounded bg-purple-500/20 text-purple-200 border border-purple-500/30 font-bold">Staff Protected</span>' : ''}
                             ${u.isLocked ? '<span class="text-[10px] px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 font-bold">Banned</span>' : ''}
                             ${u.isRestricted ? '<span class="text-[10px] px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 font-bold">Restricted</span>' : ''}
                         </div>
@@ -1109,12 +1109,23 @@ function renderUserList(users, isServerPaginated = true) {
                 </div>
 
                 <div class="flex items-center gap-2 pt-3 border-t border-white/5 flex-wrap">
-                    <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.restricted}', ${!u.isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
-                        ${u.isRestricted ? 'Unrestrict' : 'Restrict'}
-                    </button>
-                    <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.blacklisted}', ${!u.isLocked})" class="flex-1 py-1.5 px-2 ${u.isLocked ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20'} border rounded-lg text-xs font-bold transition-all">
-                        ${u.isLocked ? 'Unban' : 'Blacklist'}
-                    </button>
+                    ${u.isStaff ? `
+                        <div class="w-full flex flex-col gap-2">
+                            <p class="text-[11px] text-purple-300 flex items-center gap-1.5">
+                                <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+                                Staff accounts are protected from new restrictions and blacklists.
+                            </p>
+                            ${u.isRestricted ? `<button onclick="toggleUserTag('${threadId}', '${TAG_IDS.restricted}', false)" class="w-full py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">Remove Restriction</button>` : ''}
+                            ${u.isLocked ? `<button onclick="toggleUserTag('${threadId}', '${TAG_IDS.blacklisted}', false)" class="w-full py-1.5 px-2 bg-green-500/10 text-green-400 hover:bg-green-500/20 border border-green-500/20 rounded-lg text-xs font-bold transition-all">Unban</button>` : ''}
+                        </div>
+                    ` : `
+                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.restricted}', ${!u.isRestricted})" class="flex-1 py-1.5 px-2 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 rounded-lg text-xs font-bold transition-all">
+                            ${u.isRestricted ? 'Unrestrict' : 'Restrict'}
+                        </button>
+                        <button onclick="toggleUserTag('${threadId}', '${TAG_IDS.blacklisted}', ${!u.isLocked})" class="flex-1 py-1.5 px-2 ${u.isLocked ? 'bg-green-500/10 text-green-400 hover:bg-green-500/20 border-green-500/20' : 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20'} border rounded-lg text-xs font-bold transition-all">
+                            ${u.isLocked ? 'Unban' : 'Blacklist'}
+                        </button>
+                    `}
                 </div>
             </div>
         `;
@@ -1517,12 +1528,15 @@ window.toggleUserTag = async function(threadId, tagId, shouldAdd) {
                 add: shouldAdd,
             })
         });
-        if (!response.ok) throw new Error('Failed to update user tag state');
+        if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.error || 'Failed to update user tag state');
+        }
 
         showDashboardAlert('User authorization status updated.', 'success');
         await loadUserList();
     } catch (err) {
-        showDashboardAlert('Failed to update user status.', 'error');
+        showDashboardAlert(err.message || 'Failed to update user status.', 'error');
     }
 };
 
