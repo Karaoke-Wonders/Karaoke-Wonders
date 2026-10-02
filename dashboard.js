@@ -111,6 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await Promise.all([
         loadPendingRequests(),
         loadUserList(userCurrentPage),
+        loadWorldStaffList(),
         loadSongs(songCurrentPage)
     ]);
 });
@@ -132,6 +133,24 @@ function bindGlobalEventListeners() {
     const editTrackForm = document.getElementById('edit-track-form');
     if (editTrackForm) {
         editTrackForm.addEventListener('submit', window.updateTrackDirectly);
+    }
+
+    const worldStaffInput = document.getElementById('world-staff-name-input');
+    const worldStaffAddBtn = document.getElementById('world-staff-add-btn');
+    const worldStaffRemoveBtn = document.getElementById('world-staff-remove-btn');
+    if (worldStaffInput) {
+        worldStaffInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                window.addWorldStaff();
+            }
+        });
+    }
+    if (worldStaffAddBtn) {
+        worldStaffAddBtn.addEventListener('click', () => window.addWorldStaff());
+    }
+    if (worldStaffRemoveBtn) {
+        worldStaffRemoveBtn.addEventListener('click', () => window.removeWorldStaffFromInput());
     }
 
     document.addEventListener('keydown', (e) => {
@@ -1117,6 +1136,126 @@ window.filterUsers = function(query) {
 };
 
 window.filterManagementUsers = window.filterUsers;
+
+async function loadWorldStaffList() {
+    const listContainer = document.getElementById('world-staff-list');
+    const countBadge = document.getElementById('world-staff-count');
+    if (!listContainer) return;
+
+    try {
+        const response = await adminFetch('/api/admin/staff', { cache: 'no-store' });
+        if (!response.ok) throw new Error('Unable to load world staff list');
+        const data = await response.json();
+        const staff = Array.isArray(data.staff) ? data.staff : [];
+
+        if (countBadge) countBadge.textContent = String(staff.length);
+
+        if (staff.length === 0) {
+            listContainer.innerHTML = '<span class="text-xs text-slate-500">No world staff names saved yet.</span>';
+            return;
+        }
+
+        listContainer.innerHTML = staff.map((name) => `
+            <div class="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-2.5 py-2 text-xs text-red-100">
+                <span class="font-medium">${escapeHtml(name)}</span>
+                <button type="button" data-world-staff-name="${escapeAttr(name)}" class="world-staff-remove-btn ml-auto rounded-lg border border-red-500/20 bg-red-500/10 px-2 py-1 text-[10px] font-bold text-red-300 hover:bg-red-500/20 transition-all">Remove</button>
+            </div>
+        `).join('');
+
+        listContainer.querySelectorAll('.world-staff-remove-btn').forEach((button) => {
+            button.addEventListener('click', () => {
+                window.removeWorldStaff(button.dataset.worldStaffName);
+            });
+        });
+    } catch (err) {
+        console.error('[loadWorldStaffList]', err);
+        listContainer.innerHTML = '<span class="text-xs text-red-300">World staff list unavailable.</span>';
+    }
+}
+
+function parseWorldStaffNames(value) {
+    return (value || '')
+        .split(/[\n,]+/)
+        .map(name => String(name).trim())
+        .filter(Boolean);
+}
+
+window.addWorldStaff = async function() {
+    const input = document.getElementById('world-staff-name-input');
+    if (!input) return;
+
+    const names = parseWorldStaffNames(input.value);
+    if (!names.length) {
+        showDashboardAlert('Enter at least one VRChat player name before saving.', 'error');
+        return;
+    }
+
+    try {
+        const response = await adminFetch('/api/admin/staff', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'add', names })
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'Failed to add staff names');
+
+        input.value = '';
+        showDashboardAlert(data.message || 'World staff entries added.', 'success');
+        await loadWorldStaffList();
+    } catch (err) {
+        showDashboardAlert(err.message || 'Failed to add world staff entries.', 'error');
+    }
+};
+
+window.removeWorldStaffFromInput = async function() {
+    const input = document.getElementById('world-staff-name-input');
+    if (!input) return;
+
+    const names = parseWorldStaffNames(input.value);
+    if (!names.length) {
+        showDashboardAlert('Enter the names you want to remove.', 'error');
+        return;
+    }
+
+    try {
+        const response = await adminFetch('/api/admin/staff', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'remove', names })
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'Failed to remove staff names');
+
+        input.value = '';
+        showDashboardAlert(data.message || 'World staff entries removed.', 'success');
+        await loadWorldStaffList();
+    } catch (err) {
+        showDashboardAlert(err.message || 'Failed to remove world staff entries.', 'error');
+    }
+};
+
+window.removeWorldStaff = async function(name) {
+    const safeName = String(name || '').trim();
+    if (!safeName) return;
+
+    try {
+        const response = await adminFetch('/api/admin/staff', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'remove', name: safeName })
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || 'Failed to remove staff name');
+
+        showDashboardAlert(data.message || 'World staff entry removed.', 'success');
+        await loadWorldStaffList();
+    } catch (err) {
+        showDashboardAlert(err.message || 'Failed to remove world staff entry.', 'error');
+    }
+};
 
 window.filterUsersByRole = function(role) {
     userRoleFilter = role || 'all';
