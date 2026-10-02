@@ -11,6 +11,8 @@ let songSearchQuery = '';
 let songSortBy = 'title';
 let songSearchTimer = null;
 let pendingSearchQuery = '';
+let worldStaffSearchQuery = '';
+let worldStaffSearchTimer = null;
 
 // Pagination States (10 items per page)
 const PAGE_SIZE = 10;
@@ -47,6 +49,7 @@ function restoreDashboardUrlState() {
     songSortBy = params.get('songSort') || 'title';
     userSearchQuery = params.get('userSearch') || '';
     userRoleFilter = params.get('userRole') || 'all';
+    worldStaffSearchQuery = params.get('worldStaffSearch') || '';
 }
 
 function updateDashboardUrlState(changes, historyMethod = 'replaceState') {
@@ -55,13 +58,29 @@ function updateDashboardUrlState(changes, historyMethod = 'replaceState') {
         const isDefaultPage = (key === 'songPage' || key === 'userPage') && Number(value) <= 1;
         const isDefaultSort = key === 'songSort' && value === 'title';
         const isDefaultRole = key === 'userRole' && value === 'all';
-        if (value === null || value === undefined || value === '' || isDefaultPage || isDefaultSort || isDefaultRole) {
+        const isDefaultTab = key === 'tab' && value === 'queue';
+        if (value === null || value === undefined || value === '' || isDefaultPage || isDefaultSort || isDefaultRole || isDefaultTab) {
             url.searchParams.delete(key);
         } else {
             url.searchParams.set(key, String(value));
         }
     });
-    window.history[historyMethod]({}, '', `${url.pathname}${url.search}${url.hash}`);
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (nextUrl !== currentUrl) window.history[historyMethod]({}, '', nextUrl);
+}
+
+function restoreDashboardTabFromUrl(defaultTab = 'queue') {
+    const validTabs = new Set(['queue', 'users', 'library', 'management', 'world-staff']);
+    const params = new URLSearchParams(window.location.search);
+    const requestedTab = params.get('tab');
+    const tab = validTabs.has(requestedTab) ? requestedTab : defaultTab;
+    if (requestedTab !== tab) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    }
+    return tab;
 }
 
 // ==========================================
@@ -97,12 +116,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const songSearchInput = document.getElementById('admin-search-input');
     const userSearchInput = document.getElementById('user-search-input');
     const managementSearchInput = document.getElementById('management-search-input');
+    const worldStaffSearchInput = document.getElementById('world-staff-search-input');
     if (songSearchInput) songSearchInput.value = songSearchQuery;
     if (userSearchInput) userSearchInput.value = userSearchQuery;
     if (managementSearchInput) managementSearchInput.value = userSearchQuery;
+    if (worldStaffSearchInput) worldStaffSearchInput.value = worldStaffSearchQuery;
 
     setupUserProfile();
     bindGlobalEventListeners();
+
+    const initialTab = restoreDashboardTabFromUrl('queue');
+    window.switchTab(initialTab);
 
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
@@ -122,9 +146,15 @@ window.addEventListener('popstate', () => {
     const songSearchInput = document.getElementById('admin-search-input');
     const userSearchInput = document.getElementById('user-search-input');
     const managementSearchInput = document.getElementById('management-search-input');
+    const worldStaffSearchInput = document.getElementById('world-staff-search-input');
+    window.clearTimeout(songSearchTimer);
+    window.clearTimeout(userSearchTimer);
+    window.clearTimeout(worldStaffSearchTimer);
     if (songSearchInput) songSearchInput.value = songSearchQuery;
     if (userSearchInput) userSearchInput.value = userSearchQuery;
     if (managementSearchInput) managementSearchInput.value = userSearchQuery;
+    if (worldStaffSearchInput) worldStaffSearchInput.value = worldStaffSearchQuery;
+    applyWorldStaffSearch(worldStaffSearchQuery);
     loadSongs(songCurrentPage);
     loadUserList(userCurrentPage);
 });
@@ -156,14 +186,12 @@ function bindGlobalEventListeners() {
     }
     if (worldStaffSearchInput) {
         worldStaffSearchInput.addEventListener('input', (e) => {
-            const query = (e.target.value || '').trim().toLowerCase();
-            const list = document.getElementById('world-staff-list');
-            if (!list) return;
-            const cards = Array.from(list.querySelectorAll('[data-world-staff-card]'));
-            cards.forEach((card) => {
-                const name = (card.dataset.worldStaffName || '').toLowerCase();
-                card.classList.toggle('hidden', query && !name.includes(query));
-            });
+            worldStaffSearchQuery = e.target.value || '';
+            applyWorldStaffSearch(worldStaffSearchQuery);
+            window.clearTimeout(worldStaffSearchTimer);
+            worldStaffSearchTimer = window.setTimeout(() => {
+                updateDashboardUrlState({ worldStaffSearch: worldStaffSearchQuery }, 'pushState');
+            }, 250);
         });
     }
     if (copyWorldStaffBtn) {
@@ -206,21 +234,48 @@ function setupUserProfile() {
     }
 }
 
+function applyWorldStaffSearch(query) {
+    const list = document.getElementById('world-staff-list');
+    if (!list) return;
+    const normalizedQuery = (query || '').trim().toLowerCase();
+    list.querySelectorAll('[data-world-staff-card]').forEach((card) => {
+        const name = (card.dataset.worldStaffName || '').toLowerCase();
+        card.classList.toggle('hidden', normalizedQuery && !name.includes(normalizedQuery));
+    });
+}
+
 window.switchTab = function(tabName) {
+    const validTabs = new Set(['queue', 'users', 'library', 'management', 'world-staff']);
+    const nextTab = validTabs.has(tabName) ? tabName : 'queue';
+
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
     document.querySelectorAll('.sidebar-link').forEach(btn => btn.classList.remove('active'));
 
-    const activeSection = document.getElementById(`content-${tabName}`);
+    const activeSection = document.getElementById(`content-${nextTab}`);
     if (activeSection) activeSection.classList.remove('hidden');
 
-    const activeBtn = document.getElementById(`tab-${tabName}`);
+    const activeBtn = document.getElementById(`tab-${nextTab}`);
     if (activeBtn) activeBtn.classList.add('active');
+
+    const url = new URL(window.location.href);
+    const currentTab = url.searchParams.get('tab');
+    if (currentTab !== nextTab) {
+        url.searchParams.set('tab', nextTab);
+        window.history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    }
 
     hideDashboardAlert();
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
     }
 };
+
+window.addEventListener('popstate', () => {
+    const tab = restoreDashboardTabFromUrl('queue');
+    if (tab) {
+        window.switchTab(tab);
+    }
+});
 
 window.logout = function() {
     localStorage.removeItem('kw_session');
@@ -694,15 +749,17 @@ window.changeSongPage = async function(targetPage) {
 window.filterSongs = function(query) {
     songSearchQuery = query || '';
     songCurrentPage = 1;
-    updateDashboardUrlState({ songSearch: songSearchQuery, songPage: 1 });
     window.clearTimeout(songSearchTimer);
-    songSearchTimer = window.setTimeout(() => loadSongs(1), 250);
+    songSearchTimer = window.setTimeout(() => {
+        updateDashboardUrlState({ songSearch: songSearchQuery, songPage: 1 }, 'pushState');
+        loadSongs(1);
+    }, 250);
 };
 
 window.sortSongs = function(sortBy) {
     songSortBy = sortBy || 'title';
     songCurrentPage = 1;
-    updateDashboardUrlState({ songSort: songSortBy, songPage: 1 });
+    updateDashboardUrlState({ songSort: songSortBy, songPage: 1 }, 'pushState');
     loadSongs(1);
 };
 
@@ -1169,9 +1226,11 @@ window.filterUsers = function(query) {
     userSearchQuery = query || '';
     userCurrentPage = 1;
     managementUserCurrentPage = 1;
-    updateDashboardUrlState({ userSearch: userSearchQuery, userPage: 1 });
     window.clearTimeout(userSearchTimer);
-    userSearchTimer = window.setTimeout(() => loadUserList(1), 250);
+    userSearchTimer = window.setTimeout(() => {
+        updateDashboardUrlState({ userSearch: userSearchQuery, userPage: 1 }, 'pushState');
+        loadUserList(1);
+    }, 250);
 };
 
 window.filterManagementUsers = window.filterUsers;
@@ -1233,6 +1292,7 @@ async function loadWorldStaffList() {
                 </div>
             </div>
         `).join('');
+        applyWorldStaffSearch(worldStaffSearchQuery);
 
         listContainer.querySelectorAll('.world-staff-remove-btn').forEach((button) => {
             button.addEventListener('click', () => {
@@ -1342,7 +1402,7 @@ window.filterUsersByRole = function(role) {
     userRoleFilter = role || 'all';
     userCurrentPage = 1;
     managementUserCurrentPage = 1;
-    updateDashboardUrlState({ userRole: userRoleFilter, userPage: 1 });
+    updateDashboardUrlState({ userRole: userRoleFilter, userPage: 1 }, 'pushState');
     window.clearTimeout(userSearchTimer);
     loadUserList(1);
 };

@@ -82,6 +82,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. Render UI immediately using normalized credentials
     setupMemberProfile();
+    const initialTab = restoreMainTabFromUrl('library');
+    window.switchTab(initialTab);
     loadSongLibrary(currentPage);
 
     if (typeof lucide !== 'undefined') {
@@ -182,21 +184,44 @@ window.addEventListener('kw-session-updated', event => {
 
 window.addEventListener('kw-song-catalog-updated', () => loadSongLibrary(currentPage));
 
+function restoreMainTabFromUrl(defaultTab = 'library') {
+    const validTabs = new Set(['library', 'upload', 'my-submissions']);
+    const params = new URLSearchParams(window.location.search);
+    const requestedTab = params.get('tab');
+    const tab = validTabs.has(requestedTab) ? requestedTab : defaultTab;
+    if (requestedTab !== tab) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    }
+    return tab;
+}
+
 // Tab switcher for main.html
 window.switchTab = function(tabName) {
+    const validTabs = new Set(['library', 'upload', 'my-submissions']);
+    const nextTab = validTabs.has(tabName) ? tabName : 'library';
+
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
     document.querySelectorAll('.sidebar-link').forEach(btn => btn.classList.remove('active'));
 
-    const activeSection = document.getElementById(`content-${tabName}`);
+    const activeSection = document.getElementById(`content-${nextTab}`);
     if (activeSection) activeSection.classList.remove('hidden');
 
-    const activeBtn = document.getElementById(`tab-${tabName}`);
+    const activeBtn = document.getElementById(`tab-${nextTab}`);
     if (activeBtn) activeBtn.classList.add('active');
+
+    const url = new URL(window.location.href);
+    const currentTab = url.searchParams.get('tab');
+    if (currentTab !== nextTab) {
+        url.searchParams.set('tab', nextTab);
+        window.history.pushState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    }
 
     hideAlert();
 
     // Trigger submissions load when switching to My Submissions tab
-    if (tabName === 'my-submissions' || tabName === 'submissions') {
+    if (nextTab === 'my-submissions' || nextTab === 'submissions') {
         loadMySubmissions();
     }
 
@@ -204,6 +229,14 @@ window.switchTab = function(tabName) {
         lucide.createIcons();
     }
 };
+
+window.handleTabClick = window.switchTab;
+window.addEventListener('popstate', () => {
+    const tab = restoreMainTabFromUrl('library');
+    if (tab) {
+        window.switchTab(tab);
+    }
+});
 
 window.logout = function() {
     localStorage.removeItem('kw_session');
@@ -596,18 +629,22 @@ window.changePage = function(direction) {
 // Search and filter placeholder (can be expanded later for server-side search)
 function filterSongs(query) {
     currentPage = 1;
-    updateMainUrlState(currentPage, query);
     window.clearTimeout(songSearchTimer);
-    songSearchTimer = window.setTimeout(() => loadSongLibrary(1, query), 250);
+    songSearchTimer = window.setTimeout(() => {
+        updateMainUrlState(currentPage, query, 'pushState');
+        loadSongLibrary(1, query);
+    }, 250);
 }
 
 function updateMainUrlState(page, search, historyMethod = 'replaceState') {
     const url = new URL(window.location.href);
+    const currentUrl = `${url.pathname}${url.search}${url.hash}`;
     if (page > 1) url.searchParams.set('page', String(page));
     else url.searchParams.delete('page');
     if (search.trim()) url.searchParams.set('search', search.trim());
     else url.searchParams.delete('search');
-    window.history[historyMethod]({}, '', `${url.pathname}${url.search}${url.hash}`);
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    if (nextUrl !== currentUrl) window.history[historyMethod]({}, '', nextUrl);
 }
 
 window.addEventListener('popstate', () => {
