@@ -18,7 +18,7 @@ export async function onRequestPost(context) {
     const siteContext = matches.matches.map(m => m.vector.metadata?.text || '').join('\n\n');
 
     // 3. Generate response with active model @cf/meta/llama-3.1-8b-instruct
-    const aiResponse = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+    const aiResponse = await env.AI.run('@cf/cloudflare/clef', {
       messages: [
         {
           role: 'system',
