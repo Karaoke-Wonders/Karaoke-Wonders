@@ -42,6 +42,7 @@ export async function onRequestPost(context) {
 
     // 4. Send request to Llama with strict guardrails
     const aiResponse = await env.AI.run('@cf/meta/llama-3.2-1b-instruct', {
+      temperature: 0.0, // FORCES strict factual adherence
       messages: [
         {
           role: 'system',
