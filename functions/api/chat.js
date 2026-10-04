@@ -43,9 +43,10 @@ export async function onRequestPost(context) {
       });
     }
 
-    // 4. Call GLM-4.7 Flash model
-    const aiResponse = await env.AI.run('@cf/zai-org/glm-4.7-flash', {
+    // 4. Request streaming response from GLM-4.7 Flash
+    const stream = await env.AI.run('@cf/zai-org/glm-4.7-flash', {
       temperature: 0.1,
+      stream: true,
       messages: [
         {
           role: 'system',
@@ -68,23 +69,13 @@ Formatting rules:
       ]
     });
 
-    // 5. Extract reasoning content AND main response text
-    const replyText = 
-      aiResponse?.response || 
-      aiResponse?.choices?.[0]?.message?.content || 
-      aiResponse?.choices?.[0]?.text ||
-      (typeof aiResponse === 'string' ? aiResponse : null) ||
-      "I was unable to generate a response.";
-
-    const reasoningText = 
-      aiResponse?.reasoning || 
-      aiResponse?.choices?.[0]?.message?.reasoning_content || 
-      '';
-
-    // Send both properties so the frontend thought box populates cleanly
-    return Response.json({ 
-      response: replyText,
-      reasoning: reasoningText 
+    // 5. Return Server-Sent Events (SSE) response stream
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive'
+      }
     });
 
   } catch (err) {

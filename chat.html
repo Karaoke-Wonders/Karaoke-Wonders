@@ -300,43 +300,52 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+
   /* AI Thought Process Box */
-.kw-thought-container {
-  margin-bottom: 12px;
-  background-color: rgba(15, 23, 42, 0.6);
-  border: 1px solid var(--kw-border);
-  border-radius: 8px;
-  overflow: hidden;
-  font-size: 0.85rem;
-}
+  .kw-thought-container {
+    margin-bottom: 12px;
+    background-color: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--kw-border);
+    border-radius: 8px;
+    overflow: hidden;
+    font-size: 0.85rem;
+  }
 
-.kw-thought-summary {
-  padding: 8px 12px;
-  font-weight: 600;
-  color: var(--kw-text-muted);
-  cursor: pointer;
-  user-select: none;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: background-color 0.2s, color 0.2s;
-}
+  .kw-thought-summary {
+    padding: 8px 12px;
+    font-weight: 600;
+    color: var(--kw-text-muted);
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s, color 0.2s;
+  }
 
-.kw-thought-summary:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: var(--kw-accent);
-}
+  .kw-thought-summary:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--kw-accent);
+  }
 
-.kw-thought-content {
-  padding: 10px 12px;
-  border-top: 1px solid var(--kw-border);
-  color: #94a3b8;
-  font-family: monospace;
-  white-space: pre-wrap;
-  font-size: 0.82rem;
-  line-height: 1.5;
-  background-color: #080d1a;
-}
+  /* Accent styling for the disclosure triangle */
+  .kw-thought-summary::marker,
+  .kw-thought-summary::-webkit-details-marker {
+    color: var(--kw-accent);
+  }
+
+  .kw-thought-content {
+    padding: 10px 12px;
+    border-top: 1px solid var(--kw-border);
+    color: #94a3b8;
+    font-family: monospace;
+    white-space: pre-wrap;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    background-color: #080d1a;
+    max-height: 250px;
+    overflow-y: auto;
+  }
 </style>
 </head>
 <body class="mobile-centered-page p-6 relative flex items-center justify-center min-h-screen bg-slate-950 text-slate-100">
@@ -384,37 +393,30 @@
       });
     }
 
-    // Helper: Separates thinking/reasoning content from the final answer
-    function parseAiResponseData(data) {
-      let rawText = '';
-      let reasoningText = '';
-
-      // Check if API returned separate reasoning property
-      if (data.reasoning || data.choices?.[0]?.message?.reasoning_content) {
-        reasoningText = data.reasoning || data.choices[0].message.reasoning_content;
+    // Dynamic Topic Inspector: Detects context keywords from the reasoning stream
+    function detectThoughtTopic(text) {
+      const lower = text.toLowerCase();
+      
+      if (lower.includes('event') || lower.includes('schedule') || lower.includes('time') || lower.includes('date')) {
+        return 'Thinking about events & schedule...';
+      }
+      if (lower.includes('song') || lower.includes('request') || lower.includes('queue') || lower.includes('music')) {
+        return 'Thinking about song requests...';
+      }
+      if (lower.includes('vrchat') || lower.includes('world') || lower.includes('instance') || lower.includes('join')) {
+        return 'Thinking about VRChat world details...';
+      }
+      if (lower.includes('role') || lower.includes('staff') || lower.includes('team') || lower.includes('host')) {
+        return 'Thinking about community roles & team...';
+      }
+      if (lower.includes('context') || lower.includes('database') || lower.includes('search') || lower.includes('query')) {
+        return 'Analyzing database context...';
       }
 
-      // Extract text content from various Cloudflare / OpenAI output schemas
-      rawText = 
-        data.response || 
-        data.choices?.[0]?.message?.content || 
-        data.result?.response || 
-        (typeof data === 'string' ? data : '');
-
-      // Check for <think>...</think> or <thought>...</thought> tags inside rawText
-      const thinkMatch = rawText.match(/<(think|thought)>([\s\S]*?)<\/\1>/i);
-      if (thinkMatch) {
-        reasoningText = thinkMatch[2].trim();
-        rawText = rawText.replace(/<(think|thought)>[\s\S]*?<\/\1>/i, '').trim();
-      }
-
-      return {
-        thinking: reasoningText,
-        answer: rawText || 'Sorry, I could not process that request.'
-      };
+      return 'Thinking...';
     }
 
-    // Handle Chat Submission
+    // Handle Streaming Chat Submission
     chatForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const prompt = chatInput.value.trim();
@@ -426,8 +428,34 @@
       chatInput.disabled = true;
       chatSendBtn.disabled = true;
 
-      // 2. Render Initial Loading State
-      const loadingMessage = appendMessage('Thinking...', 'ai', true);
+      // 2. Create AI Message Bubble Container
+      const aiMsgDiv = document.createElement('div');
+      aiMsgDiv.classList.add('kw-message', 'kw-message-ai');
+
+      // Collapsible Live-Thinking Container
+      const detailsEl = document.createElement('details');
+      detailsEl.className = 'kw-thought-container';
+
+      const summaryEl = document.createElement('summary');
+      summaryEl.className = 'kw-thought-summary';
+      
+      const headerTextSpan = document.createElement('span');
+      headerTextSpan.textContent = '🧠 Thinking...';
+      summaryEl.appendChild(headerTextSpan);
+
+      const thoughtContentEl = document.createElement('div');
+      thoughtContentEl.className = 'kw-thought-content';
+
+      detailsEl.appendChild(summaryEl);
+      detailsEl.appendChild(thoughtContentEl);
+      aiMsgDiv.appendChild(detailsEl);
+
+      // Main Response Text Container
+      const answerContainer = document.createElement('div');
+      aiMsgDiv.appendChild(answerContainer);
+
+      chatMessages.appendChild(aiMsgDiv);
+      scrollToBottom();
 
       try {
         const response = await fetch('/api/chat', {
@@ -440,44 +468,85 @@
           throw new Error('Server returned an error response');
         }
 
-        const data = await response.json();
-        const { thinking, answer } = parseAiResponseData(data);
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
 
-        // Clear loading state
-        loadingMessage.innerHTML = '';
-        loadingMessage.classList.remove('kw-message-loading');
+        let rawAnswerText = '';
+        let reasoningText = '';
+        let isInsideThinkTag = false;
+        let hasThinkingStarted = false;
 
-        // 3. Render Collapsible Thought Process (if available)
-        if (thinking) {
-          const detailsEl = document.createElement('details');
-          detailsEl.className = 'kw-thought-container';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-          const summaryEl = document.createElement('summary');
-          summaryEl.className = 'kw-thought-summary';
-          summaryEl.innerHTML = `<span>🧠 Thought Process</span>`;
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
 
-          const contentEl = document.createElement('div');
-          contentEl.className = 'kw-thought-content';
-          contentEl.textContent = thinking;
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const dataStr = line.replace('data: ', '').trim();
+              if (dataStr === '[DONE]') break;
 
-          detailsEl.appendChild(summaryEl);
-          detailsEl.appendChild(contentEl);
-          loadingMessage.appendChild(detailsEl);
+              try {
+                const parsed = JSON.parse(dataStr);
+                const token = parsed.response || parsed.choices?.[0]?.delta?.content || '';
+
+                // Detect <think> or <thought> opening tag
+                if (token.includes('<think>') || token.includes('<thought>')) {
+                  isInsideThinkTag = true;
+                  hasThinkingStarted = true;
+                  continue;
+                }
+
+                // Detect closing tag
+                if (token.includes('</think>') || token.includes('</thought>')) {
+                  isInsideThinkTag = false;
+                  headerTextSpan.textContent = '🧠 Thought Process';
+                  continue;
+                }
+
+                if (isInsideThinkTag) {
+                  hasThinkingStarted = true;
+                  reasoningText += token;
+                  
+                  // Stream reasoning into the dropdown box
+                  thoughtContentEl.textContent = reasoningText;
+
+                  // Dynamically update the header subject line as text flows in
+                  const dynamicTopic = detectThoughtTopic(reasoningText);
+                  headerTextSpan.textContent = `🧠 ${dynamicTopic}`;
+                } else {
+                  rawAnswerText += token;
+                  
+                  // Render stream answer in real time
+                  if (window.marked) {
+                    answerContainer.innerHTML = marked.parse(rawAnswerText);
+                  } else {
+                    answerContainer.textContent = rawAnswerText;
+                  }
+                }
+
+                scrollToBottom();
+
+              } catch (err) {
+                // Ignore parsing errors for partial chunk fragments
+              }
+            }
+          }
         }
 
-        // 4. Render Main Answer (Markdown)
-        const answerContainer = document.createElement('div');
-        if (window.marked) {
-          answerContainer.innerHTML = marked.parse(answer);
+        // Finalize header title when stream completes
+        if (hasThinkingStarted) {
+          headerTextSpan.textContent = '🧠 Thought Process';
         } else {
-          answerContainer.textContent = answer;
+          // Remove container if no thinking tags were generated
+          detailsEl.remove();
         }
-        loadingMessage.appendChild(answerContainer);
 
       } catch (error) {
         console.error('Chat API Error:', error);
-        loadingMessage.textContent = 'Sorry, something went wrong. Please try again.';
-        loadingMessage.classList.remove('kw-message-loading');
+        answerContainer.textContent = 'Sorry, something went wrong. Please try again.';
       } finally {
         chatInput.disabled = false;
         chatSendBtn.disabled = false;
@@ -486,14 +555,11 @@
       }
     });
 
-    function appendMessage(text, sender, isLoading = false) {
+    function appendMessage(text, sender) {
       const msgDiv = document.createElement('div');
       msgDiv.classList.add('kw-message', `kw-message-${sender}`);
-      if (isLoading) {
-        msgDiv.classList.add('kw-message-loading');
-      }
 
-      if (sender === 'user' || isLoading) {
+      if (sender === 'user') {
         msgDiv.textContent = text;
       } else if (window.marked) {
         msgDiv.innerHTML = marked.parse(text);
