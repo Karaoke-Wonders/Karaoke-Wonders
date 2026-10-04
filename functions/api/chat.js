@@ -47,7 +47,7 @@ export async function onRequestPost(context) {
     }
 
     // 3. Query Llama 3.1 8B Instruct with temperature set to 0.0
-    const aiResponse = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+    const aiResponse = await env.AI.run('@cf/zai-org/glm-4.7-flash', {
       temperature: 0.0,
       messages: [
         {
