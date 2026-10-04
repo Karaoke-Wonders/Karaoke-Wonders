@@ -2,7 +2,7 @@
   {
     "id": "doc-home",
     "url": "https://karaokewonders.com",
-    "text": "Welcome to Karaoke Wonders in VRChat (https://karaokewonders.com). We host weekly live karaoke events, community meetups, and open mic nights every Friday and Saturday."
+    "text": "Welcome to Karaoke Wonders in VRChat (https://karaokewonders.com)."
   },
   {
     "id": "doc-about",
@@ -12,7 +12,7 @@
   {
     "id": "doc-roles-moderation",
     "url": "https://karaokewonders.com/about",
-    "text": "Karaoke Wonders Community & Moderation Roles: KW Community (unlimited members) (Base role for all users). Caretakers (unlimited members) (Discord & World moderators: Trial, Standard, Senior). Guide Managers (5-10 members) (Managers: Managers of Caretakers (Responsible for the promotions and demotions of Caretakers), Managers of Karaoke Wonders (Responsible for the watch of KW), General Manager (Manage the discord server), Senior Manager (Manages the Guide Managers)."
+    "text": "Karaoke Wonders Community & Moderation Roles: KW Community (unlimited members) (Base role for all users). Caretakers (unlimited members) ( Trial (Discord moderation), Standard (Discord and world moderation), Senior (Discord, World, and Website Moderation). Guide Managers (5-10 members) (Managers: Managers of Caretakers (Responsible for the promotions and demotions of Caretakers), Managers of Karaoke Wonders (Responsible for the watch of KW), General Manager (Manage the discord server), Senior Manager (Manages the Guide Managers)."
   },
   {
     "id": "doc-roles-team",
@@ -22,12 +22,12 @@
   {
     "id": "doc-careers",
     "url": "https://karaokewonders.com/careers",
-    "text": "Karaoke Wonders offers community staff roles such as Event Host, Stage DJ, and World Moderator. Apply directly on our careers page at https://karaokewonders.com/careers."
+    "text": "Karaoke Wonders is sometimes looking for developers.. Apply directly on our careers page at https://karaokewonders.com/careers."
   },
   {
     "id": "doc-main",
     "url": "https://karaokewonders.com/main",
-    "text": "The main page of Karaoke Wonders (https://karaokewonders.com/main) allows users to request songs for moderator approval, view approved songs, and check current queue statuses."
+    "text": "The main page of Karaoke Wonders (https://karaokewonders.com/main) allows users to request songs for moderator approval, view approved songs, and community options."
   },
   {
     "id": "doc-inbox",
