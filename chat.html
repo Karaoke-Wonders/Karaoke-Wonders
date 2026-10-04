@@ -300,6 +300,43 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+  /* AI Thought Process Box */
+.kw-thought-container {
+  margin-bottom: 12px;
+  background-color: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--kw-border);
+  border-radius: 8px;
+  overflow: hidden;
+  font-size: 0.85rem;
+}
+
+.kw-thought-summary {
+  padding: 8px 12px;
+  font-weight: 600;
+  color: var(--kw-text-muted);
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+.kw-thought-summary:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--kw-accent);
+}
+
+.kw-thought-content {
+  padding: 10px 12px;
+  border-top: 1px solid var(--kw-border);
+  color: #94a3b8;
+  font-family: monospace;
+  white-space: pre-wrap;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  background-color: #080d1a;
+}
 </style>
 </head>
 <body class="mobile-centered-page p-6 relative flex items-center justify-center min-h-screen bg-slate-950 text-slate-100">
@@ -340,12 +377,41 @@
     const chatSendBtn = document.getElementById('kw-chat-send');
     const chatToggleBtn = document.getElementById('kw-chat-toggle');
 
-    // Toggle Minimize / Expand Widget (if toggle button exists)
     if (chatToggleBtn) {
       chatToggleBtn.addEventListener('click', () => {
         chatContainer.classList.toggle('minimized');
         chatToggleBtn.textContent = chatContainer.classList.contains('minimized') ? '+' : '−';
       });
+    }
+
+    // Helper: Separates thinking/reasoning content from the final answer
+    function parseAiResponseData(data) {
+      let rawText = '';
+      let reasoningText = '';
+
+      // Check if API returned separate reasoning property
+      if (data.reasoning || data.choices?.[0]?.message?.reasoning_content) {
+        reasoningText = data.reasoning || data.choices[0].message.reasoning_content;
+      }
+
+      // Extract text content from various Cloudflare / OpenAI output schemas
+      rawText = 
+        data.response || 
+        data.choices?.[0]?.message?.content || 
+        data.result?.response || 
+        (typeof data === 'string' ? data : '');
+
+      // Check for <think>...</think> or <thought>...</thought> tags inside rawText
+      const thinkMatch = rawText.match(/<(think|thought)>([\s\S]*?)<\/\1>/i);
+      if (thinkMatch) {
+        reasoningText = thinkMatch[2].trim();
+        rawText = rawText.replace(/<(think|thought)>[\s\S]*?<\/\1>/i, '').trim();
+      }
+
+      return {
+        thinking: reasoningText,
+        answer: rawText || 'Sorry, I could not process that request.'
+      };
     }
 
     // Handle Chat Submission
@@ -354,17 +420,16 @@
       const prompt = chatInput.value.trim();
       if (!prompt) return;
 
-      // 1. Render User Message (Plain text to prevent XSS)
+      // 1. Render User Message
       appendMessage(prompt, 'user');
       chatInput.value = '';
       chatInput.disabled = true;
       chatSendBtn.disabled = true;
 
-      // 2. Render Loading State
+      // 2. Render Initial Loading State
       const loadingMessage = appendMessage('Thinking...', 'ai', true);
 
       try {
-        // 3. Send request to Cloudflare Pages Function endpoint
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -376,17 +441,38 @@
         }
 
         const data = await response.json();
-        
-        // Handle Workers AI response payload formats
-        const aiText = data.response || data.result?.response || 'Sorry, I could not process that request.';
-        
-        // 4. Parse Markdown into HTML for AI Response
-        if (window.marked) {
-          loadingMessage.innerHTML = marked.parse(aiText);
-        } else {
-          loadingMessage.textContent = aiText;
-        }
+        const { thinking, answer } = parseAiResponseData(data);
+
+        // Clear loading state
+        loadingMessage.innerHTML = '';
         loadingMessage.classList.remove('kw-message-loading');
+
+        // 3. Render Collapsible Thought Process (if available)
+        if (thinking) {
+          const detailsEl = document.createElement('details');
+          detailsEl.className = 'kw-thought-container';
+
+          const summaryEl = document.createElement('summary');
+          summaryEl.className = 'kw-thought-summary';
+          summaryEl.innerHTML = `<span>🧠 Thought Process</span>`;
+
+          const contentEl = document.createElement('div');
+          contentEl.className = 'kw-thought-content';
+          contentEl.textContent = thinking;
+
+          detailsEl.appendChild(summaryEl);
+          detailsEl.appendChild(contentEl);
+          loadingMessage.appendChild(detailsEl);
+        }
+
+        // 4. Render Main Answer (Markdown)
+        const answerContainer = document.createElement('div');
+        if (window.marked) {
+          answerContainer.innerHTML = marked.parse(answer);
+        } else {
+          answerContainer.textContent = answer;
+        }
+        loadingMessage.appendChild(answerContainer);
 
       } catch (error) {
         console.error('Chat API Error:', error);
@@ -407,7 +493,6 @@
         msgDiv.classList.add('kw-message-loading');
       }
 
-      // User messages and loading states stay textContent; AI answers get parsed as Markdown
       if (sender === 'user' || isLoading) {
         msgDiv.textContent = text;
       } else if (window.marked) {

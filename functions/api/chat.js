@@ -25,7 +25,7 @@ export async function onRequestPost(context) {
       throw new Error("Failed to generate embedding vector.");
     }
 
-    // 2. Query Vectorize index (topK = 3 for lower context overhead and faster speed)
+    // 2. Query Vectorize index (topK = 3)
     const matches = await env.VECTORIZE_INDEX.query(userEmbedding.data[0], {
       topK: 3,
       returnMetadata: 'all'
@@ -68,7 +68,7 @@ Formatting rules:
       ]
     });
 
-    // 5. Safely extract text across varying response schemas
+    // 5. Extract reasoning content AND main response text
     const replyText = 
       aiResponse?.response || 
       aiResponse?.choices?.[0]?.message?.content || 
@@ -76,7 +76,16 @@ Formatting rules:
       (typeof aiResponse === 'string' ? aiResponse : null) ||
       "I was unable to generate a response.";
 
-    return Response.json({ response: replyText });
+    const reasoningText = 
+      aiResponse?.reasoning || 
+      aiResponse?.choices?.[0]?.message?.reasoning_content || 
+      '';
+
+    // Send both properties so the frontend thought box populates cleanly
+    return Response.json({ 
+      response: replyText,
+      reasoning: reasoningText 
+    });
 
   } catch (err) {
     console.error("Chat Error:", err.stack || err.message);
