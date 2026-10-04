@@ -12,20 +12,41 @@ export async function onRequestGet(context) {
     }
 
     if (!env.AI || !env.VECTORIZE_INDEX) {
-      return new Response(JSON.stringify({ error: "Missing AI or VECTORIZE_INDEX bindings." }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      });
+      return Response.json(
+        { error: "Missing env.AI or env.VECTORIZE_INDEX bindings." }, 
+        { status: 500 }
+      );
+    }
+
+    if (!Array.isArray(publicContent) || publicContent.length === 0) {
+      return Response.json(
+        { error: "context.json is empty or not formatted as an array." }, 
+        { status: 400 }
+      );
     }
 
     // 1. Generate embeddings concurrently from context.json
     const vectors = await Promise.all(
       publicContent.map(async (item) => {
-        const embedding = await env.AI.run('@cf/baai/bge-small-en-v1.5', { text: [item.text] });
+        if (!item.id || !item.text) {
+          throw new Error(`Invalid context entry: missing 'id' or 'text'.`);
+        }
+
+        const embedding = await env.AI.run('@cf/baai/bge-small-en-v1.5', { 
+          text: [item.text] 
+        });
+
+        if (!embedding?.data?.[0]) {
+          throw new Error(`Failed to generate embedding for ID: ${item.id}`);
+        }
+
         return {
-          id: item.id,
+          id: String(item.id),
           values: embedding.data[0],
-          metadata: { text: item.text, url: item.url }
+          metadata: { 
+            text: item.text, 
+            url: item.url || 'https://karaokewonders.com' 
+          }
         };
       })
     );
@@ -33,12 +54,16 @@ export async function onRequestGet(context) {
     // 2. Upsert into Vectorize index
     await env.VECTORIZE_INDEX.upsert(vectors);
 
-    return Response.json({ success: true, count: vectors.length });
+    return Response.json({ 
+      success: true, 
+      count: vectors.length 
+    });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: `Seeding Error: ${err.message}` }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    console.error("Seeding Error:", err.stack || err.message);
+    return Response.json(
+      { error: `Seeding Error: ${err.message}` }, 
+      { status: 500 }
+    );
   }
 }
