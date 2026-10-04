@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://karaokewonders.fetched.workers.dev https://cloudflareinsights.com https://www.google-analytics.com https://*.google-analytics.com; img-src 'self' data: https:; object-src 'none';">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat - Karaoke Wonders</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <script src="files/lucide.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="/image/kwicon.svg" />
+    
+    <meta property="og:title" content="Karaoke Wonders - Karaoke" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://karaokewonders.com/main" />
+    <meta property="og:description" content="A website to view and request songs for our VRChat world's karaoke system!" />
+    <meta property="og:site_name" content="Karaoke Wonders" />
+    <meta property="og:image" content="https://karaokewonders.com/image/kw.png" />
+    <meta name="theme-color" content="#90ee90" />
+    <link rel="stylesheet" href="mobile.css" media="screen and (max-width: 768px)">
+    <script src="schema.js" defer></script>
+
+    <style>
+      :root {
+        --kw-bg: #0f172a;
+        --kw-panel: #1e293b;
+        --kw-accent: #90ee90;
+        --kw-accent-hover: #76d776;
+        --kw-accent-text: #052e16;
+        --kw-text: #f8fafc;
+        --kw-text-muted: #94a3b8;
+        --kw-border: #334155;
+        --kw-user-msg: #1e1b4b;
+      }
+
+      .kw-chat-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 380px;
+        max-width: calc(100vw - 32px);
+        height: 520px;
+        max-height: calc(100vh - 100px);
+        background-color: var(--kw-panel);
+        border: 1px solid var(--kw-border);
+        border-radius: 16px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+        font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+        z-index: 9999;
+        overflow: hidden;
+        transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .kw-chat-container.minimized {
+        height: 58px;
+      }
+
+      .kw-chat-header {
+        background-color: var(--kw-bg);
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid var(--kw-border);
+        user-select: none;
+      }
+
+      .kw-chat-title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        color: var(--kw-text);
+        font-size: 0.95rem;
+      }
+
+      .kw-status-dot {
+        width: 10px;
+        height: 10px;
+        background-color: var(--kw-accent);
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 8px var(--kw-accent);
+      }
+
+      #kw-chat-toggle {
+        background: none;
+        border: none;
+        color: var(--kw-text-muted);
+        font-size: 1.25rem;
+        cursor: pointer;
+        padding: 0 4px;
+        line-height: 1;
+        transition: color 0.2s;
+      }
+
+      #kw-chat-toggle:hover {
+        color: var(--kw-text);
+      }
+
+      .kw-chat-messages {
+        flex: 1;
+        padding: 16px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .kw-message {
+        max-width: 85%;
+        padding: 10px 14px;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        word-break: break-word;
+      }
+
+      .kw-message-ai {
+        background-color: var(--kw-bg);
+        color: var(--kw-text);
+        align-self: flex-start;
+        border: 1px solid var(--kw-border);
+        border-bottom-left-radius: 4px;
+      }
+
+      .kw-message-user {
+        background-color: var(--kw-user-msg);
+        color: #ffffff;
+        align-self: flex-end;
+        border: 1px solid #312e81;
+        border-bottom-right-radius: 4px;
+      }
+
+      .kw-message-loading {
+        opacity: 0.7;
+        font-style: italic;
+      }
+
+      .kw-chat-input-area {
+        padding: 12px;
+        background-color: var(--kw-bg);
+        border-top: 1px solid var(--kw-border);
+        display: flex;
+        gap: 8px;
+      }
+
+      #kw-chat-input {
+        flex: 1;
+        background-color: var(--kw-panel);
+        border: 1px solid var(--kw-border);
+        color: var(--kw-text);
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 0.875rem;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      #kw-chat-input:focus {
+        border-color: var(--kw-accent);
+      }
+
+      #kw-chat-send {
+        background-color: var(--kw-accent);
+        color: var(--kw-accent-text);
+        border: none;
+        padding: 10px 16px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      #kw-chat-send:hover {
+        background-color: var(--kw-accent-hover);
+      }
+
+      #kw-chat-send:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    </style>
+</head>
+<body class="mobile-centered-page p-6 relative flex items-center justify-center min-h-screen bg-slate-950 text-slate-100">
+
+    <div id="kw-chat-widget" class="kw-chat-container">
+      <div class="kw-chat-header">
+        <div class="kw-chat-title">
+          <span class="kw-status-dot"></span>
+          <span>Karaoke Wonders Assistant</span>
+        </div>
+        <button type="button" id="kw-chat-toggle" aria-label="Toggle chat">−</button>
+      </div>
+      
+      <div id="kw-chat-messages" class="kw-chat-messages">
+        <div class="kw-message kw-message-ai">
+          Welcome to Karaoke Wonders! Ask me anything about our VRChat world, events, community roles, or song requests.
+        </div>
+      </div>
+
+      <form id="kw-chat-form" class="kw-chat-input-area">
+        <input 
+          type="text" 
+          id="kw-chat-input" 
+          placeholder="Type a question..." 
+          required 
+          autocomplete="off"
+        />
+        <button type="submit" id="kw-chat-send">Send</button>
+      </form>
+    </div>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const chatContainer = document.getElementById('kw-chat-widget');
+        const chatMessages = document.getElementById('kw-chat-messages');
+        const chatForm = document.getElementById('kw-chat-form');
+        const chatInput = document.getElementById('kw-chat-input');
+        const chatSendBtn = document.getElementById('kw-chat-send');
+        const chatToggleBtn = document.getElementById('kw-chat-toggle');
+
+        // Toggle Minimize / Expand Widget
+        chatToggleBtn.addEventListener('click', () => {
+          chatContainer.classList.toggle('minimized');
+          chatToggleBtn.textContent = chatContainer.classList.contains('minimized') ? '+' : '−';
+        });
+
+        // Handle Chat Submission
+        chatForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const prompt = chatInput.value.trim();
+          if (!prompt) return;
+
+          // 1. Render User Message
+          appendMessage(prompt, 'user');
+          chatInput.value = '';
+          chatInput.disabled = true;
+          chatSendBtn.disabled = true;
+
+          // 2. Render Loading State
+          const loadingMessage = appendMessage('Thinking...', 'ai', true);
+
+          try {
+            // 3. Send request to Cloudflare Pages Function endpoint
+            const response = await fetch('/api/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ prompt })
+            });
+
+            if (!response.ok) {
+              throw new Error('Server returned an error response');
+            }
+
+            const data = await response.json();
+            
+            // Handle Workers AI response payload formats
+            const aiText = data.response || data.result?.response || 'Sorry, I could not process that request.';
+            
+            // 4. Update Loading Message with AI Response
+            loadingMessage.textContent = aiText;
+            loadingMessage.classList.remove('kw-message-loading');
+
+          } catch (error) {
+            console.error('Chat API Error:', error);
+            loadingMessage.textContent = 'Sorry, something went wrong. Please try again.';
+            loadingMessage.classList.remove('kw-message-loading');
+          } finally {
+            chatInput.disabled = false;
+            chatSendBtn.disabled = false;
+            chatInput.focus();
+            scrollToBottom();
+          }
+        });
+
+        function appendMessage(text, sender, isLoading = false) {
+          const msgDiv = document.createElement('div');
+          msgDiv.classList.add('kw-message', `kw-message-${sender}`);
+          if (isLoading) {
+            msgDiv.classList.add('kw-message-loading');
+          }
+          msgDiv.textContent = text;
+          chatMessages.appendChild(msgDiv);
+          scrollToBottom();
+          return msgDiv;
+        }
+
+        function scrollToBottom() {
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+      });
+    </script>
+</body>
+</html>
