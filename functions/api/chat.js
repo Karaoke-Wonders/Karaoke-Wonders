@@ -17,12 +17,12 @@ export async function onRequestPost(context) {
     const matches = await env.VECTORIZE_INDEX.query(userEmbedding.data[0], { topK: 3 });
     const siteContext = matches.matches.map(m => m.vector.metadata?.text || '').join('\n\n');
 
-    // 3. Generate response using @cf/meta/llama-3.2-1b-instruct
+    // 3. Generate response using @cf/meta/llama-3.2-1b-instruct with Markdown rules
     const aiResponse = await env.AI.run('@cf/meta/llama-3.2-1b-instruct', {
       messages: [
         {
           role: 'system',
-          content: `You are the official assistant for Karaoke Wonders (VRChat). Answer using strictly this context:\n${siteContext}`
+          content: `You are the official assistant for Karaoke Wonders (VRChat). Answer strictly using this context:\n${siteContext}\n\nFormatting rules:\n- Format responses using clean standard Markdown.\n- Use separate paragraphs for readability.\n- Use bulleted or numbered lists when giving options or steps.\n- Format links as clickable Markdown: [Link Text](https://example.com). All the pu`
         },
         { role: 'user', content: prompt }
       ]

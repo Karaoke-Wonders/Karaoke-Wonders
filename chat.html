@@ -13,6 +13,7 @@
     <script src="files/lucide.min.js"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/png" href="/image/kwicon.svg" />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <meta property="og:title" content="Karaoke Wonders - Karaoke" />
     <meta property="og:type" content="website" />
@@ -35,6 +36,7 @@
     --kw-text-muted: #94a3b8;
     --kw-border: #334155;
     --kw-user-msg: #1e1b4b;
+    --kw-user-border: #312e81;
   }
 
   /* Fullscreen Chat Container */
@@ -51,11 +53,12 @@
     display: flex;
     flex-direction: column;
     box-shadow: none;
-    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     z-index: 9999;
     overflow: hidden;
   }
 
+  /* Header Bar */
   .kw-chat-header {
     background-color: var(--kw-bg);
     padding: 18px 24px;
@@ -88,7 +91,7 @@
     display: none; /* Hidden for full-screen layout */
   }
 
-  /* Messages Area Centered Container */
+  /* Messages Area */
   .kw-chat-messages {
     flex: 1;
     padding: 24px;
@@ -100,15 +103,39 @@
     width: 100%;
     margin: 0 auto;
     box-sizing: border-box;
+    scroll-behavior: smooth;
   }
 
+  /* Custom Dark Scrollbar for Messages Area */
+  .kw-chat-messages::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .kw-chat-messages::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .kw-chat-messages::-webkit-scrollbar-thumb {
+    background-color: var(--kw-border);
+    border-radius: 3px;
+  }
+
+  /* Base Message Bubbles */
   .kw-message {
-    max-width: 75%;
-    padding: 12px 18px;
+    max-width: 85%;
+    padding: 14px 18px;
     border-radius: 12px;
     font-size: 0.95rem;
-    line-height: 1.5;
+    line-height: 1.6;
     word-break: break-word;
+  }
+
+  .kw-message-user {
+    background-color: var(--kw-user-msg);
+    color: #ffffff;
+    align-self: flex-end;
+    border: 1px solid var(--kw-user-border);
+    border-bottom-right-radius: 4px;
   }
 
   .kw-message-ai {
@@ -119,24 +146,111 @@
     border-bottom-left-radius: 4px;
   }
 
-  .kw-message-user {
-    background-color: var(--kw-user-msg);
-    color: #ffffff;
-    align-self: flex-end;
-    border: 1px solid #312e81;
-    border-bottom-right-radius: 4px;
-  }
-
   .kw-message-loading {
     opacity: 0.7;
     font-style: italic;
   }
 
-  /* Input Area Centered Container */
-  .kw-chat-input-area {
-    padding: 20px 24px;
+  /* ==========================================================================
+     MARKDOWN RENDERING STYLES (inside AI messages)
+     ========================================================================== */
+
+  .kw-message-ai p {
+    margin: 0 0 12px 0;
+  }
+
+  .kw-message-ai p:last-child {
+    margin-bottom: 0;
+  }
+
+  .kw-message-ai ul,
+  .kw-message-ai ol {
+    margin: 8px 0 12px 20px;
+    padding: 0;
+  }
+
+  .kw-message-ai ul {
+    list-style-type: disc;
+  }
+
+  .kw-message-ai ol {
+    list-style-type: decimal;
+  }
+
+  .kw-message-ai li {
+    margin-bottom: 6px;
+  }
+
+  .kw-message-ai li:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Clickable Links */
+  .kw-message-ai a {
+    color: var(--kw-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .kw-message-ai a:hover {
+    color: var(--kw-accent-hover);
+  }
+
+  /* Bold & Emphasis */
+  .kw-message-ai strong {
+    color: #ffffff;
+    font-weight: 700;
+  }
+
+  .kw-message-ai em {
+    color: var(--kw-text-muted);
+  }
+
+  /* Inline Code & Code Blocks */
+  .kw-message-ai code {
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.88em;
+  }
+
+  .kw-message-ai pre {
+    background-color: #090d16;
+    padding: 12px;
+    border-radius: 8px;
+    overflow-x: auto;
+    border: 1px solid var(--kw-border);
+    margin: 10px 0;
+  }
+
+  .kw-message-ai pre code {
+    background-color: transparent;
+    padding: 0;
+  }
+
+  /* Blockquotes */
+  .kw-message-ai blockquote {
+    border-left: 3px solid var(--kw-accent);
+    margin: 10px 0;
+    padding-left: 12px;
+    color: var(--kw-text-muted);
+  }
+
+  /* ==========================================================================
+     INPUT AREA (Full-width background with centered container)
+     ========================================================================== */
+
+  .kw-chat-footer {
     background-color: var(--kw-bg);
     border-top: 1px solid var(--kw-border);
+    width: 100%;
+  }
+
+  .kw-chat-input-area {
+    padding: 16px 24px;
     display: flex;
     gap: 12px;
     max-width: 800px;
@@ -154,11 +268,16 @@
     border-radius: 8px;
     font-size: 0.95rem;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
   }
 
   #kw-chat-input:focus {
     border-color: var(--kw-accent);
+    box-shadow: 0 0 0 2px rgba(144, 238, 144, 0.15);
+  }
+
+  #kw-chat-input::placeholder {
+    color: var(--kw-text-muted);
   }
 
   #kw-chat-send {
@@ -170,10 +289,10 @@
     font-weight: 700;
     font-size: 0.95rem;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background-color 0.2s, opacity 0.2s;
   }
 
-  #kw-chat-send:hover {
+  #kw-chat-send:hover:not(:disabled) {
     background-color: var(--kw-accent-hover);
   }
 
@@ -212,85 +331,100 @@
       </form>
     </div>
 
-    <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        const chatContainer = document.getElementById('kw-chat-widget');
-        const chatMessages = document.getElementById('kw-chat-messages');
-        const chatForm = document.getElementById('kw-chat-form');
-        const chatInput = document.getElementById('kw-chat-input');
-        const chatSendBtn = document.getElementById('kw-chat-send');
-        const chatToggleBtn = document.getElementById('kw-chat-toggle');
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const chatContainer = document.getElementById('kw-chat-widget');
+    const chatMessages = document.getElementById('kw-chat-messages');
+    const chatForm = document.getElementById('kw-chat-form');
+    const chatInput = document.getElementById('kw-chat-input');
+    const chatSendBtn = document.getElementById('kw-chat-send');
+    const chatToggleBtn = document.getElementById('kw-chat-toggle');
 
-        // Toggle Minimize / Expand Widget
-        chatToggleBtn.addEventListener('click', () => {
-          chatContainer.classList.toggle('minimized');
-          chatToggleBtn.textContent = chatContainer.classList.contains('minimized') ? '+' : '−';
-        });
-
-        // Handle Chat Submission
-        chatForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const prompt = chatInput.value.trim();
-          if (!prompt) return;
-
-          // 1. Render User Message
-          appendMessage(prompt, 'user');
-          chatInput.value = '';
-          chatInput.disabled = true;
-          chatSendBtn.disabled = true;
-
-          // 2. Render Loading State
-          const loadingMessage = appendMessage('Thinking...', 'ai', true);
-
-          try {
-            // 3. Send request to Cloudflare Pages Function endpoint
-            const response = await fetch('/api/chat', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ prompt })
-            });
-
-            if (!response.ok) {
-              throw new Error('Server returned an error response');
-            }
-
-            const data = await response.json();
-            
-            // Handle Workers AI response payload formats
-            const aiText = data.response || data.result?.response || 'Sorry, I could not process that request.';
-            
-            // 4. Update Loading Message with AI Response
-            loadingMessage.textContent = aiText;
-            loadingMessage.classList.remove('kw-message-loading');
-
-          } catch (error) {
-            console.error('Chat API Error:', error);
-            loadingMessage.textContent = 'Sorry, something went wrong. Please try again.';
-            loadingMessage.classList.remove('kw-message-loading');
-          } finally {
-            chatInput.disabled = false;
-            chatSendBtn.disabled = false;
-            chatInput.focus();
-            scrollToBottom();
-          }
-        });
-
-        function appendMessage(text, sender, isLoading = false) {
-          const msgDiv = document.createElement('div');
-          msgDiv.classList.add('kw-message', `kw-message-${sender}`);
-          if (isLoading) {
-            msgDiv.classList.add('kw-message-loading');
-          }
-          msgDiv.textContent = text;
-          chatMessages.appendChild(msgDiv);
-          scrollToBottom();
-          return msgDiv;
-        }
-
-        function scrollToBottom() {
-          chatMessages.scrollTop = chatMessages.scrollHeight;
-        }
+    // Toggle Minimize / Expand Widget (if toggle button exists)
+    if (chatToggleBtn) {
+      chatToggleBtn.addEventListener('click', () => {
+        chatContainer.classList.toggle('minimized');
+        chatToggleBtn.textContent = chatContainer.classList.contains('minimized') ? '+' : '−';
       });
-    </script>
+    }
+
+    // Handle Chat Submission
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const prompt = chatInput.value.trim();
+      if (!prompt) return;
+
+      // 1. Render User Message (Plain text to prevent XSS)
+      appendMessage(prompt, 'user');
+      chatInput.value = '';
+      chatInput.disabled = true;
+      chatSendBtn.disabled = true;
+
+      // 2. Render Loading State
+      const loadingMessage = appendMessage('Thinking...', 'ai', true);
+
+      try {
+        // 3. Send request to Cloudflare Pages Function endpoint
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt })
+        });
+
+        if (!response.ok) {
+          throw new Error('Server returned an error response');
+        }
+
+        const data = await response.json();
+        
+        // Handle Workers AI response payload formats
+        const aiText = data.response || data.result?.response || 'Sorry, I could not process that request.';
+        
+        // 4. Parse Markdown into HTML for AI Response
+        if (window.marked) {
+          loadingMessage.innerHTML = marked.parse(aiText);
+        } else {
+          loadingMessage.textContent = aiText;
+        }
+        loadingMessage.classList.remove('kw-message-loading');
+
+      } catch (error) {
+        console.error('Chat API Error:', error);
+        loadingMessage.textContent = 'Sorry, something went wrong. Please try again.';
+        loadingMessage.classList.remove('kw-message-loading');
+      } finally {
+        chatInput.disabled = false;
+        chatSendBtn.disabled = false;
+        chatInput.focus();
+        scrollToBottom();
+      }
+    });
+
+    function appendMessage(text, sender, isLoading = false) {
+      const msgDiv = document.createElement('div');
+      msgDiv.classList.add('kw-message', `kw-message-${sender}`);
+      if (isLoading) {
+        msgDiv.classList.add('kw-message-loading');
+      }
+
+      // User messages and loading states stay textContent; AI answers get parsed as Markdown
+      if (sender === 'user' || isLoading) {
+        msgDiv.textContent = text;
+      } else if (window.marked) {
+        msgDiv.innerHTML = marked.parse(text);
+      } else {
+        msgDiv.textContent = text;
+      }
+
+      chatMessages.appendChild(msgDiv);
+      scrollToBottom();
+      return msgDiv;
+    }
+
+    function scrollToBottom() {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+  });
+</script>
 </body>
 </html>
