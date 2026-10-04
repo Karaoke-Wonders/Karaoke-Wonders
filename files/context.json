@@ -1,0 +1,57 @@
+[
+  {
+    "id": "doc-home",
+    "url": "https://karaokewonders.com",
+    "text": "Welcome to Karaoke Wonders in VRChat (https://karaokewonders.com). We host weekly live karaoke events, community meetups, and open mic nights every Friday and Saturday."
+  },
+  {
+    "id": "doc-about",
+    "url": "https://karaokewonders.com/about",
+    "text": "Karaoke Wonders is a VRChat venue created for singers and performers. Rules include treating everyone with respect, waiting your turn in line, and keeping song requests appropriate."
+  },
+  {
+    "id": "doc-roles-moderation",
+    "url": "https://karaokewonders.com/about",
+    "text": "Karaoke Wonders Community & Moderation Roles: KW Community (unlimited members) (Base role for all users). Caretakers (unlimited members) (Discord & World moderators: Trial, Standard, Senior). Guide Managers (5-10 members) (Managers: Managers of Caretakers (Responsible for the promotions and demotions of Caretakers), Managers of Karaoke Wonders (Responsible for the watch of KW), General Manager (Manage the discord server), Senior Manager (Manages the Guide Managers)."
+  },
+  {
+    "id": "doc-roles-team",
+    "url": "https://karaokewonders.com/careers",
+    "text": "Karaoke Wonders Team & Administration: Administrators of KW (3 spots). Developers. The 3 primary developers for Karaoke Wonders are Tells Fox, VanishSynax, and EmilHauge."
+  },
+  {
+    "id": "doc-careers",
+    "url": "https://karaokewonders.com/careers",
+    "text": "Karaoke Wonders offers community staff roles such as Event Host, Stage DJ, and World Moderator. Apply directly on our careers page at https://karaokewonders.com/careers."
+  },
+  {
+    "id": "doc-main",
+    "url": "https://karaokewonders.com/main",
+    "text": "The main page of Karaoke Wonders (https://karaokewonders.com/main) allows users to request songs for moderator approval, view approved songs, and check current queue statuses."
+  },
+  {
+    "id": "doc-inbox",
+    "url": "https://karaokewonders.com/inbox",
+    "text": "The inbox page (https://karaokewonders.com/inbox) is where you can view your submitted song requests, check their approval status, and view details about your account."
+  },
+  {
+    "id": "doc-settings",
+    "url": "https://karaokewonders.com/settings",
+    "text": "The settings page (https://karaokewonders.com/settings) allows you to update account details, check account status, and manage profile preferences."
+  },
+  {
+    "id": "doc-world",
+    "url": "https://vrchat.com/home/world/wrld_916c8605-94c1-4271-ac07-dddf5403c793",
+    "text": "Official VRChat World for Karaoke Wonders: https://vrchat.com/home/world/wrld_916c8605-94c1-4271-ac07-dddf5403c793. Join this world to sing and hang out with players."
+  },
+  {
+    "id": "doc-group",
+    "url": "https://vrchat.com/home/group/grp_67cc6d58-8e66-44a5-af92-f53d31f5a694",
+    "text": "Official VRChat Group for Karaoke Wonders: KAWON (Group ID: grp_67cc6d58-8e66-44a5-af92-f53d31f5a694). Link: https://vrchat.com/home/group/grp_67cc6d58-8e66-44a5-af92-f53d31f5a694"
+  },
+  {
+    "id": "doc-staff-group",
+    "url": "https://vrchat.com/home/group/grp_636e6717-e0b4-4e38-b881-3e49a796f5be",
+    "text": "Official Staff VRChat Group for Karaoke Wonders Caretakers: KWCARE (Group ID: grp_636e6717-e0b4-4e38-b881-3e49a796f5be). Link: https://vrchat.com/home/group/grp_636e6717-e0b4-4e38-b881-3e49a796f5be"
+  }
+]
