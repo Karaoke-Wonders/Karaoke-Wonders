@@ -13,16 +13,16 @@ export async function onRequestPost(context) {
     // 1. Embed user query
     const userEmbedding = await env.AI.run('@cf/baai/bge-small-en-v1.5', { text: [prompt] });
 
-    // 2. Query Vectorize
+    // 2. Query Vectorize index
     const matches = await env.VECTORIZE_INDEX.query(userEmbedding.data[0], { topK: 3 });
     const siteContext = matches.matches.map(m => m.vector.metadata?.text || '').join('\n\n');
 
-    // 3. Generate AI response with an active Llama model ID
+    // 3. Generate response with active model @cf/meta/llama-3.1-8b-instruct
     const aiResponse = await env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
       messages: [
         {
           role: 'system',
-          content: `You are the official assistant for Karaoke Wonders (VRChat). Answer questions strictly using the provided context. If context is missing, state that you do not have that information.\n\nWebsite Context:\n${siteContext}`
+          content: `You are the official assistant for Karaoke Wonders (VRChat). Answer using strictly this context:\n${siteContext}`
         },
         { role: 'user', content: prompt }
       ]
