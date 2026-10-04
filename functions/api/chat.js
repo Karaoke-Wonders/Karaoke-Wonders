@@ -25,30 +25,27 @@ export async function onRequestPost(context) {
       throw new Error("Failed to generate embedding vector.");
     }
 
-    // 2. Query Vectorize
+    // 2. Query Vectorize index (topK = 3 for lower context overhead and faster speed)
     const matches = await env.VECTORIZE_INDEX.query(userEmbedding.data[0], {
-      topK: 5,
+      topK: 3,
       returnMetadata: 'all'
     });
 
-    // FIX: Access m.metadata directly (m.vector is undefined on query matches)
+    // 3. Extract metadata text
     const siteContext = matches?.matches
       ?.map(m => m.metadata?.text)
       ?.filter(Boolean)
       ?.join('\n\n') || '';
 
-    console.log("Retrieved siteContext:", siteContext);
-
-    // Fallback if no context text was retrieved
     if (!siteContext) {
       return Response.json({
         response: "I do not have information regarding that in my database right now."
       });
     }
 
-    // 3. Query Llama 3.1 8B Instruct with temperature set to 0.0
+    // 4. Call GLM-4.7 Flash model
     const aiResponse = await env.AI.run('@cf/zai-org/glm-4.7-flash', {
-      temperature: 0.0,
+      temperature: 0.1,
       messages: [
         {
           role: 'system',
@@ -57,7 +54,7 @@ export async function onRequestPost(context) {
 Strict Response Guidelines:
 - Answer ONLY using the facts provided in the Context below.
 - Do NOT assume, make up, or extrapolate any roles, teams, names, or features not mentioned in the Context.
-- If the question cannot be answered directly using the Context, state: "I do not have that specific information in my context right now."
+- If the question cannot be answered directly using the Context, state: "I do not have that specific information in my context base right now."
 
 Context:
 ${siteContext}
@@ -71,7 +68,15 @@ Formatting rules:
       ]
     });
 
-    return Response.json(aiResponse);
+    // 5. Safely extract text across varying response schemas
+    const replyText = 
+      aiResponse?.response || 
+      aiResponse?.choices?.[0]?.message?.content || 
+      aiResponse?.choices?.[0]?.text ||
+      (typeof aiResponse === 'string' ? aiResponse : null) ||
+      "I was unable to generate a response.";
+
+    return Response.json({ response: replyText });
 
   } catch (err) {
     console.error("Chat Error:", err.stack || err.message);
