@@ -32,20 +32,46 @@ export async function onRequestPost(context) {
     });
 
     // 3. Extract metadata text
-    const siteContext = matches?.matches
+    let siteContext = matches?.matches
       ?.map(m => m.metadata?.text)
       ?.filter(Boolean)
       ?.join('\n\n') || '';
 
+    // 4. Web Search Fallback (If vector database has no matching knowledge)
+    if (!siteContext && env.TAVILY_API_KEY) {
+      try {
+        const searchRes = await fetch("https://api.tavily.com/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            api_key: env.TAVILY_API_KEY,
+            query: prompt,
+            search_depth: "basic",
+            max_results: 3
+          })
+        });
+
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          siteContext = searchData.results
+            ?.map(r => `Title: ${r.title}\nURL: ${r.url}\nContent: ${r.content}`)
+            .join('\n\n') || '';
+        }
+      } catch (searchErr) {
+        console.error("Web Search Error:", searchErr);
+      }
+    }
+
+    // Fallback response if both Vectorize and Web Search yield no context
     if (!siteContext) {
       return Response.json({
         response: "I do not have information regarding that in my database right now."
       });
     }
 
-    // 4. Request streaming response from GLM-4.7 Flash
+    // 5. Request streaming response from GLM-4.7 Flash
     const stream = await env.AI.run('@cf/zai-org/glm-4.7-flash', {
-      temperature: 0.1,
+      temperature: 0.5,
       stream: true,
       messages: [
         {
@@ -53,9 +79,9 @@ export async function onRequestPost(context) {
           content: `You are the official AI assistant for Karaoke Wonders in VRChat (https://karaokewonders.com).
 
 Strict Response Guidelines:
-- Answer ONLY using the facts provided in the Context below.
-- Do NOT assume, make up, or extrapolate any roles, teams, names, or features not mentioned in the Context.
-- If the question cannot be answered directly using the Context, state: "I do not have that specific information in my context base right now."
+- Answer using the facts provided in the Context.
+- Don't assume any facts if you don't know them. If you have an idea of some facts, you can tell them.
+- If the question cannot be answered directly using the Context, state: "I do not have that specific information right now."
 
 Context:
 ${siteContext}
@@ -69,7 +95,7 @@ Formatting rules:
       ]
     });
 
-    // 5. Return Server-Sent Events (SSE) response stream
+    // 6. Return Server-Sent Events (SSE) response stream
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
