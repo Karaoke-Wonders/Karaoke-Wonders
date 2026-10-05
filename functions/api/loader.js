@@ -7,9 +7,10 @@ export async function onRequest(context) {
   // 1. Regex to check for non-HTML static asset extensions
   const isStaticAsset = /\.(css|js|json|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot)$/i.test(path);
 
-  // 2. Bypass static assets, status.json, loading page, and explicitly skipped requests
+  // 2. Bypass static assets, API calls, status.json, loading page, and explicitly skipped requests
   if (
     isStaticAsset ||
+    path.startsWith('/api/') ||
     path === '/loading.html' ||
     path === '/files/status.json' ||
     skipFlag
@@ -17,6 +18,7 @@ export async function onRequest(context) {
     // Determine exact reason for bypass for log visibility
     let bypassReason = 'Unknown';
     if (isStaticAsset) bypassReason = 'Static Asset File';
+    else if (path.startsWith('/api/')) bypassReason = 'API Endpoint Request';
     else if (path === '/loading.html') bypassReason = 'Loading Page Request';
     else if (path === '/files/status.json') bypassReason = 'Status Config File';
     else if (skipFlag) bypassReason = 'skip_loader=true Flag Present';

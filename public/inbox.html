@@ -1,19 +1,30 @@
 <!DOCTYPE html>
 <html lang="en" class="dark h-full">
 <head>
-    <script>
-  (function() {
-    // 1. Check if the request carries the 'skip_loader' bypass key
+<script>
+  (async function() {
     const urlParams = new URLSearchParams(window.location.search);
     const hasSkipFlag = urlParams.get('skip_loader') === 'true';
 
-    // 2. If skip_loader is NOT present, instantly bounce to loading.html
     if (!hasSkipFlag) {
       const currentPath = window.location.pathname + window.location.search;
-      const targetUrl = '/loading.html?page=' + encodeURIComponent(currentPath);
-      window.location.replace(targetUrl);
+
+      try {
+        // Query the loader API endpoint
+        const res = await fetch('/api/loader?page=' + encodeURIComponent(currentPath));
+        const data = await res.json();
+
+        // If maintenance or page block is active, redirect to loading.html
+        if (!data.allowed) {
+          const targetUrl = '/loading.html?page=' + encodeURIComponent(currentPath);
+          window.location.replace(targetUrl);
+          return;
+        }
+      } catch (err) {
+        console.warn('[Interceptor] Could not reach loader API:', err);
+      }
     } else {
-      // 3. Clean up ?skip_loader=true from the address bar so the URL stays clean
+      // Clean up ?skip_loader=true from address bar
       const cleanUrl = new URL(window.location.href);
       cleanUrl.searchParams.delete('skip_loader');
       const cleanSearch = cleanUrl.search ? cleanUrl.search : '';
