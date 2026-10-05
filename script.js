@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (existingSession) {
         const verifiedUser = await refreshUserSession();
         if (verifiedUser) {
-            window.location.href = verifiedUser.isAdmin ? 'admin.html' : 'main.html';
+            window.location.href = verifiedUser.isAdmin ? '/private/admin.html' : '/public/main.html';
             return;
         }
     }
@@ -237,7 +237,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
 
                     setTimeout(() => {
-                        window.location.href = (isStaff || isManager) ? 'admin.html' : 'main.html';
+                        window.location.href = (isStaff || isManager) ? '/private/admin.html' : '/public/main.html';
                     }, 1000);
                 }
 
