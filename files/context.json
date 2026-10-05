@@ -6,22 +6,22 @@
   },
   {
     "id": "doc-about",
-    "url": "https://karaokewonders.com/about",
+    "url": "https://karaokewonders.com/public/bout",
     "text": "Karaoke Wonders is a VRChat venue created for singers and performers. Rules include treating everyone with respect, waiting your turn in line, and keeping song requests appropriate."
   },
   {
     "id": "doc-roles-moderation",
-    "url": "https://karaokewonders.com/about",
+    "url": "https://karaokewonders.com/public/about",
     "text": "Karaoke Wonders Community & Moderation Roles: KW Community (unlimited members) (Base role for all users). Caretakers (unlimited members) ( Trial (Discord moderation), Standard (Discord and world moderation), Senior (Discord, World, and Website Moderation). Guide Managers (5-10 members) (Managers: Managers of Caretakers (Responsible for the promotions and demotions of Caretakers), Managers of Karaoke Wonders (Responsible for the watch of KW), General Manager (Manage the discord server), Senior Manager (Manages the Guide Managers)."
   },
   {
     "id": "doc-roles-team",
-    "url": "https://karaokewonders.com/careers",
+    "url": "https://karaokewonders.com/public/careers",
     "text": "Karaoke Wonders Team & Administration: Administrators of KW (3 spots). Developers. The 3 primary developers for Karaoke Wonders are Tells Fox, VanishSynax, and EmilHauge."
   },
   {
     "id": "doc-careers",
-    "url": "https://karaokewonders.com/careers",
+    "url": "https://karaokewonders.com/public/careers",
     "text": "Karaoke Wonders is sometimes looking for developers.. Apply directly on our careers page at https://karaokewonders.com/careers."
   },
   {
@@ -31,12 +31,12 @@
   },
   {
     "id": "doc-inbox",
-    "url": "https://karaokewonders.com/inbox",
+    "url": "https://karaokewonders.com/public/inbox",
     "text": "The inbox page (https://karaokewonders.com/inbox) is where you can view your submitted song requests, check their approval status, and view details about your account."
   },
   {
     "id": "doc-settings",
-    "url": "https://karaokewonders.com/settings",
+    "url": "https://karaokewonders.com/public/settings",
     "text": "The settings page (https://karaokewonders.com/settings) allows you to update account details, check account status, and manage profile preferences."
   },
   {
