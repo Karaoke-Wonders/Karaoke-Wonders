@@ -3,6 +3,7 @@
   "maintenanceMessage": "We are pushing a hotfix to our VRChat song request server.",
   "maintenanceProgress": 40,
   "blockedPages": [
+    "public/careers"
   ],
   "blockedPageMessage": "This specific section is currently undergoing database updates."
 }
