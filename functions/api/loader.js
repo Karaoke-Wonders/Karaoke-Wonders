@@ -1,37 +1,39 @@
-export async function onRequest(context) {
-  const { request } = context;
-  const url = new URL(request.url);
-  const path = url.pathname;
-  const skipFlag = url.searchParams.get('skip_loader') === 'true';
+export async function onRequestGet(context) {
+  const url = new URL(context.request.url);
+  const targetPage = url.searchParams.get('page') || '/main';
 
-  // 1. Regex to check for non-HTML static asset extensions
-  const isStaticAsset = /\.(css|js|json|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot)$/i.test(path);
+  try {
+    // Fetch current status configuration
+    const statusRes = await context.env.ASSETS.fetch(new URL('/files/status.json', url.origin));
+    
+    if (!statusRes.ok) {
+      return Response.json({ allowed: true });
+    }
 
-  // 2. Bypass static assets, API calls, status.json, loading page, and explicitly skipped requests
-  if (
-    isStaticAsset ||
-    path.startsWith('/api/') ||
-    path === '/loading.html' ||
-    path === '/files/status.json' ||
-    skipFlag
-  ) {
-    // Determine exact reason for bypass for log visibility
-    let bypassReason = 'Unknown';
-    if (isStaticAsset) bypassReason = 'Static Asset File';
-    else if (path.startsWith('/api/')) bypassReason = 'API Endpoint Request';
-    else if (path === '/loading.html') bypassReason = 'Loading Page Request';
-    else if (path === '/files/status.json') bypassReason = 'Status Config File';
-    else if (skipFlag) bypassReason = 'skip_loader=true Flag Present';
+    const status = await statusRes.json();
 
-    console.log(`[Middleware BYPASS] Path: "${path}${url.search}" | Reason: ${bypassReason}`);
-    return context.next();
+    // 1. Global Maintenance Mode Check
+    if (status.maintenanceMode) {
+      return Response.json({ allowed: false, reason: 'maintenance' });
+    }
+
+    // 2. Targeted Page Maintenance Check
+    const cleanTarget = targetPage.toLowerCase().replace(/^\/+|\/+$/g, '');
+    const isBlocked = status.blockedPages?.some(p => {
+      const cleanBlocked = p.toLowerCase().replace(/^\/+|\/+$/g, '');
+      return cleanBlocked.length > 0 && (cleanTarget.includes(cleanBlocked) || cleanBlocked.includes(cleanTarget));
+    });
+
+    if (isBlocked) {
+      return Response.json({ allowed: false, reason: 'blocked' });
+    }
+
+    // Site and page are open
+    return Response.json({ allowed: true });
+
+  } catch (err) {
+    console.error('[Loader API Error]:', err);
+    // Fall back to allowing traffic if status check fails
+    return Response.json({ allowed: true });
   }
-
-  // 3. Redirect all HTML page requests to loading.html
-  const loadingUrl = new URL('/loading.html', request.url);
-  loadingUrl.searchParams.set('page', path + url.search);
-
-  console.log(`[Middleware REDIRECT] Path: "${path}${url.search}" -> Target: "${loadingUrl.toString()}"`);
-
-  return Response.redirect(loadingUrl.toString(), 302);
 }

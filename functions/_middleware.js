@@ -4,21 +4,21 @@ export async function onRequest(context) {
   const path = url.pathname;
   const skipFlag = url.searchParams.get('skip_loader') === 'true';
 
-  // 1. Check for non-HTML static asset extensions
+  // 1. Regex to check for non-HTML static asset extensions
   const isStaticAsset = /\.(css|js|json|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot)$/i.test(path);
 
-  // 2. Bypass static assets, API calls, status config, loading page, and skip_loader flags
+  // 2. Bypass static assets, API calls, status config, loading page, and explicitly skipped requests
   if (
     isStaticAsset ||
     path.startsWith('/api/') ||
-    path === '/loading.html' ||
+    path.startsWith('/loading') || // Matches /loading, /loading.html, etc. (prevents loop)
     path === '/files/status.json' ||
     skipFlag
   ) {
     let bypassReason = 'Unknown';
     if (isStaticAsset) bypassReason = 'Static Asset File';
     else if (path.startsWith('/api/')) bypassReason = 'API Endpoint Request';
-    else if (path === '/loading.html') bypassReason = 'Loading Page Request';
+    else if (path.startsWith('/loading')) bypassReason = 'Loading Page Request';
     else if (path === '/files/status.json') bypassReason = 'Status Config File';
     else if (skipFlag) bypassReason = 'skip_loader=true Flag Present';
 
@@ -26,7 +26,7 @@ export async function onRequest(context) {
     return context.next();
   }
 
-  // 3. Intercept and redirect all HTML page visits to loading.html
+  // 3. Redirect all HTML page requests to loading.html
   const loadingUrl = new URL('/loading.html', request.url);
   loadingUrl.searchParams.set('page', path + url.search);
 
