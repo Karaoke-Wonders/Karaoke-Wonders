@@ -12,29 +12,40 @@ let totalPages = 1;
 const itemsPerPage = 10;
 let songSearchTimer = null;
 
-function renderMainAnnouncements() {
+async function renderMainAnnouncements() {
     const mainAlert = document.getElementById('main-alert');
     const mainAlertIcon = document.getElementById('main-alert-icon');
     const mainAlertText = document.getElementById('main-alert-text');
     if (!mainAlert || !mainAlertIcon || !mainAlertText) return;
 
-    const announcements = JSON.parse(localStorage.getItem('kw_team_announcements') || '[]');
-    const websiteNote = localStorage.getItem('kw_team_website_note') || '';
-    const activeAnnouncements = announcements.filter(item => item && item.active !== false);
+    // Fetch data asynchronously from Cloudflare KV
+    const announcementsRaw = await getStoredKWAnnouncements();
+    const websiteNote = await getStoredKWWebsiteNote();
 
-    if (activeAnnouncements.length === 0 && !websiteNote.trim()) {
+    // Normalize announcements into an array format
+    let announcements = [];
+    if (Array.isArray(announcementsRaw)) {
+        announcements = announcementsRaw;
+    } else if (announcementsRaw && typeof announcementsRaw === 'object') {
+        announcements = [announcementsRaw];
+    }
+
+    const activeAnnouncements = announcements.filter(item => item && item.active !== false && !item.clear);
+    const note = (websiteNote || '').trim();
+
+    if (activeAnnouncements.length === 0 && !note) {
         mainAlert.classList.add('hidden');
         return;
     }
 
     const first = activeAnnouncements[0];
-    const note = websiteNote.trim();
     const combinedMessage = note
-        ? `${first ? `${first.title}: ${first.message}` : 'Website update'}${note ? ` • ${note}` : ''}`
-        : `${first.title}: ${first.message}`;
+        ? `${first ? `${first.title}:${first.message}` : 'Website update'}${note ? ` • ${note}` : ''}`
+        : (first ? `${first.title}: ${first.message}` : note);
 
     const type = first?.type || 'info';
     mainAlert.classList.remove('hidden', 'bg-red-500/10', 'border-red-500/20', 'text-red-400', 'bg-yellow-500/10', 'border-yellow-500/20', 'text-yellow-400', 'bg-green-500/10', 'border-green-500/20', 'text-green-400', 'bg-sky-500/10', 'border-sky-500/20', 'text-sky-400');
+    
     if (type === 'error') {
         mainAlert.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-400');
         mainAlertIcon.setAttribute('data-lucide', 'alert-circle');
@@ -43,7 +54,7 @@ function renderMainAnnouncements() {
         mainAlertIcon.setAttribute('data-lucide', 'triangle-alert');
     } else if (type === 'success') {
         mainAlert.classList.add('bg-green-500/10', 'border-green-500/20', 'text-green-400');
-        mainAlertIcon.setAttribute('data-lucide', 'check-circle');
+        mainAlertIcon.setAttribute('data-lucide=' , 'check-circle');
     } else {
         mainAlert.classList.add('bg-sky-500/10', 'border-sky-500/20', 'text-sky-400');
         mainAlertIcon.setAttribute('data-lucide', 'info');
@@ -52,6 +63,11 @@ function renderMainAnnouncements() {
     mainAlertText.textContent = combinedMessage;
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
+
+// Ensure it runs automatically when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    renderMainAnnouncements();
+});
 
 function normalizeUserData(raw) {
     if (!raw || typeof raw !== 'object') return null;
