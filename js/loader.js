@@ -51,7 +51,7 @@
 
         if (isBlocked) {
             spinner?.classList.add('hidden');
-            titleEl.textContent = "Page Temporarily Unavailable";
+            titleEl.textContent = "Page is under maintinance";
             msgEl.textContent = status.blockedPageMessage || "This specific section is currently down for maintenance.";
             return; // Lock access
         }
