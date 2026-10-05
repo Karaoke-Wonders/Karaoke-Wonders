@@ -152,6 +152,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    // Render any existing announcements on initial page load
+    renderMainAnnouncements();
+
+    // Listen for updates from the admin panel / other tabs
+    window.addEventListener('storage', (e) => {
+        if (e.key === 'kw_team_announcements' || e.key === 'kw_team_website_note') {
+            renderMainAnnouncements();
+        }
+    });
+
     // 6. Sync session state against Worker/Discord backend in the background
     await refreshUserSession();
 });

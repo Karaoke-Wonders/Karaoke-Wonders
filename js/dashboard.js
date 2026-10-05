@@ -1737,6 +1737,19 @@ function extractVideoId(urlOrId) {
         return '';
     }
 }
+// Add this function to your script to resolve the ReferenceError
+function renderMainAnnouncements() {
+    // Retrieve stored items to verify or dispatch an update event if needed
+    const announcements = getStoredKWAnnouncements();
+    const websiteNote = getStoredKWWebsiteNote();
+
+    // If your admin panel has a preview section for announcements, render them here.
+    // Otherwise, dispatch a storage event so other open tabs/windows catch the update.
+    window.dispatchEvent(new StorageEvent('storage', {
+        key: KW_TEAM_STORAGE.announcements,
+        newValue: JSON.stringify(announcements)
+    }));
+}
 
 function resetModalStatus(elementId) {
     const statusBox = document.getElementById(elementId);
