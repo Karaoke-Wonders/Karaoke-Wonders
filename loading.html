@@ -9,27 +9,80 @@
     <link rel="icon" type="image/png" href="/image/kwicon.svg" />
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-6">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4 sm:p-6 font-['Plus_Jakarta_Sans',sans-serif]">
 
-    <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl text-center">
-        <!-- Spinner -->
-        <!-- Updated Spinner with Tailwind's native animate-spin -->
-<div id="loading-spinner" class="w-12 h-12 border-4 border-slate-800 border-t-sky-400 rounded-full animate-spin mx-auto mb-6"></div>
-
-        <!-- Status Header & Message -->
-        <h1 id="status-title" class="text-xl font-bold text-slate-100 mb-2">Connecting to Karaoke Wonders...</h1>
-        <p id="status-msg" class="text-sm text-slate-400 mb-6">Preparing your requested page.</p>
-
-        <!-- Progress Bar (Used during updates) -->
-        <div id="progress-container" class="hidden w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-2">
-            <div id="progress-bar" class="bg-gradient-to-r from-sky-400 to-indigo-500 h-full transition-all duration-300" style="width: 0%;"></div>
+    <div class="max-w-xl w-full bg-slate-900/90 backdrop-blur-md border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl text-left space-y-6">
+        
+        <!-- Header & Primary Status (Always visible during loading) -->
+        <div class="space-y-2">
+            <div class="flex items-center gap-3">
+                <div id="loading-spinner" class="w-6 h-6 border-2 border-slate-700 border-t-sky-400 rounded-full animate-spin shrink-0"></div>
+                <h1 id="status-title" class="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">Connecting to Karaoke Wonders...</h1>
+            </div>
+            <p id="status-msg" class="text-sm text-slate-400 pl-9">Preparing your requested page.</p>
         </div>
-        <span id="progress-text" class="hidden text-xs font-semibold text-sky-400">0% Complete</span>
 
-        <!-- Back Button (Shown only when loading halts) -->
-        <button id="back-btn" class="hidden mt-6 w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-xl border border-slate-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer">
-            &larr; Go Back
-        </button>
+        <!-- System Maintenance Breakdown (Hidden by default; only shown if maintenance is active) -->
+        <div id="maintenance-details" class="hidden border-t border-slate-800/80 pt-5 space-y-4">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">System Status</span>
+            
+            <ul id="status-checklist" class="space-y-3 text-sm text-slate-300">
+                <!-- Completed Step -->
+                <li class="flex items-center gap-3 text-slate-400">
+                    <svg class="w-5 h-5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"></path>
+                    </svg>
+                    <span>System diagnostic & security check</span>
+                </li>
+
+                <!-- Skipped Step -->
+                <li class="flex items-center gap-3 text-slate-400">
+                    <svg class="w-5 h-5 text-rose-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                    <span class="line-through text-slate-500">Cache synchronization skipped</span>
+                </li>
+
+                <!-- Active In-Progress Step -->
+                <li class="space-y-2">
+                    <div class="flex items-center gap-3 font-medium text-slate-100">
+                        <div class="w-5 h-5 border-2 border-sky-500/30 border-t-sky-400 rounded-full animate-spin shrink-0"></div>
+                        <span id="active-step-label">Updating server modules & database...</span>
+                    </div>
+
+                    <!-- Embedded Progress Bar -->
+                    <div id="progress-container" class="pl-8 space-y-1.5">
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                            <div id="progress-bar" class="bg-gradient-to-r from-sky-400 to-indigo-500 h-full transition-all duration-300" style="width: 0%;"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-500">Progress</span>
+                            <span id="progress-text" class="font-semibold text-sky-400">0% Complete</span>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- Pending Step -->
+                <li class="flex items-center gap-3 text-slate-600">
+                    <div class="w-5 h-5 rounded-full border border-slate-700 shrink-0 flex items-center justify-center">
+                        <div class="w-1.5 h-1.5 rounded-full bg-slate-700"></div>
+                    </div>
+                    <span>Final integration testing</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Action / Footer Bar (Hidden during normal loads; shown when halted) -->
+        <div id="footer-actions" class="hidden border-t border-slate-800/80 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <button id="back-btn" class="hidden w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-xl border border-slate-700/50 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-400 cursor-pointer">
+                &larr; Go Back
+            </button>
+
+            <a id="community-btn" href="https://discord.gg/sXaRMKKDbe" target="_blank" rel="noopener noreferrer" class="hidden w-full sm:w-auto px-5 py-2.5 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 text-sm font-semibold rounded-xl transition-colors text-center focus:outline-none focus:ring-2 focus:ring-sky-400">
+                Join our discord server &rarr;
+            </a>
+        </div>
+
     </div>
 
     <script src="/js/loader.js"></script>

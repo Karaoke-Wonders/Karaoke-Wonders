@@ -3,26 +3,52 @@
     const rawTarget = urlParams.get('page') || '/main';
     const targetPage = decodeURIComponent(rawTarget);
     
+    // Core Elements
     const titleEl = document.getElementById('status-title');
     const msgEl = document.getElementById('status-msg');
     const spinner = document.getElementById('loading-spinner');
-    const progressContainer = document.getElementById('progress-container');
+    
+    // Maintenance Section Elements
+    const maintenanceDetails = document.getElementById('maintenance-details');
     const progressBar = document.getElementById('progress-bar');
     const progressText = document.getElementById('progress-text');
+    
+    // Footer Action Elements
+    const footerActions = document.getElementById('footer-actions');
     const backBtn = document.getElementById('back-btn');
+    const communityBtn = document.getElementById('community-btn');
 
-    // Helper to reveal and attach back navigation logic
-    function showBackButton() {
-        if (!backBtn) return;
-        backBtn.classList.remove('hidden');
-        backBtn.onclick = () => {
-            // Return to previous page if it originated from the same domain; otherwise fallback to root
-            if (document.referrer && new URL(document.referrer).origin === window.location.origin) {
-                window.history.back();
+    // Helper function to reveal maintenance/error controls when navigation is halted
+    function showHaltUI(status) {
+        // Hide primary top spinner
+        spinner?.classList.add('hidden');
+
+        // Reveal the main footer actions container
+        footerActions?.classList.remove('hidden');
+
+        // Reveal Discord/Community link button
+        communityBtn?.classList.remove('hidden');
+
+        // Handle safe Back button display and action
+        if (backBtn) {
+            const hasSameOriginReferrer = document.referrer && new URL(document.referrer).origin === window.location.origin;
+
+            if (hasSameOriginReferrer) {
+                backBtn.classList.remove('hidden');
+                backBtn.onclick = () => window.history.back();
             } else {
-                window.location.href = '/';
+                const cleanRoot = 'main';
+                const isRootBlocked = status?.maintenanceMode || status?.blockedPages?.some(p => {
+                    const clean = p.toLowerCase().replace(/^\/+|\/+$/g, '');
+                    return clean === '' || clean === cleanRoot;
+                });
+
+                if (!isRootBlocked) {
+                    backBtn.classList.remove('hidden');
+                    backBtn.onclick = () => window.location.href = '/';
+                }
             }
-        };
+        }
     }
 
     const MIN_BUFFER_MS = 600;
@@ -41,19 +67,20 @@
 
         const status = await res.json();
 
-        // Mode A: Global Maintenance / Update Mode
+        // Mode A: Global Maintenance / Update Mode Enabled
         if (status.maintenanceMode) {
-            titleEl.textContent = "Site Update in Progress";
-            msgEl.textContent = status.maintenanceMessage || "Karaoke Wonders is currently undergoing maintenance.";
+            titleEl.textContent = "System Maintenance in Progress";
+            msgEl.textContent = status.maintenanceMessage || "Karaoke Wonders is currently undergoing scheduled updates.";
             
+            // Reveal the detailed maintenance checklist breakdown section
+            maintenanceDetails?.classList.remove('hidden');
+
             if (status.maintenanceProgress !== undefined) {
-                progressContainer?.classList.remove('hidden');
-                progressText?.classList.remove('hidden');
                 if (progressBar) progressBar.style.width = status.maintenanceProgress + '%';
                 if (progressText) progressText.textContent = status.maintenanceProgress + '% Complete';
             }
 
-            showBackButton();
+            showHaltUI(status);
             return; // Lock access
         }
 
@@ -62,30 +89,31 @@
 
         const isBlocked = status.blockedPages?.some(p => {
             const cleanBlocked = p.toLowerCase().replace(/^\/+|\/+$/g, '');
-            // Only block if the target page matches or lives inside a blocked directory
+            // Only block if target page matches or lives inside a blocked directory
             return cleanBlocked.length > 0 && cleanTarget.startsWith(cleanBlocked);
         });
 
         if (isBlocked) {
-            spinner?.classList.add('hidden');
-            titleEl.textContent = "Page is under maintenance";
+            titleEl.textContent = "Page Temporarily Unavailable";
             msgEl.textContent = status.blockedPageMessage || "This specific section is currently down for maintenance.";
 
-            showBackButton();
+            // Reveal breakdown and action buttons
+            maintenanceDetails?.classList.remove('hidden');
+
+            showHaltUI(status);
             return; // Lock access
         }
 
     } catch (err) {
         console.warn("Could not reach or parse status.json:", err);
-        spinner?.classList.add('hidden');
         titleEl.textContent = "Connection Error";
-        msgEl.textContent = "Unable to verify site status. Please refresh or try again shortly.";
+        msgEl.textContent = "Unable to verify site status. Please try again shortly.";
 
-        showBackButton();
+        showHaltUI(null);
         return; // STOP execution — do not bypass gate on error
     }
 
-    // Mode C: Clear to proceed -> Redirect after buffer delay
+    // Mode C: Clear to proceed -> Fast redirect after buffer delay (keeps normal loading clean)
     const elapsedTime = Date.now() - startTime;
     const remainingDelay = Math.max(0, MIN_BUFFER_MS - elapsedTime);
 
