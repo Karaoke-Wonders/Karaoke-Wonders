@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading - Karaoke Wonders</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/image/kwicon.svg" />
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-6">
+
+    <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl text-center">
+        <!-- Spinner -->
+        <div id="loading-spinner" class="w-12 h-12 border-4 border-slate-800 border-t-sky-400 rounded-full spinner mx-auto mb-6"></div>
+
+        <!-- Status Header & Message -->
+        <h1 id="status-title" class="text-xl font-bold text-slate-100 mb-2">Connecting to Karaoke Wonders...</h1>
+        <p id="status-msg" class="text-sm text-slate-400 mb-6">Preparing your requested page.</p>
+
+        <!-- Progress Bar (Used during updates) -->
+        <div id="progress-container" class="hidden w-full bg-slate-800 h-2 rounded-full overflow-hidden mb-2">
+            <div id="progress-bar" class="bg-gradient-to-r from-sky-400 to-indigo-500 h-full transition-all duration-300" style="width: 0%;"></div>
+        </div>
+        <span id="progress-text" class="hidden text-xs font-semibold text-sky-400">0% Complete</span>
+    </div>
+    <script src="/js/loader.js"></script>
+</body>
+</html>
