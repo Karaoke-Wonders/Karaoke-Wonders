@@ -20,7 +20,7 @@ async function renderMainAnnouncements() {
 
     try {
         // Fetch directly from your Cloudflare Pages function endpoint
-        const response = await fetch('/api/announcements', {
+        const response = await fetch('/api/announcement', {
             headers: { 'Cache-Control': 'no-cache' }
         });
         

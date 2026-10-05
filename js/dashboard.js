@@ -63,7 +63,7 @@ window.closeAdminSidebar = function() {
 
 async function getStoredKWAnnouncements() {
     try {
-        const response = await adminFetch('/api/announcements', { cache: 'no-store' });
+        const response = await adminFetch('/api/announcement', { cache: 'no-store' });
         if (!response.ok) return [];
         const data = await response.json();
         return Array.isArray(data) ? data : (Array.isArray(data.announcements) ? data.announcements : []);
@@ -75,7 +75,7 @@ async function getStoredKWAnnouncements() {
 
 async function saveStoredKWAnnouncements(items) {
     try {
-        const response = await adminFetch('/api/announcements', {
+        const response = await adminFetch('/api/announcement', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ announcements: items })
