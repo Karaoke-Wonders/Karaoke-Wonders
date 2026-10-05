@@ -3,12 +3,12 @@ export async function onRequest(context) {
   const url = new URL(request.url);
   const path = url.pathname;
 
-  // Bypass asset files (CSS, JS, images, status.json) and loading page itself
+  // 1. Regex to check for non-HTML static asset extensions
+  const isStaticAsset = /\.(css|js|json|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot)$/i.test(path);
+
+  // 2. Bypass static assets, status.json, loading page, and explicitly skipped requests
   if (
-    path.startsWith('/css') ||
-    path.startsWith('/js') ||
-    path.startsWith('/image') ||
-    path.includes('.') ||
+    isStaticAsset ||
     path === '/loading.html' ||
     path === '/files/status.json' ||
     url.searchParams.get('skip_loader') === 'true'
@@ -16,7 +16,7 @@ export async function onRequest(context) {
     return context.next();
   }
 
-  // Redirect page request to dedicated loading page with target page as parameter
+  // 3. Redirect all HTML page requests to loading.html
   const loadingUrl = new URL('/loading.html', request.url);
   loadingUrl.searchParams.set('page', path + url.search);
 
