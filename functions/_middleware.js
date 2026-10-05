@@ -4,29 +4,26 @@ export async function onRequest(context) {
   const path = url.pathname;
   const skipFlag = url.searchParams.get('skip_loader') === 'true';
 
-  // 1. Regex to check for non-HTML static asset extensions
   const isStaticAsset = /\.(css|js|json|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot)$/i.test(path);
 
-  // 2. Bypass static assets, API calls, status config, loading page, and explicitly skipped requests
-  if (
-    isStaticAsset ||
-    path.startsWith('/api/') ||
-    path.startsWith('/loading') || // Matches /loading, /loading.html, etc. (prevents loop)
-    path === '/files/status.json' ||
-    skipFlag
-  ) {
+  // Check specific routes first, then general static assets
+  const isApi = path.startsWith('/api/');
+  const isLoading = path.startsWith('/loading');
+  const isStatusFile = path.endsWith('status.json');
+
+  if (isStaticAsset || isApi || isLoading || isStatusFile || skipFlag) {
     let bypassReason = 'Unknown';
-    if (isStaticAsset) bypassReason = 'Static Asset File';
-    else if (path.startsWith('/api/')) bypassReason = 'API Endpoint Request';
-    else if (path.startsWith('/loading')) bypassReason = 'Loading Page Request';
-    else if (path === '/files/status.json') bypassReason = 'Status Config File';
+    if (isStatusFile) bypassReason = 'Status Config File';
+    else if (isApi) bypassReason = 'API Endpoint Request';
+    else if (isLoading) bypassReason = 'Loading Page Request';
     else if (skipFlag) bypassReason = 'skip_loader=true Flag Present';
+    else if (isStaticAsset) bypassReason = 'Static Asset File';
 
     console.log(`[Middleware BYPASS] Path: "${path}${url.search}" | Reason: ${bypassReason}`);
     return context.next();
   }
 
-  // 3. Redirect all HTML page requests to loading.html
+  // Redirect HTML page requests to loading.html
   const loadingUrl = new URL('/loading.html', request.url);
   loadingUrl.searchParams.set('page', path + url.search);
 

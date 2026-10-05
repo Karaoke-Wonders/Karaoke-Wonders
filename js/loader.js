@@ -10,12 +10,15 @@
     const progressBar = document.getElementById('progress-bar');
     const progressText = document.getElementById('progress-text');
 
-    const MIN_BUFFER_MS = 600; // Buffer time for low-end devices/styling
+    const MIN_BUFFER_MS = 600;
     const startTime = Date.now();
 
     try {
-        // Fetch central status config
-        const res = await fetch('/files/status.json?t=' + Date.now(), { cache: 'no-store' });
+        // Fetch central status config directly using origin to prevent base tag interference
+        const statusUrl = new URL('/files/status.json', window.location.origin);
+        statusUrl.searchParams.set('t', Date.now().toString());
+
+        const res = await fetch(statusUrl.toString(), { cache: 'no-store' });
         
         if (!res.ok) {
             throw new Error(`status.json returned HTTP status ${res.status}`);
@@ -29,39 +32,43 @@
             msgEl.textContent = status.maintenanceMessage || "Karaoke Wonders is currently undergoing maintenance.";
             
             if (status.maintenanceProgress !== undefined) {
-                progressContainer.classList.remove('hidden');
-                progressText.classList.remove('hidden');
-                progressBar.style.width = status.maintenanceProgress + '%';
-                progressText.textContent = status.maintenanceProgress + '% Complete';
+                progressContainer?.classList.remove('hidden');
+                progressText?.classList.remove('hidden');
+                if (progressBar) progressBar.style.width = status.maintenanceProgress + '%';
+                if (progressText) progressText.textContent = status.maintenanceProgress + '% Complete';
             }
-            return; // Keep user locked on this dedicated loading screen
+            return; // Lock access
         }
 
-        // Mode B: Target Page Maintenance Block (Normalized Substring Match)
+        // Mode B: Target Page Maintenance Block
         const cleanTarget = targetPage.toLowerCase().replace(/^\/+|\/+$/g, '');
 
         const isBlocked = status.blockedPages?.some(p => {
             const cleanBlocked = p.toLowerCase().replace(/^\/+|\/+$/g, '');
-            return cleanBlocked.length > 0 && (cleanTarget.includes(cleanBlocked) || cleanBlocked.includes(cleanTarget));
+            // Only block if the target page matches or lives inside a blocked directory
+            return cleanBlocked.length > 0 && cleanTarget.startsWith(cleanBlocked);
         });
 
         if (isBlocked) {
-            spinner.classList.add('hidden');
+            spinner?.classList.add('hidden');
             titleEl.textContent = "Page Temporarily Unavailable";
             msgEl.textContent = status.blockedPageMessage || "This specific section is currently down for maintenance.";
-            return; // Lock access to target page
+            return; // Lock access
         }
 
     } catch (err) {
         console.warn("Could not reach or parse status.json:", err);
+        spinner?.classList.add('hidden');
+        titleEl.textContent = "Connection Error";
+        msgEl.textContent = "Unable to verify site status. Please refresh or try again shortly.";
+        return; // STOP execution — do not bypass gate on error
     }
 
-    // Mode C: Clear to proceed -> Redirect to requested page after buffer delay
+    // Mode C: Clear to proceed -> Redirect after buffer delay
     const elapsedTime = Date.now() - startTime;
     const remainingDelay = Math.max(0, MIN_BUFFER_MS - elapsedTime);
 
     setTimeout(() => {
-        // Pass skip_loader flag to avoid redirect loops
         const redirectUrl = new URL(targetPage, window.location.origin);
         redirectUrl.searchParams.set('skip_loader', 'true');
         window.location.replace(redirectUrl.toString());

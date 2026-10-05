@@ -3,37 +3,40 @@ export async function onRequestGet(context) {
   const targetPage = url.searchParams.get('page') || '/main';
 
   try {
-    // Fetch current status configuration
-    const statusRes = await context.env.ASSETS.fetch(new URL('/files/status.json', url.origin));
+    // 1. Fetch status config from static build assets
+    const statusAssetUrl = new URL('/files/status.json', url.origin);
+    const statusRes = await context.env.ASSETS.fetch(statusAssetUrl);
     
     if (!statusRes.ok) {
-      return Response.json({ allowed: true });
+      console.warn(`[Loader API] Could not load /files/status.json — HTTP ${statusRes.status}`);
+      return Response.json({ allowed: true, warning: 'status_config_missing' });
     }
 
     const status = await statusRes.json();
 
-    // 1. Global Maintenance Mode Check
+    // 2. Global Maintenance Check
     if (status.maintenanceMode) {
       return Response.json({ allowed: false, reason: 'maintenance' });
     }
 
-    // 2. Targeted Page Maintenance Check
+    // 3. Targeted Page Maintenance Check
     const cleanTarget = targetPage.toLowerCase().replace(/^\/+|\/+$/g, '');
+
     const isBlocked = status.blockedPages?.some(p => {
       const cleanBlocked = p.toLowerCase().replace(/^\/+|\/+$/g, '');
-      return cleanBlocked.length > 0 && (cleanTarget.includes(cleanBlocked) || cleanBlocked.includes(cleanTarget));
+      // Only block if target page matches or resides within a blocked path prefix
+      return cleanBlocked.length > 0 && cleanTarget.startsWith(cleanBlocked);
     });
 
     if (isBlocked) {
       return Response.json({ allowed: false, reason: 'blocked' });
     }
 
-    // Site and page are open
+    // Page clear to load
     return Response.json({ allowed: true });
 
   } catch (err) {
     console.error('[Loader API Error]:', err);
-    // Fall back to allowing traffic if status check fails
     return Response.json({ allowed: true });
   }
 }
