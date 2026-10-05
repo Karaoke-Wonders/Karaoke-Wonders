@@ -15,7 +15,7 @@ export async function onRequestPost(context) {
     }
 
     if (!env.AI || !env.VECTORIZE_INDEX) {
-      return Response.json({ response: "Server error: Missing bindings." }, { status: 500 });
+      return Response.json({ response: "Server error: Missing Cloudflare AI or Vectorize bindings." }, { status: 500 });
     }
 
     // 1. Generate query embedding vector
@@ -31,18 +31,21 @@ export async function onRequestPost(context) {
       returnMetadata: 'all'
     });
 
-    // 3. Extract metadata text
+    // 3. Extract metadata text from Vectorize matches
     let siteContext = matches?.matches
       ?.map(m => m.metadata?.text)
       ?.filter(Boolean)
       ?.join('\n\n') || '';
 
-    // 4. Web Search Fallback (If vector database has no matching knowledge)
+    // 4. Web Search Fallback via Tavily (if vector database yields no matching knowledge)
     if (!siteContext && env.TAVILY_API_KEY) {
       try {
         const searchRes = await fetch("https://api.tavily.com/search", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${env.TAVILY_API_KEY}`
+          },
           body: JSON.stringify({
             api_key: env.TAVILY_API_KEY,
             query: prompt,
@@ -56,20 +59,29 @@ export async function onRequestPost(context) {
           siteContext = searchData.results
             ?.map(r => `Title: ${r.title}\nURL: ${r.url}\nContent: ${r.content}`)
             .join('\n\n') || '';
+        } else {
+          console.error("Tavily Search API Error:", await searchRes.text());
         }
       } catch (searchErr) {
-        console.error("Web Search Error:", searchErr);
+        console.error("Tavily Search Exception:", searchErr);
       }
     }
 
-    // Fallback response if both Vectorize and Web Search yield no context
+    // 5. Fallback SSE stream if both Vectorize and Tavily yield no context
     if (!siteContext) {
-      return Response.json({
-        response: "I do not have information regarding that in my database right now."
+      const fallbackText = "I do not have that specific information in my context base right now.";
+      const sseFallback = `data: ${JSON.stringify({ choices: [{ delta: { content: fallbackText } }] })}\n\ndata: [DONE]\n\n`;
+      
+      return new Response(sseFallback, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive'
+        }
       });
     }
 
-    // 5. Request streaming response from GLM-4.7 Flash
+    // 6. Request streaming response from GLM-4.7 Flash with context
     const stream = await env.AI.run('@cf/zai-org/glm-4.7-flash', {
       temperature: 0.5,
       stream: true,
@@ -79,8 +91,8 @@ export async function onRequestPost(context) {
           content: `You are the official AI assistant for Karaoke Wonders in VRChat (https://karaokewonders.com).
 
 Strict Response Guidelines:
-- Answer using the facts provided in the Context.
-- Don't assume any facts if you don't know them. If you have an idea of some facts, you can tell them.
+- Answer ONLY using the facts provided in the Context below.
+- Do NOT assume, make up, or extrapolate details not mentioned in the Context.
 - If the question cannot be answered directly using the Context, state: "I do not have that specific information right now."
 
 Context:
@@ -95,7 +107,7 @@ Formatting rules:
       ]
     });
 
-    // 6. Return Server-Sent Events (SSE) response stream
+    // 7. Return SSE stream directly to frontend
     return new Response(stream, {
       headers: {
         'Content-Type': 'text/event-stream',
