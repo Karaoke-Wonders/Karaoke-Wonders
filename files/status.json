@@ -1,9 +1,8 @@
 {
-  "maintenanceMode": false,
+  "maintenanceMode": true,
   "maintenanceMessage": "We are pushing a hotfix to our VRChat song request server.",
   "maintenanceProgress": 40,
   "blockedPages": [
-    "public/inbox"
   ],
   "blockedPageMessage": "This specific section is currently undergoing database updates."
 }
