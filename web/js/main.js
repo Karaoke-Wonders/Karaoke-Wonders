@@ -12,10 +12,6 @@ let totalPages = 1;
 const itemsPerPage = 10;
 let songSearchTimer = null;
 
-/**
- * Normalizes user session data regardless of whether properties are 
- * top-level or nested inside user/account/data objects.
- */
 function renderMainAnnouncements() {
     const mainAlert = document.getElementById('main-alert');
     const mainAlertIcon = document.getElementById('main-alert-icon');
