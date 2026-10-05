@@ -78,6 +78,12 @@ document.addEventListener('DOMContentLoaded', () => {
     chatMessages.appendChild(aiMsgDiv);
     scrollToBottom();
 
+    // 3. Keep scroll pinned as thinking container resizes
+    const resizeObserver = new ResizeObserver(() => {
+      scrollToBottom();
+    });
+    resizeObserver.observe(aiMsgDiv);
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -129,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
               reasoningText += explicitReasoning;
               thoughtContentEl.textContent = reasoningText;
               headerTextSpan.textContent = `🧠 ${detectThoughtTopic(reasoningText)}`;
-              scrollToBottom();
               continue;
             }
 
@@ -166,8 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
                   answerContainer.textContent = rawAnswerText;
                 }
               }
-
-              scrollToBottom();
             }
 
           } catch (err) {
@@ -189,6 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('Chat API Error:', error);
       answerContainer.textContent = 'Sorry, something went wrong. Please try again.';
     } finally {
+      resizeObserver.disconnect();
       chatInput.disabled = false;
       chatSendBtn.disabled = false;
       chatInput.focus();
