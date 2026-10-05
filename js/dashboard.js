@@ -57,50 +57,79 @@ window.closeAdminSidebar = function() {
     document.body.classList.remove('overflow-hidden');
 };
 
-const KW_TEAM_STORAGE = {
-    announcements: 'kw_team_announcements',
-    websiteNote: 'kw_team_website_note'
-};
+// ==========================================
+// KV STORAGE HELPERS (Cloudflare Workers)
+// ==========================================
 
-function getStoredKWAnnouncements() {
+async function getStoredKWAnnouncements() {
     try {
-        const value = localStorage.getItem(KW_TEAM_STORAGE.announcements);
-        if (!value) return [];
-        const parsed = JSON.parse(value);
-        return Array.isArray(parsed) ? parsed : [];
-    } catch {
+        const response = await adminFetch('/api/announcements', { cache: 'no-store' });
+        if (!response.ok) return [];
+        const data = await response.json();
+        return Array.isArray(data) ? data : (Array.isArray(data.announcements) ? data.announcements : []);
+    } catch (err) {
+        console.error('Failed to fetch KV announcements:', err);
         return [];
     }
 }
 
-function saveStoredKWAnnouncements(items) {
-    localStorage.setItem(KW_TEAM_STORAGE.announcements, JSON.stringify(items));
+async function saveStoredKWAnnouncements(items) {
+    try {
+        const response = await adminFetch('/api/announcements', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ announcements: items })
+        });
+        if (!response.ok) throw new Error('Failed to save announcements to KV');
+    } catch (err) {
+        console.error('Failed to save KV announcements:', err);
+        showDashboardAlert('Failed to save announcements to server storage.', 'error');
+    }
 }
 
-function getStoredKWWebsiteNote() {
+async function getStoredKWWebsiteNote() {
     try {
-        return localStorage.getItem(KW_TEAM_STORAGE.websiteNote) || '';
-    } catch {
+        const response = await adminFetch('/api/kw/website-note', { cache: 'no-store' });
+        if (!response.ok) return '';
+        const data = await response.json();
+        return data.note || data.message || '';
+    } catch (err) {
+        console.error('Failed to fetch KV website note:', err);
         return '';
     }
 }
 
-function saveStoredKWWebsiteNote(message) {
-    localStorage.setItem(KW_TEAM_STORAGE.websiteNote, String(message || ''));
+async function saveStoredKWWebsiteNote(message) {
+    try {
+        const response = await adminFetch('/api/kw/website-note', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ note: String(message || '') })
+        });
+        if (!response.ok) throw new Error('Failed to save website note to KV');
+    } catch (err) {
+        console.error('Failed to save KV website note:', err);
+        showDashboardAlert('Failed to save website note to server storage.', 'error');
+    }
 }
 
-function renderKWTeamPanel() {
+async function renderKWTeamPanel() {
     const titleInput = document.getElementById('kw-announcement-title');
     const bodyInput = document.getElementById('kw-announcement-body');
     const typeInput = document.getElementById('kw-announcement-type');
     const noteInput = document.getElementById('kw-website-note');
+    
     if (titleInput) titleInput.value = '';
     if (bodyInput) bodyInput.value = '';
     if (typeInput) typeInput.value = 'info';
-    if (noteInput) noteInput.value = getStoredKWWebsiteNote();
+    
+    if (noteInput) {
+        const note = await getStoredKWWebsiteNote();
+        noteInput.value = note;
+    }
 }
 
-window.publishKWAnnouncement = function() {
+window.publishKWAnnouncement = async function() {
     const titleInput = document.getElementById('kw-announcement-title');
     const bodyInput = document.getElementById('kw-announcement-body');
     const typeInput = document.getElementById('kw-announcement-type');
@@ -113,7 +142,7 @@ window.publishKWAnnouncement = function() {
         return;
     }
 
-    const announcements = getStoredKWAnnouncements();
+    const announcements = await getStoredKWAnnouncements();
     announcements.push({
         id: `announce_${Date.now()}`,
         title,
@@ -122,7 +151,8 @@ window.publishKWAnnouncement = function() {
         active: true,
         createdAt: new Date().toISOString()
     });
-    saveStoredKWAnnouncements(announcements);
+    
+    await saveStoredKWAnnouncements(announcements);
 
     if (titleInput) titleInput.value = '';
     if (bodyInput) bodyInput.value = '';
@@ -131,16 +161,16 @@ window.publishKWAnnouncement = function() {
     renderMainAnnouncements();
 };
 
-window.clearKWAnnouncement = function() {
-    saveStoredKWAnnouncements([]);
+window.clearKWAnnouncement = async function() {
+    await saveStoredKWAnnouncements([]);
     showDashboardAlert('Announcement cleared from the main page.', 'success');
     renderMainAnnouncements();
 };
 
-window.saveKWWebsiteNote = function() {
+window.saveKWWebsiteNote = async function() {
     const noteInput = document.getElementById('kw-website-note');
     const note = noteInput?.value || '';
-    saveStoredKWWebsiteNote(note);
+    await saveStoredKWWebsiteNote(note);
     showDashboardAlert('Website note saved.', 'success');
     renderMainAnnouncements();
 };
