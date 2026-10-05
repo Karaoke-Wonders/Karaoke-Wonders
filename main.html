@@ -218,17 +218,16 @@
     <!-- Global Announcement Banner -->
     <div id="global-announcement-container" class="hidden mb-6"></div>
 
-    <!-- Notification Banner -->
+    <!-- Notification Banner (Only ONE should exist) -->
     <div id="main-alert" class="hidden mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between shadow-sm">
-...
-        <!-- Notification Banner -->
-        <div id="main-alert" class="hidden mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between shadow-sm">
-            <div class="flex items-center gap-3">
-                <i id="main-alert-icon" class="w-4 h-4 shrink-0"></i>
-                <span id="main-alert-text"></span>
-            </div>
-            <button onclick="hideAlert()" class="opacity-60 hover:opacity-100 transition-opacity"><i data-lucide="x" class="w-4 h-4"></i></button>
+        <div class="flex items-center gap-3">
+            <i id="main-alert-icon" class="w-4 h-4 shrink-0"></i>
+            <span id="main-alert-text"></span>
         </div>
+        <button onclick="hideAlert()" class="opacity-60 hover:opacity-100 transition-opacity">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+    </div>
 
         <!-- TAB 1: SONG LIBRARY -->
         <section id="content-library" class="tab-content space-y-8">
