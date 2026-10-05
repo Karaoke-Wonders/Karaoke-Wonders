@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+  (function() {
+    // 1. Check if the request carries the 'skip_loader' bypass key
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasSkipFlag = urlParams.get('skip_loader') === 'true';
+
+    // 2. If skip_loader is NOT present, instantly bounce to loading.html
+    if (!hasSkipFlag) {
+      const currentPath = window.location.pathname + window.location.search;
+      const targetUrl = '/loading.html?page=' + encodeURIComponent(currentPath);
+      window.location.replace(targetUrl);
+    } else {
+      // 3. Clean up ?skip_loader=true from the address bar so the URL stays clean
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('skip_loader');
+      const cleanSearch = cleanUrl.search ? cleanUrl.search : '';
+      window.history.replaceState({}, document.title, cleanUrl.pathname + cleanSearch + cleanUrl.hash);
+    }
+  })();
+</script>
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://karaokewonders.fetched.workers.dev https://cloudflareinsights.com https://www.google-analytics.com https://*.google-analytics.com; img-src 'self' data: https:; object-src 'none';">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

@@ -14,7 +14,7 @@
 
             try {
                 // Fetch central status config
-                const res = await fetch('/status.json?t=' + Date.now(), { cache: 'no-store' });
+                const res = await fetch('/files/status.json?t=' + Date.now(), { cache: 'no-store' });
                 
                 if (res.ok) {
                     const status = await res.json();
