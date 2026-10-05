@@ -9,6 +9,21 @@
     const progressContainer = document.getElementById('progress-container');
     const progressBar = document.getElementById('progress-bar');
     const progressText = document.getElementById('progress-text');
+    const backBtn = document.getElementById('back-btn');
+
+    // Helper to reveal and attach back navigation logic
+    function showBackButton() {
+        if (!backBtn) return;
+        backBtn.classList.remove('hidden');
+        backBtn.onclick = () => {
+            // Return to previous page if it originated from the same domain; otherwise fallback to root
+            if (document.referrer && new URL(document.referrer).origin === window.location.origin) {
+                window.history.back();
+            } else {
+                window.location.href = '/';
+            }
+        };
+    }
 
     const MIN_BUFFER_MS = 600;
     const startTime = Date.now();
@@ -37,6 +52,8 @@
                 if (progressBar) progressBar.style.width = status.maintenanceProgress + '%';
                 if (progressText) progressText.textContent = status.maintenanceProgress + '% Complete';
             }
+
+            showBackButton();
             return; // Lock access
         }
 
@@ -51,8 +68,10 @@
 
         if (isBlocked) {
             spinner?.classList.add('hidden');
-            titleEl.textContent = "Page is under maintinance";
+            titleEl.textContent = "Page is under maintenance";
             msgEl.textContent = status.blockedPageMessage || "This specific section is currently down for maintenance.";
+
+            showBackButton();
             return; // Lock access
         }
 
@@ -61,6 +80,8 @@
         spinner?.classList.add('hidden');
         titleEl.textContent = "Connection Error";
         msgEl.textContent = "Unable to verify site status. Please refresh or try again shortly.";
+
+        showBackButton();
         return; // STOP execution — do not bypass gate on error
     }
 
