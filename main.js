@@ -18,53 +18,60 @@ async function renderMainAnnouncements() {
     const mainAlertText = document.getElementById('main-alert-text');
     if (!mainAlert || !mainAlertIcon || !mainAlertText) return;
 
-    // Fetch data asynchronously from Cloudflare KV
-    const announcementsRaw = await getStoredKWAnnouncements();
-    const websiteNote = await getStoredKWWebsiteNote();
+    try {
+        // Fetch directly from your Cloudflare Pages function endpoint
+        const response = await fetch('/api/announcements', {
+            headers: { 'Cache-Control': 'no-cache' }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`Server returned status ${response.status}`);
+        }
 
-    // Normalize announcements into an array format
-    let announcements = [];
-    if (Array.isArray(announcementsRaw)) {
-        announcements = announcementsRaw;
-    } else if (announcementsRaw && typeof announcementsRaw === 'object') {
-        announcements = [announcementsRaw];
-    }
+        const data = await response.json();
 
-    const activeAnnouncements = announcements.filter(item => item && item.active !== false && !item.clear);
-    const note = (websiteNote || '').trim();
+        // Check if data is empty, cleared, or explicitly inactive
+        if (!data || Object.keys(data).length === 0 || data.clear || data.active === false) {
+            mainAlert.classList.add('hidden');
+            return;
+        }
 
-    if (activeAnnouncements.length === 0 && !note) {
+        const title = data.title || 'Announcement';
+        const message = data.message || '';
+        const combinedMessage = `${title}: ${message}`;
+        const type = data.type || 'info';
+
+        // Reset class list cleanly
+        mainAlert.className = 'hidden mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between shadow-sm';
+
+        // Apply color schemes and icons based on announcement type
+        if (type === 'error') {
+            mainAlert.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-400');
+            mainAlertIcon.setAttribute('data-lucide', 'alert-circle');
+        } else if (type === 'warning') {
+            mainAlert.classList.add('bg-yellow-500/10', 'border-yellow-500/20', 'text-yellow-400');
+            mainAlertIcon.setAttribute('data-lucide', 'triangle-alert');
+        } else if (type === 'success') {
+            mainAlert.classList.add('bg-green-500/10', 'border-green-500/20', 'text-green-400');
+            mainAlertIcon.setAttribute('data-lucide', 'check-circle');
+        } else {
+            mainAlert.classList.add('bg-sky-500/10', 'border-sky-500/20', 'text-sky-400');
+            mainAlertIcon.setAttribute('data-lucide', 'info');
+        }
+
+        mainAlertText.textContent = combinedMessage;
+        mainAlert.classList.remove('hidden'); // Show the banner
+
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    } catch (err) {
+        console.error('Failed to load main announcement:', err);
         mainAlert.classList.add('hidden');
-        return;
     }
-
-    const first = activeAnnouncements[0];
-    const combinedMessage = note
-        ? `${first ? `${first.title}:${first.message}` : 'Website update'}${note ? ` • ${note}` : ''}`
-        : (first ? `${first.title}: ${first.message}` : note);
-
-    const type = first?.type || 'info';
-    mainAlert.classList.remove('hidden', 'bg-red-500/10', 'border-red-500/20', 'text-red-400', 'bg-yellow-500/10', 'border-yellow-500/20', 'text-yellow-400', 'bg-green-500/10', 'border-green-500/20', 'text-green-400', 'bg-sky-500/10', 'border-sky-500/20', 'text-sky-400');
-    
-    if (type === 'error') {
-        mainAlert.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-400');
-        mainAlertIcon.setAttribute('data-lucide', 'alert-circle');
-    } else if (type === 'warning') {
-        mainAlert.classList.add('bg-yellow-500/10', 'border-yellow-500/20', 'text-yellow-400');
-        mainAlertIcon.setAttribute('data-lucide', 'triangle-alert');
-    } else if (type === 'success') {
-        mainAlert.classList.add('bg-green-500/10', 'border-green-500/20', 'text-green-400');
-        mainAlertIcon.setAttribute('data-lucide=' , 'check-circle');
-    } else {
-        mainAlert.classList.add('bg-sky-500/10', 'border-sky-500/20', 'text-sky-400');
-        mainAlertIcon.setAttribute('data-lucide', 'info');
-    }
-
-    mainAlertText.textContent = combinedMessage;
-    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-// Ensure it runs automatically when the page loads
+// Run on page load
 document.addEventListener('DOMContentLoaded', () => {
     renderMainAnnouncements();
 });
