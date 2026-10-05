@@ -10,7 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="files/lucide.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/web/css/style.css">
     <link rel="icon" type="image/png" href="/image/kwicon.svg" />
     <meta property="og:title" content="Karaoke Wonders - Karaoke" />
     <meta property="og:type" content="website" />
@@ -19,8 +19,8 @@
     <meta property="og:site_name" content="Karaoke Wonders" />
     <meta property="og:image" content="https://karaokewonders.com/image/kw.png" />
     <meta name="theme-color" content="#90ee90" />
-    <link rel="stylesheet" href="mobile.css" media="screen and (max-width: 768px)">
-    <script src="schema.js" defer></script>
+    <link rel="stylesheet" href="/web/css/mobile.css" media="screen and (max-width: 768px)">
+    <script src="/web/js/schema.js" defer></script>
     <style>
         body {
             font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
@@ -97,7 +97,7 @@
                 <!-- Admin Link -->
                 <div id="admin-links" class="pt-5 mt-5 border-t border-slate-800/80 hidden">
                     <p class="px-3 text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-2">Moderation</p>
-                    <a href="admin.html" class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-purple-300 hover:bg-purple-500/10 border border-purple-500/20 transition-all text-sm font-medium">
+                    <a href="/web/private/admin.html" class="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-purple-300 hover:bg-purple-500/10 border border-purple-500/20 transition-all text-sm font-medium">
                         <div class="flex items-center gap-3">
                             <i data-lucide="shield-check" class="w-4 h-4 text-purple-400"></i>
                             <span>Karaoke Panel</span>
@@ -111,7 +111,7 @@
                     <p class="px-3 text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-2">Community</p>
                     
                     <div id="inbox">
-                        <a href="inbox.html" class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all text-sm font-medium">
+                        <a href="/web/public/inbox.html" class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all text-sm font-medium">
                             <div class="flex items-center gap-3">
                                 <i data-lucide="archive" class="w-4 h-4 text-emerald-400"></i>
                                 <span>Inbox</span>
@@ -121,7 +121,7 @@
                     </div>
 
                     <div id="settings">
-                        <a href="settings.html" class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all text-sm font-medium">
+                        <a href="/web/public/settings.html" class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all text-sm font-medium">
                             <div class="flex items-center gap-3">
                                 <i data-lucide="cog" class="w-4 h-4 text-blue-400"></i>
                                 <span>Settings</span>
@@ -131,7 +131,7 @@
                     </div>
 
                     <div id="careers">
-                        <a href="careers.html" class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all text-sm font-medium">
+                        <a href="/web/public/careers.html" class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-slate-300 hover:bg-slate-800/50 hover:text-white transition-all text-sm font-medium">
                             <div class="flex items-center gap-3">
                                 <i data-lucide="briefcase" class="w-4 h-4 text-amber-400"></i>
                                 <span>Careers</span>
@@ -308,8 +308,8 @@
             }
         }
     </script>
-    <script src="session-sync.js"></script>
-    <script src="main.js"></script>
-    <script src="catalog-sync.js"></script>
+    <script src="/web/js/session-sync.js"></script>
+    <script src="/web/js/main.js"></script>
+    <script src="/web/js/catalog-sync.js"></script>
 </body>
 </html>
