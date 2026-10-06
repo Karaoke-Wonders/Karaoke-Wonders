@@ -13,23 +13,21 @@ const itemsPerPage = 10;
 let songSearchTimer = null;
 
 async function renderMainAnnouncements() {
-    const mainAlert = document.getElementById('main-alert');
-    const mainAlertIcon = document.getElementById('main-alert-icon');
-    const mainAlertText = document.getElementById('main-alert-text');
-    if (!mainAlert || !mainAlertIcon || !mainAlertText) return;
+    const container = document.getElementById('global-announcement-container');
+    if (!container) return;
 
     try {
         const response = await fetch('/api/announcement', {
             headers: { 'Cache-Control': 'no-cache' }
         });
-        
+
         if (!response.ok) {
             throw new Error(`Server returned status ${response.status}`);
         }
 
         const data = await response.json();
 
-        // Dynamically resolve raw array [...], wrapped object { announcements: [...] }, or single object
+        // Handles direct arrays [...], wrapped objects { announcements: [...] }, or flat objects
         let item = null;
         if (Array.isArray(data)) {
             item = data[0];
@@ -39,45 +37,48 @@ async function renderMainAnnouncements() {
             item = data;
         }
 
-        // Check if announcement is missing, cleared, or inactive
+        // Hide container if payload is empty, cleared, or inactive
         if (!item || Object.keys(item).length === 0 || item.clear || item.active === false) {
-            mainAlert.classList.add('hidden');
-            mainAlert.dataset.isAnnouncement = 'false';
+            container.innerHTML = '';
+            container.classList.add('hidden');
             return;
         }
 
         const title = item.title || 'Announcement';
         const message = item.message || '';
-        const combinedMessage = message ? `${title}: ${message}` : title;
         const type = item.type || 'info';
 
-        mainAlert.className = 'mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between shadow-sm';
-        mainAlert.dataset.isAnnouncement = 'true';
+        let colorClasses = 'bg-sky-500/10 border-sky-500/20 text-sky-400';
+        let iconName = 'info';
 
         if (type === 'error') {
-            mainAlert.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-400');
-            mainAlertIcon.setAttribute('data-lucide', 'alert-circle');
+            colorClasses = 'bg-red-500/10 border-red-500/20 text-red-400';
+            iconName = 'alert-circle';
         } else if (type === 'warning') {
-            mainAlert.classList.add('bg-yellow-500/10', 'border-yellow-500/20', 'text-yellow-400');
-            mainAlertIcon.setAttribute('data-lucide', 'triangle-alert');
+            colorClasses = 'bg-yellow-500/10 border-yellow-500/20 text-yellow-400';
+            iconName = 'triangle-alert';
         } else if (type === 'success') {
-            mainAlert.classList.add('bg-green-500/10', 'border-green-500/20', 'text-green-400');
-            mainAlertIcon.setAttribute('data-lucide', 'check-circle');
-        } else {
-            mainAlert.classList.add('bg-sky-500/10', 'border-sky-500/20', 'text-sky-400');
-            mainAlertIcon.setAttribute('data-lucide', 'info');
+            colorClasses = 'bg-green-500/10 border-green-500/20 text-green-400';
+            iconName = 'check-circle';
         }
 
-        mainAlertText.textContent = combinedMessage;
-        mainAlert.classList.remove('hidden');
+        container.className = `mb-6 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between shadow-sm ${colorClasses}`;
+        container.innerHTML = `
+            <div class="flex items-center gap-3">
+                <i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i>
+                <span>${title}${message ? `: ${message}` : ''}</span>
+            </div>
+            <button onclick="document.getElementById('global-announcement-container').classList.add('hidden')" class="opacity-60 hover:opacity-100 transition-opacity">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        `;
 
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
         }
     } catch (err) {
         console.error('Failed to load main announcement:', err);
-        mainAlert.classList.add('hidden');
-        mainAlert.dataset.isAnnouncement = 'false';
+        container.classList.add('hidden');
     }
 }
 
