@@ -27,20 +27,22 @@ async function renderMainAnnouncements() {
             throw new Error(`Server returned status ${response.status}`);
         }
 
-        const rawData = await response.json();
-        // Support flat object or wrapped { announcement: { ... } } payloads
-        const data = rawData.announcement || rawData.data || rawData;
+        const data = await response.json();
 
-        if (!data || Object.keys(data).length === 0 || data.clear || data.active === false) {
+        // Target the first element in the 'announcements' array if present
+        const item = Array.isArray(data.announcements) ? data.announcements[0] : data;
+
+        // Check if announcement is missing, cleared, or inactive
+        if (!item || Object.keys(item).length === 0 || item.clear || item.active === false) {
             mainAlert.classList.add('hidden');
             mainAlert.dataset.isAnnouncement = 'false';
             return;
         }
 
-        const title = data.title || 'Announcement';
-        const message = data.message || '';
+        const title = item.title || 'Announcement';
+        const message = item.message || '';
         const combinedMessage = message ? `${title}: ${message}` : title;
-        const type = data.type || 'info';
+        const type = item.type || 'info';
 
         mainAlert.className = 'mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between shadow-sm';
         mainAlert.dataset.isAnnouncement = 'true';
@@ -60,6 +62,7 @@ async function renderMainAnnouncements() {
         }
 
         mainAlertText.textContent = combinedMessage;
+        mainAlert.classList.remove('hidden');
 
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
