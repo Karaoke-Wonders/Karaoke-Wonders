@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaving Karaoke Wonders</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-slate-800/80 border border-slate-700/60 p-6 rounded-3xl shadow-xl space-y-5 text-center">
+        <div class="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mx-auto flex items-center justify-center text-xl font-bold">
+            !
+        </div>
+        
+        <h1 class="text-xl font-bold tracking-tight">You are leaving Karaoke Wonders</h1>
+        
+        <p class="text-xs text-slate-400 leading-relaxed">
+            The link you clicked leads to an external website. If it was not added by the KW team then be careful what you click on.
+        </p>
+
+        <div class="p-3 bg-slate-900/60 rounded-2xl border border-slate-700/40 text-left">
+            <p class="text-[10px] uppercase font-semibold text-slate-500 mb-1">Destination</p>
+            <p id="destination-url" class="text-xs font-mono text-indigo-300 break-all">Loading link...</p>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+            <button onclick="window.close()" class="flex-1 py-2.5 px-4 rounded-2xl bg-slate-700/60 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-all">
+                Go Back
+            </button>
+            <a id="proceed-btn" href="#" rel="noopener noreferrer" class="flex-1 py-2.5 px-4 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold transition-all text-center">
+                Continue to External Site
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const targetUrl = params.get('target');
+
+        const urlDisplay = document.getElementById('destination-url');
+        const proceedBtn = document.getElementById('proceed-btn');
+
+        if (targetUrl) {
+            urlDisplay.textContent = targetUrl;
+            proceedBtn.href = targetUrl;
+        } else {
+            urlDisplay.textContent = "No destination specified.";
+            proceedBtn.classList.add('pointer-events-none', 'opacity-50');
+        }
+    </script>
+</body>
+</html>
