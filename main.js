@@ -62,11 +62,15 @@ async function renderMainAnnouncements() {
             iconName = 'check-circle';
         }
 
+        // Explicitly reveal the container
+        container.classList.remove('hidden');
+
+        // Apply styling and contents
         container.className = `mb-6 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between shadow-sm ${colorClasses}`;
         container.innerHTML = `
             <div class="flex items-center gap-3">
                 <i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i>
-                <span>${title}${message ? `: ${message}` : ''}</span>
+                <span>${escapeHtml(title)}${message ? `: ${escapeHtml(message)}` : ''}</span>
             </div>
             <button onclick="document.getElementById('global-announcement-container').classList.add('hidden')" class="opacity-60 hover:opacity-100 transition-opacity">
                 <i data-lucide="x" class="w-4 h-4"></i>
@@ -78,6 +82,7 @@ async function renderMainAnnouncements() {
         }
     } catch (err) {
         console.error('Failed to load main announcement:', err);
+        container.innerHTML = '';
         container.classList.add('hidden');
     }
 }
@@ -447,12 +452,6 @@ function showAlert(message, type = 'error') {
         lucide.createIcons();
     }
 }
-
-window.hideAlert = function() {
-    const alertBox = document.getElementById('main-alert');
-    if (alertBox) alertBox.classList.add('hidden');
-};
-
 // Load approved songs for the current page from Worker API with a loading state
 async function loadSongLibrary(page = currentPage, search = document.getElementById('search-input')?.value || '') {
     const songListContainer = document.getElementById('song-list');
