@@ -1,27 +1,44 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://karaokewonders.fetched.workers.dev; img-src 'self' data: https:; object-src 'none';">
-    <link rel="preconnect" href="https://fonts.googleapis.com">    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blog - Karaoke Wonders</title>
-    
+
+    <!-- Updated CSP to allow cdnjs -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://karaokewonders.fetched.workers.dev; img-src 'self' data: https:; object-src 'none';">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <!-- External Assets -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="/files/lucide.min.js"></script>
-    
+
+    <!-- Docsify Theme CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/docsify/4.13.1/themes/vue.min.css">
+
     <!-- Absolute Paths -->
     <link rel="stylesheet" href="/css/style.css">
     <link rel="icon" type="image/png" href="/image/kwicon.svg" />
     <link rel="stylesheet" href="/css/mobile.css" media="screen and (max-width: 768px)">
     <meta name="theme-color" content="#90ee90" />
 </head>
-<script>
-  window.$docsify = {
-    name: 'Karaoke Wonders blog',
-    loadSidebar: true
-  }
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/docsify/4.13.1/docsify.min.js"></script>
+<body>
+    <!-- Docsify Mount Element -->
+    <div id="app">Loading blog...</div>
+
+    <!-- Docsify Configuration -->
+    <script>
+      window.$docsify = {
+        name: 'Karaoke Wonders Blog',
+        loadSidebar: true,
+        auto2top: true
+      }
+    </script>
+    
+    <!-- Docsify Core JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docsify/4.13.1/docsify.min.js"></script>
+</body>
+</html>
