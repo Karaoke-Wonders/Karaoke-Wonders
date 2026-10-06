@@ -8,7 +8,7 @@ export async function onRequest(context) {
 
   // Check specific routes first, then general static assets
   const isApi = path.startsWith('/api/');
-  const isBlog = path.startsWith('/blog/');
+  const isBlog = path.startsWith('/blog/blog.html');
   const isLoading = path.startsWith('/loading');
   const isStatusFile = path.endsWith('status.json');
 
