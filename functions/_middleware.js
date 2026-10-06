@@ -4,7 +4,7 @@ export async function onRequest(context) {
   const path = url.pathname;
   const skipFlag = url.searchParams.get('skip_loader') === 'true';
 
-  const isStaticAsset = /\.(css|js|json|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot)$/i.test(path);
+  const isStaticAsset = /\.(css|js|json|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot|md)$/i.test(path);
 
   // Check specific routes first, then general static assets
   const isApi = path.startsWith('/api/');
