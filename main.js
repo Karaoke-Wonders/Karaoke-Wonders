@@ -29,8 +29,15 @@ async function renderMainAnnouncements() {
 
         const data = await response.json();
 
-        // Target the first element in the 'announcements' array if present
-        const item = Array.isArray(data.announcements) ? data.announcements[0] : data;
+        // Dynamically resolve raw array [...], wrapped object { announcements: [...] }, or single object
+        let item = null;
+        if (Array.isArray(data)) {
+            item = data[0];
+        } else if (Array.isArray(data?.announcements)) {
+            item = data.announcements[0];
+        } else {
+            item = data;
+        }
 
         // Check if announcement is missing, cleared, or inactive
         if (!item || Object.keys(item).length === 0 || item.clear || item.active === false) {
