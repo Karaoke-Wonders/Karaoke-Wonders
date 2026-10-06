@@ -19,7 +19,6 @@ async function renderMainAnnouncements() {
     if (!mainAlert || !mainAlertIcon || !mainAlertText) return;
 
     try {
-        // Fetch directly from your API endpoint
         const response = await fetch('/api/announcement', {
             headers: { 'Cache-Control': 'no-cache' }
         });
@@ -28,23 +27,24 @@ async function renderMainAnnouncements() {
             throw new Error(`Server returned status ${response.status}`);
         }
 
-        const data = await response.json();
+        const rawData = await response.json();
+        // Support flat object or wrapped { announcement: { ... } } payloads
+        const data = rawData.announcement || rawData.data || rawData;
 
-        // Check if data is empty, cleared, or explicitly inactive
         if (!data || Object.keys(data).length === 0 || data.clear || data.active === false) {
             mainAlert.classList.add('hidden');
+            mainAlert.dataset.isAnnouncement = 'false';
             return;
         }
 
         const title = data.title || 'Announcement';
         const message = data.message || '';
-        const combinedMessage = `${title}: ${message}`;
+        const combinedMessage = message ? `${title}: ${message}` : title;
         const type = data.type || 'info';
 
-        // Reset class list cleanly
-        mainAlert.className = 'hidden mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between shadow-sm';
+        mainAlert.className = 'mb-8 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between shadow-sm';
+        mainAlert.dataset.isAnnouncement = 'true';
 
-        // Apply color schemes and icons based on announcement type
         if (type === 'error') {
             mainAlert.classList.add('bg-red-500/10', 'border-red-500/20', 'text-red-400');
             mainAlertIcon.setAttribute('data-lucide', 'alert-circle');
@@ -60,7 +60,6 @@ async function renderMainAnnouncements() {
         }
 
         mainAlertText.textContent = combinedMessage;
-        mainAlert.classList.remove('hidden'); // Show the banner
 
         if (typeof lucide !== 'undefined') {
             lucide.createIcons();
@@ -68,13 +67,21 @@ async function renderMainAnnouncements() {
     } catch (err) {
         console.error('Failed to load main announcement:', err);
         mainAlert.classList.add('hidden');
+        mainAlert.dataset.isAnnouncement = 'false';
     }
 }
 
-// Run on page load
-document.addEventListener('DOMContentLoaded', () => {
-    renderMainAnnouncements();
-});
+// Update hideAlert so tab switches don't wipe active announcements
+window.hideAlert = function() {
+    const alertBox = document.getElementById('main-alert');
+    if (!alertBox) return;
+
+    // Preserve the announcement if one is active
+    if (alertBox.dataset.isAnnouncement === 'true') {
+        return;
+    }
+    alertBox.classList.add('hidden');
+};
 
 function normalizeUserData(raw) {
     if (!raw || typeof raw !== 'object') return null;

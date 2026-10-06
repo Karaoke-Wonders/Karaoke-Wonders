@@ -23,6 +23,11 @@ let songTotalPages = 1;
 let userCurrentPage = 1;
 let managementUserCurrentPage = 1;
 
+const KW_TEAM_STORAGE = {
+  announcements: [],
+  notes: []
+};
+
 // Discord Forum Tag IDs for Moderation & RBAC
 const TAG_IDS = {
     management: '1549308000664031323',
@@ -61,16 +66,28 @@ window.closeAdminSidebar = function() {
 // KV STORAGE HELPERS (Cloudflare Workers)
 // ==========================================
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 async function getStoredKWAnnouncements() {
-    try {
-        const response = await adminFetch('/api/announcement', { cache: 'no-store' });
-        if (!response.ok) return [];
-        const data = await response.json();
-        return Array.isArray(data) ? data : (Array.isArray(data.announcements) ? data.announcements : []);
-    } catch (err) {
-        console.error('Failed to fetch KV announcements:', err);
-        return [];
+  try {
+    const response = await fetch('/api/announcement');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch announcements: ${response.statusText}`);
     }
+    const data = await response.json();
+    return Array.isArray(data.announcements) ? data.announcements : [];
+  } catch (error) {
+    console.error('Error in getStoredKWAnnouncements:', error);
+    return [];
+  }
 }
 
 async function saveStoredKWAnnouncements(items) {
@@ -1768,17 +1785,28 @@ function extractVideoId(urlOrId) {
     }
 }
 // Add this function to your script to resolve the ReferenceError
-function renderMainAnnouncements() {
-    // Retrieve stored items to verify or dispatch an update event if needed
-    const announcements = getStoredKWAnnouncements();
-    const websiteNote = getStoredKWWebsiteNote();
+async function renderMainAnnouncements() {
+  const container = document.getElementById('announcements-container');
+  if (!container) return;
 
-    // If your admin panel has a preview section for announcements, render them here.
-    // Otherwise, dispatch a storage event so other open tabs/windows catch the update.
-    window.dispatchEvent(new StorageEvent('storage', {
-        key: KW_TEAM_STORAGE.announcements,
-        newValue: JSON.stringify(announcements)
-    }));
+  // Await the asynchronous network promise before updating local state
+  const fetchedAnnouncements = await getStoredKWAnnouncements();
+  KW_TEAM_STORAGE.announcements = fetchedAnnouncements;
+
+  if (KW_TEAM_STORAGE.announcements.length === 0) {
+    container.innerHTML = '<div class="empty-state">No announcements active.</div>';
+    return;
+  }
+
+  container.innerHTML = KW_TEAM_STORAGE.announcements
+    .map((item) => `
+      <div class="announcement-card" data-id="${escapeHtml(item.id)}">
+        <h4>${escapeHtml(item.title)}</h4>
+        <p>${escapeHtml(item.content)}</p>
+        <span class="timestamp">${new Date(item.created_at || Date.now()).toLocaleString()}</span>
+      </div>
+    `)
+    .join('');
 }
 
 function resetModalStatus(elementId) {
