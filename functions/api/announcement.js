@@ -1,10 +1,7 @@
 export async function onRequest(context) {
     const { request, env } = context;
-    const url = new URL(request.url);
 
-    console.log(`[API Request] Method: ${request.method}, URL: ${request.url}`);
-
-    // Ensure you have bound your KV namespace as "KW_STORAGE" in Cloudflare Pages settings
+    // Ensure KV namespace "KW_STORAGE" is bound in Cloudflare Pages settings
     const kv = env.KW_STORAGE; 
 
     if (!kv) {
@@ -15,51 +12,62 @@ export async function onRequest(context) {
         });
     }
 
-    // GET request: Fetch the current announcement for all users on the main page
+    const headers = {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate"
+    };
+
+    // GET Request: Fetch current global announcement
     if (request.method === "GET") {
-        console.log("[API GET] Fetching 'main_announcement' from KV...");
-        const data = await kv.get("main_announcement", "json");
-        console.log("[API GET] Retrieved data:", JSON.stringify(data));
-        
-        return new Response(JSON.stringify(data || {}), {
-            headers: { "Content-Type": "application/json" }
-        });
-    }
-
-    // POST request: Save or Clear the announcement from the Admin Panel
-    if (request.method === "POST") {
         try {
-            const body = await request.json();
-            console.log("[API POST] Parsed request body:", JSON.stringify(body));
+            const data = await kv.get("main_announcement", "json");
             
-            // If body is empty or action is clear, delete the record
-            if (body.clear) {
-                console.log("[API POST] Clearing 'main_announcement' from KV...");
-                await kv.delete("main_announcement");
-                console.log("[API POST] Successfully cleared announcement.");
-                
-                return new Response(JSON.stringify({ success: true, message: "Announcement cleared globally" }), {
-                    headers: { "Content-Type": "application/json" }
-                });
-            }
+            // Fallback to empty announcements object if KV key is null/empty
+            const responseData = data || { announcements: [] };
 
-            // Otherwise, save the new announcement data globally
-            console.log("[API POST] Saving 'main_announcement' to KV...");
-            await kv.put("main_announcement", JSON.stringify(body));
-            console.log("[API POST] Successfully published announcement.");
-            
-            return new Response(JSON.stringify({ success: true, message: "Announcement published globally" }), {
-                headers: { "Content-Type": "application/json" }
+            return new Response(JSON.stringify(responseData), { 
+                status: 200, 
+                headers 
             });
         } catch (err) {
-            console.error("[API Error] Failed to parse request body or save to KV:", err);
-            return new Response(JSON.stringify({ error: "Invalid request body" }), { 
-                status: 400, 
-                headers: { "Content-Type": "application/json" } 
+            console.error("[API Error] Failed to read from KV:", err);
+            return new Response(JSON.stringify({ error: "Failed to fetch announcement" }), { 
+                status: 500, 
+                headers 
             });
         }
     }
 
-    console.warn(`[API Warning] Method not allowed: ${request.method}`);
+    // POST Request: Save or Clear announcement from Admin/KW-Team panel
+    if (request.method === "POST") {
+        try {
+            const body = await request.json();
+            
+            // Clear flag deletes the key from KV
+            if (body.clear) {
+                await kv.delete("main_announcement");
+                return new Response(JSON.stringify({ 
+                    success: true, 
+                    message: "Announcement cleared globally" 
+                }), { status: 200, headers });
+            }
+
+            // Save new announcement object or { announcements: [...] } structure
+            await kv.put("main_announcement", JSON.stringify(body));
+            
+            return new Response(JSON.stringify({ 
+                success: true, 
+                message: "Announcement published globally" 
+            }), { status: 200, headers });
+
+        } catch (err) {
+            console.error("[API Error] Invalid payload or KV write failure:", err);
+            return new Response(JSON.stringify({ error: "Invalid request body" }), { 
+                status: 400, 
+                headers 
+            });
+        }
+    }
+
     return new Response("Method not allowed", { status: 405 });
 }
