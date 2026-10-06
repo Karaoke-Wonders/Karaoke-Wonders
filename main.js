@@ -27,7 +27,7 @@ async function renderMainAnnouncements() {
 
         const data = await response.json();
 
-        // Handles direct arrays [...], wrapped objects { announcements: [...] }, or flat objects
+        // Support direct arrays [...], wrapped objects { announcements: [...] }, or flat objects
         let item = null;
         if (Array.isArray(data)) {
             item = data[0];
@@ -37,7 +37,7 @@ async function renderMainAnnouncements() {
             item = data;
         }
 
-        // Hide container if payload is empty, cleared, or inactive
+        // Hide container if payload is empty, cleared, or explicitly inactive
         if (!item || Object.keys(item).length === 0 || item.clear || item.active === false) {
             container.innerHTML = '';
             container.classList.add('hidden');
@@ -62,10 +62,10 @@ async function renderMainAnnouncements() {
             iconName = 'check-circle';
         }
 
-        // Explicitly reveal the container
+        // 1. Explicitly unhide the element
         container.classList.remove('hidden');
 
-        // Apply styling and contents
+        // 2. Set styling and safe sanitized content
         container.className = `mb-6 p-4 rounded-2xl text-xs font-medium border flex items-center justify-between shadow-sm ${colorClasses}`;
         container.innerHTML = `
             <div class="flex items-center gap-3">
