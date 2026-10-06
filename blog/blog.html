@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blog - Karaoke Wonders</title>
 
-    <!-- Updated CSP to allow cdnjs -->
+    <!-- CSP Updated with search plugin requirements -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://karaokewonders.fetched.workers.dev; img-src 'self' data: https:; object-src 'none';">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,14 +16,114 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="/files/lucide.min.js"></script>
 
-    <!-- Docsify Theme CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/docsify/4.13.1/themes/vue.min.css">
+    <!-- Docsify Dark Theme CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/docsify/4.13.1/themes/dark.min.css">
 
     <!-- Absolute Paths -->
     <link rel="stylesheet" href="/css/style.css">
     <link rel="icon" type="image/png" href="/image/kwicon.svg" />
     <link rel="stylesheet" href="/css/mobile.css" media="screen and (max-width: 768px)">
-    <meta name="theme-color" content="#90ee90" />
+    <meta name="theme-color" content="#0f172a" />
+
+    <!-- Modern Dark UI Customization -->
+    <style>
+        :root {
+            --base-background-color: #0b0f19;
+            --sidebar-background: #111827;
+            --theme-color: #38bdf8;
+            --text-color-base: #cbd5e1;
+            --sidebar-width: 260px;
+        }
+
+        body {
+            background-color: #0b0f19 !important;
+            color: #cbd5e1 !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+
+        /* Sidebar Styling */
+        .sidebar {
+            background-color: #111827 !important;
+            border-right: 1px solid #1e293b !important;
+            color: #94a3b8 !important;
+        }
+
+        .sidebar-toggle {
+            background-color: transparent !important;
+        }
+
+        .sidebar h1 a {
+            color: #f8fafc !important;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+
+        .sidebar ul li a {
+            color: #94a3b8 !important;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar ul li a:hover, .sidebar ul li.active > a {
+            color: #38bdf8 !important;
+            background-color: rgba(56, 189, 248, 0.1) !important;
+            font-weight: 600;
+        }
+
+        /* Search Box Styling */
+        .search input {
+            background-color: #1e293b !important;
+            border: 1px solid #334155 !important;
+            color: #f8fafc !important;
+            border-radius: 0.75rem !important;
+            padding: 0.5rem 0.75rem !important;
+        }
+
+        .search input::placeholder {
+            color: #64748b !important;
+        }
+
+        .search .clear-button {
+            color: #64748b !important;
+        }
+
+        /* Main Content Container */
+        .content {
+            background-color: #0b0f19 !important;
+            padding-top: 20px;
+        }
+
+        .markdown-section {
+            max-width: 800px !important;
+            color: #cbd5e1 !important;
+        }
+
+        .markdown-section h1, .markdown-section h2, .markdown-section h3 {
+            color: #f8fafc !important;
+            font-weight: 700;
+            border-bottom: 1px solid #1e293b !important;
+        }
+
+        .markdown-section code {
+            background-color: #1e293b !important;
+            color: #38bdf8 !important;
+            border-radius: 0.375rem;
+            padding: 0.2rem 0.4rem;
+        }
+
+        .markdown-section pre {
+            background-color: #0f172a !important;
+            border: 1px solid #1e293b !important;
+            border-radius: 0.75rem !important;
+        }
+
+        .markdown-section blockquote {
+            border-left: 4px solid #38bdf8 !important;
+            background-color: rgba(56, 189, 248, 0.05);
+            color: #94a3b8 !important;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+    </style>
 </head>
 <body>
     <!-- Docsify Mount Element -->
@@ -32,14 +132,24 @@
     <!-- Docsify Configuration -->
     <script>
       window.$docsify = {
-        name: 'Karaoke Wonders Blog',
+        name: 'Karaoke Wonders',
         loadSidebar: true,
         basePath: '/blog/',
-        auto2top: true
+        auto2top: true,
+        search: {
+          maxAge: 86400000,
+          paths: 'auto',
+          placeholder: 'Search blog...',
+          noData: 'No results found',
+          depth: 3
+        }
       }
     </script>
     
     <!-- Docsify Core JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/docsify/4.13.1/docsify.min.js"></script>
+
+    <!-- Docsify Search Plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docsify/4.13.1/plugins/search.min.js"></script>
 </body>
 </html>
