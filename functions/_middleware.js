@@ -8,7 +8,6 @@ export async function onRequest(context) {
 
   // Check specific routes first, then general static assets
   const isApi = path.startsWith('/api/');
-  const isBlog = path.startsWith('/blog/blog.html');
   const isLoading = path.startsWith('/loading');
   const isStatusFile = path.endsWith('status.json');
 
@@ -16,7 +15,6 @@ export async function onRequest(context) {
     let bypassReason = 'Unknown';
     if (isStatusFile) bypassReason = 'Status Config File';
     else if (isApi) bypassReason = 'API Endpoint Request';
-    else if (isBlog) bypassReason = 'BLog bypassed';
     else if (isLoading) bypassReason = 'Loading Page Request';
     else if (skipFlag) bypassReason = 'skip_loader=true Flag Present';
     else if (isStaticAsset) bypassReason = 'Static Asset File';
