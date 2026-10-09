@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog - Karaoke Wonders</title>
+    <title>Community Forum - Karaoke Wonders</title>
 
     <!-- CSP Updated with search plugin requirements -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://karaokewonders.fetched.workers.dev; img-src 'self' data: https:; object-src 'none';">
@@ -13,7 +13,7 @@
 
     <!-- External Assets -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="/files/lucide.min.js"></script>
 
     <!-- Docsify Dark Theme CSS -->
@@ -25,14 +25,14 @@
     <link rel="stylesheet" href="/css/mobile.css" media="screen and (max-width: 768px)">
     <meta name="theme-color" content="#0f172a" />
 
-    <!-- Modern Dark UI Customization -->
+    <!-- Modern Discourse / Roblox Forum Custom Dark UI Styling -->
     <style>
         :root {
             --base-background-color: #0b0f19;
             --sidebar-background: #111827;
             --theme-color: #38bdf8;
             --text-color-base: #cbd5e1;
-            --sidebar-width: 260px;
+            --sidebar-width: 280px;
         }
 
         body {
@@ -41,67 +41,80 @@
             font-family: 'Inter', sans-serif !important;
         }
 
-        /* Sidebar Styling */
-        .sidebar {
+        /* Hide default docsify sidebar chrome in favor of forum layout */
+        .sidebar-toggle {
+            display: none !important;
+        }
+
+        /* Forum Top Navigation Bar */
+        .forum-header {
+            background-color: #111827;
+            border-bottom: 1px solid #1e293b;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        /* Forum Layout Container */
+        .forum-layout {
+            display: grid;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            min-height: calc(100vh - 65px);
+        }
+
+        @media (max-width: 768px) {
+            .forum-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Forum Category Sidebar */
+        .forum-sidebar {
             background-color: #111827 !important;
             border-right: 1px solid #1e293b !important;
-            color: #94a3b8 !important;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
         }
 
-        .sidebar-toggle {
-            background-color: transparent !important;
-        }
-
-        .sidebar h1 a {
-            color: #f8fafc !important;
-            font-weight: 700;
-            letter-spacing: -0.025em;
-        }
-
-        .sidebar ul li a {
-            color: #94a3b8 !important;
-            border-radius: 0.5rem;
+        .forum-sidebar a {
+            color: #94a3b8;
+            text-decoration: none;
             transition: all 0.2s ease;
         }
 
-        .sidebar ul li a:hover, .sidebar ul li.active > a {
+        .forum-sidebar a:hover, .forum-sidebar .active-cat {
             color: #38bdf8 !important;
-            background-color: rgba(56, 189, 248, 0.1) !important;
+            background-color: rgba(56, 189, 248, 0.1);
             font-weight: 600;
         }
 
-        /* Search Box Styling */
-        .search input {
-            background-color: #1e293b !important;
-            border: 1px solid #334155 !important;
-            color: #f8fafc !important;
-            border-radius: 0.75rem !important;
-            padding: 0.5rem 0.75rem !important;
-        }
-
-        .search input::placeholder {
-            color: #64748b !important;
-        }
-
-        .search .clear-button {
-            color: #64748b !important;
-        }
-
-        /* Main Content Container */
-        .content {
+        /* Main Forum Content Wrapper */
+        .forum-main {
             background-color: #0b0f19 !important;
-            padding-top: 20px;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
         }
 
-        .markdown-section {
-            max-width: 800px !important;
+        /* Customizing Docsify App container to fit Forum Theme */
+        #app {
             color: #cbd5e1 !important;
+        }
+
+        /* Discourse-style Topic Card Styling */
+        .markdown-section {
+            max-width: 100% !important;
+            padding: 0 !important;
         }
 
         .markdown-section h1, .markdown-section h2, .markdown-section h3 {
             color: #f8fafc !important;
             font-weight: 700;
             border-bottom: 1px solid #1e293b !important;
+            padding-bottom: 0.5rem;
         }
 
         .markdown-section code {
@@ -122,25 +135,92 @@
             background-color: rgba(56, 189, 248, 0.05);
             color: #94a3b8 !important;
             border-radius: 0 0.5rem 0.5rem 0;
+            padding: 1rem;
+        }
+
+        /* Forum Search Box override */
+        .search input {
+            background-color: #1e293b !important;
+            border: 1px solid #334155 !important;
+            color: #f8fafc !important;
+            border-radius: 0.75rem !important;
+            padding: 0.6rem 1rem !important;
+            width: 100%;
+        }
+
+        .search input::placeholder {
+            color: #64748b !important;
         }
     </style>
 </head>
 <body>
-    <!-- Docsify Mount Element -->
-    <div id="app">Loading blog...</div>
+    <!-- Forum Header Navbar -->
+    <header class="forum-header px-6 py-4 flex items-center justify-between shadow-md">
+        <div class="flex items-center space-x-3">
+            <img src="/image/kwicon.svg" alt="KW Logo" class="w-8 h-8 rounded-lg" onerror="this.src='https://placehold.co/32x32/111827/38bdf8?text=KW'">
+            <span class="text-xl font-bold text-white tracking-tight">Karaoke Wonders <span class="text-sky-400 font-semibold text-sm ml-2 px-2 py-0.5 bg-sky-950/60 rounded-full border border-sky-800/50">Community Discussions</span></span>
+        </div>
+        <div class="flex items-center space-x-4">
+            <div class="search w-64 md:w-80"></div>
+            <a href="https://karaokewonders.com/main" class="hidden sm:inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-medium text-sm rounded-xl transition shadow-lg shadow-sky-600/20">
+                Back to App
+            </a>
+        </div>
+    </header>
+
+    <!-- Forum Layout Structure -->
+    <div class="forum-layout">
+        <!-- Forum Sidebar / Category List -->
+        <aside class="forum-sidebar hidden md:flex flex-col">
+            <div class="space-y-1">
+                <p class="text-xs font-semibold uppercase text-slate-500 tracking-wider px-3 mb-2">Categories</p>
+                <a href="#/" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium active-cat">
+                    <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+                    <span>All Topics</span>
+                </a>
+                <a href="#/announcements" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-800/50">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <span>Announcements</span>
+                </a>
+                <a href="#/general" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-800/50">
+                    <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                    <span>General Discussion</span>
+                </a>
+                <a href="#/songs" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-800/50">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    <span>Song Requests & Q&A</span>
+                </a>
+                <a href="#/development" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-800/50">
+                    <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                    <span>Development & Updates</span>
+                </a>
+            </div>
+
+            <div class="mt-auto pt-6 border-t border-slate-800 text-xs text-slate-500 space-y-2">
+                <p>Powered by Karaoke Wonders Engine & Docsify</p>
+                <p>© 2026 Karaoke Wonders. All rights reserved.</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area housing Docsify & Forum Threads -->
+        <main class="forum-main">
+            <!-- Docsify Mount Element -->
+            <div id="app" class="animate-pulse text-slate-400">Loading discussion board...</div>
+        </main>
+    </div>
 
     <!-- Docsify Configuration -->
     <script>
       window.$docsify = {
-        name: 'Karaoke Wonders',
-        loadSidebar: true,
+        name: '',
+        loadSidebar: false,
         basePath: '/blog/',
         auto2top: true,
         search: {
           maxAge: 86400000,
           paths: 'auto',
-          placeholder: 'Search blog...',
-          noData: 'No results found',
+          placeholder: 'Search topics, authors, or tags...',
+          noData: 'No forum topics found',
           depth: 3
         }
       }
