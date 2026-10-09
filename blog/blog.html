@@ -25,7 +25,7 @@
     <link rel="stylesheet" href="/css/mobile.css" media="screen and (max-width: 768px)">
     <meta name="theme-color" content="#0f172a" />
 
-    <!-- Modern Discourse / Roblox Forum Custom Dark UI Styling -->
+    <!-- Forum & Modern Dark UI Customization -->
     <style>
         :root {
             --base-background-color: #0b0f19;
@@ -41,80 +41,168 @@
             font-family: 'Inter', sans-serif !important;
         }
 
-        /* Hide default docsify sidebar chrome in favor of forum layout */
-        .sidebar-toggle {
-            display: none !important;
-        }
-
-        /* Forum Top Navigation Bar */
-        .forum-header {
+        /* --- Discourse / Roblox Forum Header Bar --- */
+        .forum-top-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
             background-color: #111827;
             border-bottom: 1px solid #1e293b;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-        }
-
-        /* Forum Layout Container */
-        .forum-layout {
-            display: grid;
-            grid-template-columns: var(--sidebar-width) 1fr;
-            min-height: calc(100vh - 65px);
-        }
-
-        @media (max-width: 768px) {
-            .forum-layout {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Forum Category Sidebar */
-        .forum-sidebar {
-            background-color: #111827 !important;
-            border-right: 1px solid #1e293b !important;
-            padding: 1.5rem;
             display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            z-index: 99;
         }
 
-        .forum-sidebar a {
+        .forum-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            color: #f8fafc;
+            font-weight: 700;
+            font-size: 1.1rem;
+            text-decoration: none;
+        }
+
+        .forum-brand img {
+            width: 28px;
+            height: 28px;
+        }
+
+        .forum-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .forum-nav-links a {
             color: #94a3b8;
             text-decoration: none;
-            transition: all 0.2s ease;
+            transition: color 0.2s;
         }
 
-        .forum-sidebar a:hover, .forum-sidebar .active-cat {
+        .forum-nav-links a:hover, .forum-nav-links a.active {
+            color: #38bdf8;
+        }
+
+        /* Adjust body wrapper to clear fixed header */
+        #app {
+            padding-top: 60px;
+        }
+
+        /* --- Forum Sidebar Styling (Discourse Style) --- */
+        .sidebar {
+            background-color: #111827 !important;
+            border-right: 1px solid #1e293b !important;
+            color: #94a3b8 !important;
+            top: 60px !important;
+            padding-top: 1.5rem !important;
+        }
+
+        .sidebar-toggle {
+            background-color: transparent !important;
+            top: 70px !important;
+        }
+
+        .sidebar h1 a {
+            color: #f8fafc !important;
+            font-weight: 700;
+            font-size: 1.1rem !important;
+            letter-spacing: -0.025em;
+            padding: 0 1rem;
+        }
+
+        /* Simulate Forum Categories in Sidebar */
+        .sidebar ul {
+            padding: 0 0.75rem !important;
+        }
+
+        .sidebar ul li {
+            margin: 0.25rem 0;
+        }
+
+        .sidebar ul li a {
+            color: #94a3b8 !important;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem !important;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar ul li a:hover, .sidebar ul li.active > a {
             color: #38bdf8 !important;
-            background-color: rgba(56, 189, 248, 0.1);
+            background-color: rgba(56, 189, 248, 0.1) !important;
             font-weight: 600;
         }
 
-        /* Main Forum Content Wrapper */
-        .forum-main {
+        /* Search Box Styling inside Sidebar */
+        .search {
+            padding: 0 1rem 1rem 1rem !important;
+            border-bottom: 1px solid #1e293b;
+            margin-bottom: 1rem;
+        }
+
+        .search input {
+            background-color: #1e293b !important;
+            border: 1px solid #334155 !important;
+            color: #f8fafc !important;
+            border-radius: 0.5rem !important;
+            padding: 0.5rem 0.75rem !important;
+            font-size: 0.875rem !important;
+        }
+
+        .search input::placeholder {
+            color: #64748b !important;
+        }
+
+        .search .clear-button {
+            color: #64748b !important;
+        }
+
+        .search-results {
+            background-color: #111827 !important;
+            border: 1px solid #1e293b !important;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+        }
+
+        /* --- Main Forum Topic / Content Container --- */
+        .content {
             background-color: #0b0f19 !important;
-            padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
+            padding-top: 40px !important;
         }
 
-        /* Customizing Docsify App container to fit Forum Theme */
-        #app {
-            color: #cbd5e1 !important;
-        }
-
-        /* Discourse-style Topic Card Styling */
         .markdown-section {
-            max-width: 100% !important;
-            padding: 0 !important;
+            max-width: 850px !important;
+            color: #cbd5e1 !important;
+            background-color: #111827;
+            border: 1px solid #1e293b;
+            border-radius: 1rem;
+            padding: 2.5rem !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
-        .markdown-section h1, .markdown-section h2, .markdown-section h3 {
+        .markdown-section h1 {
+            font-size: 1.8rem !important;
             color: #f8fafc !important;
             font-weight: 700;
             border-bottom: 1px solid #1e293b !important;
-            padding-bottom: 0.5rem;
+            padding-bottom: 0.75rem;
+            margin-top: 0 !important;
+        }
+
+        .markdown-section h2, .markdown-section h3 {
+            color: #f8fafc !important;
+            font-weight: 600;
+            border-bottom: none !important;
         }
 
         .markdown-section code {
@@ -135,92 +223,39 @@
             background-color: rgba(56, 189, 248, 0.05);
             color: #94a3b8 !important;
             border-radius: 0 0.5rem 0.5rem 0;
-            padding: 1rem;
-        }
-
-        /* Forum Search Box override */
-        .search input {
-            background-color: #1e293b !important;
-            border: 1px solid #334155 !important;
-            color: #f8fafc !important;
-            border-radius: 0.75rem !important;
-            padding: 0.6rem 1rem !important;
-            width: 100%;
-        }
-
-        .search input::placeholder {
-            color: #64748b !important;
+            margin: 1.5rem 0;
         }
     </style>
 </head>
 <body>
-    <!-- Forum Header Navbar -->
-    <header class="forum-header px-6 py-4 flex items-center justify-between shadow-md">
-        <div class="flex items-center space-x-3">
-            <img src="/image/kwicon.svg" alt="KW Logo" class="w-8 h-8 rounded-lg" onerror="this.src='https://placehold.co/32x32/111827/38bdf8?text=KW'">
-            <span class="text-xl font-bold text-white tracking-tight">Karaoke Wonders <span class="text-sky-400 font-semibold text-sm ml-2 px-2 py-0.5 bg-sky-950/60 rounded-full border border-sky-800/50">Community Discussions</span></span>
-        </div>
-        <div class="flex items-center space-x-4">
-            <div class="search w-64 md:w-80"></div>
-            <a href="https://karaokewonders.com/main" class="hidden sm:inline-flex items-center px-4 py-2 bg-sky-600 hover:bg-sky-500 text-white font-medium text-sm rounded-xl transition shadow-lg shadow-sky-600/20">
-                Back to App
-            </a>
-        </div>
+    <!-- Top Forum Navigation Bar (Discourse / Roblox DevForum style) -->
+    <header class="forum-top-nav">
+        <a href="/blog/blog" class="forum-brand">
+            <img src="/image/kwicon.svg" alt="KW Logo">
+            <span>Karaoke Wonders Community</span>
+        </a>
+        <nav class="forum-nav-links">
+            <a href="/main">Main Dashboard</a>
+            <a href="/public/about">About</a>
+            <a href="https://discord.gg/sXaRMKKDbe" target="_blank">Discord</a>
+        </nav>
     </header>
 
-    <!-- Forum Layout Structure -->
-    <div class="forum-layout">
-        <!-- Forum Sidebar / Category List -->
-        <aside class="forum-sidebar hidden md:flex flex-col">
-            <div class="space-y-1">
-                <p class="text-xs font-semibold uppercase text-slate-500 tracking-wider px-3 mb-2">Categories</p>
-                <a href="#/" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium active-cat">
-                    <svg class="w-4 h-4 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
-                    <span>All Topics</span>
-                </a>
-                <a href="#/announcements" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-800/50">
-                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                    <span>Announcements</span>
-                </a>
-                <a href="#/general" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-800/50">
-                    <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
-                    <span>General Discussion</span>
-                </a>
-                <a href="#/songs" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-800/50">
-                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                    <span>Song Requests & Q&A</span>
-                </a>
-                <a href="#/development" class="flex items-center space-x-3 px-3 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-800/50">
-                    <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
-                    <span>Development & Updates</span>
-                </a>
-            </div>
-
-            <div class="mt-auto pt-6 border-t border-slate-800 text-xs text-slate-500 space-y-2">
-                <p>Powered by Karaoke Wonders Engine & Docsify</p>
-                <p>© 2026 Karaoke Wonders. All rights reserved.</p>
-            </div>
-        </aside>
-
-        <!-- Main Content Area housing Docsify & Forum Threads -->
-        <main class="forum-main">
-            <!-- Docsify Mount Element -->
-            <div id="app" class="animate-pulse text-slate-400">Loading discussion board...</div>
-        </main>
-    </div>
+    <!-- Docsify Mount Element -->
+    <div id="app">Loading forum topics...</div>
 
     <!-- Docsify Configuration -->
     <script>
       window.$docsify = {
-        name: '',
-        loadSidebar: false,
+        name: 'Categories',
+        loadSidebar: true,
         basePath: '/blog/',
         auto2top: true,
         search: {
           maxAge: 86400000,
           paths: 'auto',
-          placeholder: 'Search topics, authors, or tags...',
-          noData: 'No forum topics found',
+          placeholder: 'Search topics & guides...',
+          noData: 'No discussions found',
           depth: 3
         }
       }
