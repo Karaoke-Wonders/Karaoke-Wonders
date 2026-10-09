@@ -102,11 +102,12 @@
             color: #94a3b8 !important;
             top: 60px !important;
             padding-top: 1.5rem !important;
+            z-Index: 10 !important;
         }
 
+        /* Fix hamburger toggle blocking clicks on desktop/tablet */
         .sidebar-toggle {
-            background-color: transparent !important;
-            top: 70px !important;
+            display: none !important;
         }
 
         .sidebar h1 a {
@@ -224,6 +225,15 @@
             color: #94a3b8 !important;
             border-radius: 0 0.5rem 0.5rem 0;
             margin: 1.5rem 0;
+        }
+
+        /* Mobile adjustments for hamburger toggle if needed on small screens */
+        @media screen and (max-width: 768px) {
+            .sidebar-toggle {
+                display: block !important;
+                background-color: rgba(17, 24, 39, 0.8) !important;
+                top: 70px !important;
+            }
         }
     </style>
 </head>
